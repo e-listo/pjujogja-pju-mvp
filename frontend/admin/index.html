@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Admin - PJU Jogja</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+  :root{--merah:#e53935;--kuning:#fbc02d;--hijau:#43a047;--abu:#f4f4f6;}
+  *{box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;}
+  body{margin:0;background:var(--abu);}
+  header{background:#0d47a1;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;}
+  header h1{font-size:16px;margin:0;}
+  .layout{display:grid;grid-template-columns:1fr;gap:12px;padding:12px;}
+  @media(min-width:900px){.layout{grid-template-columns:1.1fr 1fr;}}
+  #map{height:420px;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.15);}
+  .panel{background:#fff;border-radius:10px;padding:12px;box-shadow:0 1px 4px rgba(0,0,0,.1);}
+  .panel h2{font-size:14px;margin:0 0 8px;color:#333;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th,td{text-align:left;padding:6px 8px;border-bottom:1px solid #eee;}
+  th{color:#666;font-weight:600;}
+  .badge{padding:2px 8px;border-radius:12px;color:#fff;font-size:11px;font-weight:600;}
+  .badge.tinggi{background:var(--merah);}
+  .badge.sedang{background:var(--kuning);color:#333;}
+  .badge.rendah{background:var(--hijau);}
+  .legend{display:flex;gap:12px;font-size:12px;margin-top:8px;flex-wrap:wrap;}
+  .legend span{display:inline-flex;align-items:center;gap:4px;}
+  .dot{width:10px;height:10px;border-radius:50%;display:inline-block;}
+  .filter-btns{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;}
+  .filter-btns button{border:1px solid #ccc;background:#fff;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;}
+  .filter-btns button.active{background:#0d47a1;color:#fff;border-color:#0d47a1;}
+</style>
+</head>
+<body>
+<header>
+  <h1>PJU Jogja — Dashboard Admin</h1>
+  <span id="jam"></span>
+</header>
+
+<div class="layout">
+  <div class="panel">
+    <h2>Peta Titik Lampu (Lokus Perbaikan)</h2>
+    <div id="map"></div>
+    <div class="legend">
+      <span><span class="dot" style="background:#e53935"></span> Rusak / Mati</span>
+      <span><span class="dot" style="background:#fbc02d"></span> Dalam Pengerjaan</span>
+      <span><span class="dot" style="background:#43a047"></span> Menyala / Selesai</span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Daftar Tugas (Urutan Prioritas)</h2>
+    <div class="filter-btns">
+      <button data-status="" class="active">Semua</button>
+      <button data-status="Baru">Baru</button>
+      <button data-status="Dalam Pengerjaan">Dalam Pengerjaan</button>
+      <button data-status="Selesai">Selesai</button>
+    </div>
+    <table>
+      <thead>
+        <tr><th>#</th><th>Lokasi</th><th>Jalan</th><th>Skor</th><th>Status</th></tr>
+      </thead>
+      <tbody id="tabelTugas"></tbody>
+    </table>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const API_BASE = "https://api.pjujogja.id";
+
+const map = L.map('map', { preferCanvas: true }).setView([-7.7956, 110.3695], 13);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19, attribution: '&copy; OpenStreetMap'
+}).addTo(map);
+
+const warnaStatus = { 'Rusak': '#e53935', 'Dalam Pengerjaan': '#fbc02d', 'Menyala': '#43a047' };
+let markerLayer = L.layerGroup().addTo(map);
+
+function buatMarker(aset) {
+  return L.circleMarker([aset.lat, aset.lng], {
+    radius: 8,
+    fillColor: warnaStatus[aset.status] || '#999',
+    color: '#fff', weight: 2, fillOpacity: 0.95
+  }).bindPopup(`<b>${aset.kode_aset}</b><br>${aset.alamat}<br>Status: ${aset.status}`);
+}
+
+async function muatPeta() {
+  try {
+    const res = await fetch(`${API_BASE}/api/aset`);
+    const json = await res.json();
+    markerLayer.clearLayers();
+    json.data.forEach(a => buatMarker(a).addTo(markerLayer));
+  } catch (e) { console.error('Gagal memuat peta', e); }
+}
+
+function badgeSkor(skor) {
+  if (skor >= 7) return `<span class="badge tinggi">${skor}</span>`;
+  if (skor >= 5) return `<span class="badge sedang">${skor}</span>`;
+  return `<span class="badge rendah">${skor}</span>`;
+}
+
+async function muatTugas(statusFilter = '') {
+  try {
+    const url = statusFilter ? `${API_BASE}/api/laporan?status=${encodeURIComponent(statusFilter)}` : `${API_BASE}/api/laporan`;
+    const res = await fetch(url);
+    const json = await res.json();
+    const tbody = document.getElementById('tabelTugas');
+    tbody.innerHTML = json.data.map((l, i) => `
+      <tr>
+        <td>${i + 1}</td>
+        <td>${l.alamat || '-'} (${l.kode_aset || '-'})</td>
+        <td>${l.kategori_jalan}</td>
+        <td>${badgeSkor(l.skor_prioritas)}</td>
+        <td>${l.status}</td>
+      </tr>`).join('');
+  } catch (e) { console.error('Gagal memuat tugas', e); }
+}
+
+document.querySelectorAll('.filter-btns button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btns button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    muatTugas(btn.dataset.status);
+  });
+});
+
+function updateJam(){ document.getElementById('jam').textContent = new Date().toLocaleString('id-ID'); }
+setInterval(updateJam, 1000); updateJam();
+
+muatPeta(); muatTugas();
+setInterval(() => { muatPeta(); muatTugas(document.querySelector('.filter-btns button.active').dataset.status); }, 30000);
+</script>
+</body>
+</html>

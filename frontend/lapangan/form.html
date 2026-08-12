@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Update Perbaikan - PJU Jogja</title>
+<style>
+  *{box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;}
+  body{margin:0;background:#f4f4f6;padding:16px;}
+  .card{max-width:480px;margin:0 auto;background:#fff;border-radius:14px;padding:18px;box-shadow:0 1px 6px rgba(0,0,0,.12);}
+  h1{font-size:18px;margin:0 0 4px;color:#0d47a1;}
+  p.sub{color:#666;font-size:13px;margin:0 0 16px;}
+  label{display:block;font-size:13px;font-weight:600;margin:14px 0 6px;color:#333;}
+  select, input[type=file], textarea{
+    width:100%;padding:12px;border:1px solid #ccc;border-radius:8px;font-size:16px;background:#fff;
+  }
+  .foto-preview{margin-top:10px;max-width:100%;border-radius:8px;display:none;}
+  .info-kompres{font-size:12px;color:#43a047;margin-top:6px;}
+  button{
+    width:100%;padding:16px;margin-top:20px;border:none;border-radius:10px;
+    background:#43a047;color:#fff;font-size:16px;font-weight:700;cursor:pointer;
+  }
+  button:disabled{background:#aaa;}
+  .lokasi-info{background:#eef3fb;border-radius:8px;padding:10px;font-size:13px;color:#0d47a1;margin-bottom:10px;}
+  .status-msg{margin-top:14px;padding:10px;border-radius:8px;font-size:13px;display:none;}
+  .status-msg.ok{background:#e8f5e9;color:#2e7d32;display:block;}
+  .status-msg.err{background:#ffebee;color:#c62828;display:block;}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>Form Update Perbaikan</h1>
+  <p class="sub">Regu Lapangan — isi singkat, minim ketikan</p>
+
+  <div class="lokasi-info" id="infoAset">Memuat data tugas...</div>
+
+  <label for="tindakan">Tindakan Perbaikan</label>
+  <select id="tindakan">
+    <option value="">-- Pilih tindakan --</option>
+    <option value="Ganti Lampu LED 50W" data-komponen="1">Ganti Lampu LED 50W</option>
+    <option value="Ganti Lampu LED 100W" data-komponen="2">Ganti Lampu LED 100W</option>
+    <option value="Ganti Fitting Lampu" data-komponen="3">Ganti Fitting Lampu</option>
+    <option value="Ganti Kabel NYA 2.5mm" data-komponen="4">Ganti Kabel NYA 2.5mm</option>
+    <option value="Ganti MCB 6A" data-komponen="5">Ganti MCB 6A</option>
+    <option value="Perbaikan Sambungan (tanpa ganti komponen)" data-komponen="">Perbaikan Sambungan (tanpa ganti komponen)</option>
+    <option value="Bersihkan Kotoran/Serangga" data-komponen="">Bersihkan Kotoran/Serangga</option>
+  </select>
+
+  <label for="foto">Foto Bukti Perbaikan</label>
+  <input type="file" id="foto" accept="image/*" capture="environment">
+  <img id="preview" class="foto-preview">
+  <div class="info-kompres" id="infoKompres"></div>
+
+  <label for="catatan">Catatan Tambahan (opsional)</label>
+  <textarea id="catatan" rows="2" placeholder="Contoh: tiang miring, perlu cek lanjutan..."></textarea>
+
+  <button id="btnSelesai">Tandai SELESAI</button>
+  <div class="status-msg" id="statusMsg"></div>
+</div>
+
+<script>
+const API_BASE = "https://api.pjujogja.id";
+const params = new URLSearchParams(window.location.search);
+const idLaporan = params.get('id') || 1;
+const idTeknisi = params.get('teknisi') || '';
+
+let fotoTerkompresi = null;
+
+async function muatInfoTugas() {
+  try {
+    const res = await fetch(`${API_BASE}/api/laporan`);
+    const json = await res.json();
+    const tugas = json.data.find(l => String(l.id_laporan) === String(idLaporan));
+    document.getElementById('infoAset').textContent = tugas
+      ? `Lokasi: ${tugas.alamat} | Jalan: ${tugas.kategori_jalan} | Status: ${tugas.status}`
+      : `Tiket #${idLaporan}`;
+  } catch (e) {
+    document.getElementById('infoAset').textContent = `Tiket #${idLaporan}`;
+  }
+}
+muatInfoTugas();
+
+document.getElementById('foto').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const infoEl = document.getElementById('infoKompres');
+  infoEl.textContent = 'Mengompres foto...';
+
+  fotoTerkompresi = await kompresGambar(file, 300 * 1024);
+  const preview = document.getElementById('preview');
+  preview.src = URL.createObjectURL(fotoTerkompresi);
+  preview.style.display = 'block';
+  infoEl.textContent = `Ukuran akhir: ${(fotoTerkompresi.size / 1024).toFixed(0)} KB (dari ${(file.size / 1024).toFixed(0)} KB)`;
+});
+
+function kompresGambar(file, maxBytes) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = (ev) => { img.src = ev.target.result; };
+    reader.readAsDataURL(file);
+
+    img.onload = () => {
+      let { width, height } = img;
+      const MAX_DIM = 1280;
+      if (width > MAX_DIM || height > MAX_DIM) {
+        const ratio = Math.min(MAX_DIM / width, MAX_DIM / height);
+        width = Math.round(width * ratio);
+        height = Math.round(height * ratio);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+
+      let quality = 0.8;
+      const cobaKompres = () => {
+        canvas.toBlob((blob) => {
+          if (blob.size <= maxBytes || quality <= 0.3) {
+            resolve(new File([blob], 'bukti.jpg', { type: 'image/jpeg' }));
+          } else {
+            quality -= 0.1;
+            cobaKompres();
+          }
+        }, 'image/jpeg', quality);
+      };
+      cobaKompres();
+    };
+  });
+}
+
+document.getElementById('btnSelesai').addEventListener('click', async () => {
+  const tindakanEl = document.getElementById('tindakan');
+  const tindakan = tindakanEl.value;
+  const idKomponen = tindakanEl.selectedOptions[0]?.dataset.komponen || '';
+  const catatan = document.getElementById('catatan').value;
+  const btn = document.getElementById('btnSelesai');
+  const msg = document.getElementById('statusMsg');
+
+  if (!tindakan) { alert('Pilih tindakan perbaikan terlebih dahulu.'); return; }
+  if (!fotoTerkompresi) { alert('Unggah foto bukti perbaikan.'); return; }
+
+  btn.disabled = true; btn.textContent = 'Mengirim...';
+
+  const formData = new FormData();
+  formData.append('status', 'Selesai');
+  formData.append('tindakan_perbaikan', tindakan);
+  if (idKomponen) formData.append('id_komponen_pins', idKomponen);
+  formData.append('qty_komponen', 1);
+  formData.append('id_teknisi', idTeknisi);
+  formData.append('catatan', catatan);
+  formData.append('foto_bukti', fotoTerkompresi);
+
+  try {
+    const res = await fetch(`${API_BASE}/api/laporan/${idLaporan}/status`, { method: 'PATCH', body: formData });
+    const json = await res.json();
+    if (json.success) {
+      msg.className = 'status-msg ok';
+      msg.textContent = 'Tugas berhasil ditandai SELESAI. Stok komponen (jika ada) sudah terpotong otomatis.';
+      btn.textContent = 'Selesai ✓';
+    } else {
+      throw new Error(json.error || 'Gagal menyimpan');
+    }
+  } catch (e) {
+    msg.className = 'status-msg err';
+    msg.textContent = 'Gagal: ' + e.message;
+    btn.disabled = false; btn.textContent = 'Tandai SELESAI';
+  }
+});
+</script>
+</body>
+</html>
