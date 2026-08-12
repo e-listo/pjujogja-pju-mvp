@@ -1,0 +1,36 @@
+name: Validasi Sintaks Python
+
+on:
+  push:
+    paths:
+      - '**.py'
+  pull_request:
+    paths:
+      - '**.py'
+
+jobs:
+  syntax-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout kode
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cek sintaks dasar (py_compile)
+        run: |
+          echo "Memeriksa sintaks semua file .py..."
+          find . -name '*.py' -not -path './venv/*' -not -path './.venv/*' -print0 | xargs -0 -n1 python -m py_compile
+          echo "Semua file .py lolos pengecekan sintaks."
+
+      - name: Install flake8 (lint ringan)
+        run: pip install flake8
+
+      - name: Lint dasar dengan flake8
+        run: |
+          # E9 = syntax error, F63/F7/F82 = logika undefined name & sejenisnya
+          # Baris panjang & style diabaikan agar tetap ringan (bukan lint penuh)
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude=venv,.venv
