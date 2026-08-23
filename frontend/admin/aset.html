@@ -4,8 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Data Aset PJU — PIJAR</title>
+  <script src="js/auth.js"></script>
   <style>
-    :root { --pju-biru:#1a56db;--pju-biru-gelap:#1e3a5f;--pju-hijau:#057a55;--pju-merah:#c81e1e;--pju-kuning:#c27803;--pju-abu:#6b7280;--sidebar-w:240px; }
+    :root{--pju-biru:#1a56db;--pju-biru-gelap:#1e3a5f;--pju-hijau:#057a55;--pju-merah:#c81e1e;--pju-kuning:#c27803;--pju-abu:#6b7280;--sidebar-w:240px;}
     *{box-sizing:border-box;margin:0;padding:0;}
     body{font-family:'Segoe UI',sans-serif;background:#f3f4f6;color:#111827;}
     .sidebar{position:fixed;top:0;left:0;width:var(--sidebar-w);height:100vh;background:#1e3a5f;color:#fff;display:flex;flex-direction:column;z-index:100;}
@@ -18,6 +19,7 @@
     .nav-item.active{border-left:3px solid #facc15;}
     .nav-icon{font-size:1.1rem;width:20px;text-align:center;}
     .sidebar-footer{padding:12px 16px;border-top:1px solid rgba(255,255,255,0.1);font-size:0.75rem;color:#64748b;}
+    .user-info-wrap{padding:10px 16px;border-top:1px solid rgba(255,255,255,0.1);}
     .main{margin-left:var(--sidebar-w);min-height:100vh;}
     .topbar{background:#fff;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e5e7eb;position:sticky;top:0;z-index:50;}
     .topbar h2{font-size:1.1rem;font-weight:600;}
@@ -40,7 +42,6 @@
     .badge-hijau{background:#d1fae5;color:#065f46;}
     .badge-biru{background:#dbeafe;color:#1e40af;}
     .loading{color:var(--pju-abu);font-size:0.85rem;padding:20px;text-align:center;}
-    /* MODAL */
     .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:center;justify-content:center;}
     .modal-overlay.show{display:flex;}
     .modal{background:#fff;border-radius:12px;padding:24px;width:520px;max-width:95vw;max-height:90vh;overflow-y:auto;}
@@ -49,7 +50,6 @@
     .form-group{margin-bottom:12px;}
     .form-group label{display:block;font-size:0.82rem;font-weight:600;margin-bottom:5px;color:#374151;}
     .form-group input,.form-group select,.form-group textarea{width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem;font-family:inherit;}
-    .form-group textarea{min-height:60px;resize:vertical;}
     .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:16px;}
     .wajib{color:var(--pju-merah);}
     @media(max-width:900px){.sidebar{display:none;}.main{margin-left:0;}.form-row{grid-template-columns:1fr;}}
@@ -66,6 +66,7 @@
     <a href="wilayah.html" class="nav-item"><span class="nav-icon">🗺️</span> Wilayah</a>
     <a href="regu.html" class="nav-item"><span class="nav-icon">👷</span> Regu Lapangan</a>
   </nav>
+  <div class="user-info-wrap" id="user-info"></div>
   <div class="sidebar-footer">Perwal Kota Yogyakarta No. 50/2022</div>
 </aside>
 <div class="main">
@@ -75,19 +76,8 @@
   </div>
   <div class="content">
     <div class="toolbar">
-      <select id="filter-status" onchange="loadAset()">
-        <option value="">Semua Status</option>
-        <option value="Menyala">Menyala</option>
-        <option value="Rusak">Rusak</option>
-        <option value="Dalam Pengerjaan">Dalam Pengerjaan</option>
-      </select>
-      <select id="filter-kategori" onchange="loadAset()">
-        <option value="">Semua Kategori</option>
-        <option value="Jalan Kota">Jalan Kota</option>
-        <option value="Jalan Lingkungan">Jalan Lingkungan</option>
-        <option value="Jalan Lingkungan Kampung">Jalan Lingkungan Kampung</option>
-        <option value="Lainnya">Lainnya</option>
-      </select>
+      <select id="filter-status" onchange="loadAset()"><option value="">Semua Status</option><option value="Menyala">Menyala</option><option value="Rusak">Rusak</option><option value="Dalam Pengerjaan">Dalam Pengerjaan</option></select>
+      <select id="filter-kategori" onchange="loadAset()"><option value="">Semua Kategori</option><option value="Jalan Kota">Jalan Kota</option><option value="Jalan Lingkungan">Jalan Lingkungan</option><option value="Jalan Lingkungan Kampung">Jalan Lingkungan Kampung</option><option value="Lainnya">Lainnya</option></select>
       <button class="btn btn-primary" onclick="loadAset()">Refresh</button>
       <span id="jumlah-aset" style="font-size:0.82rem;color:var(--pju-abu);margin-left:auto"></span>
     </div>
@@ -99,7 +89,6 @@
     </div>
   </div>
 </div>
-<!-- Modal Tambah Aset -->
 <div class="modal-overlay" id="modal-aset" onclick="tutupModal(event)">
   <div class="modal">
     <h3>💡 Tambah Aset PJU Baru</h3>
@@ -113,22 +102,8 @@
       <div class="form-group"><label>Longitude <span class="wajib">*</span></label><input type="number" id="lng" step="0.000001" placeholder="110.366000"></div>
     </div>
     <div class="form-row">
-      <div class="form-group"><label>Kategori Jalan</label>
-        <select id="kategori_jalan" onchange="toggleSubKategori()">
-          <option value="Jalan Kota">Jalan Kota</option>
-          <option value="Jalan Lingkungan">Jalan Lingkungan</option>
-          <option value="Jalan Lingkungan Kampung">Jalan Lingkungan Kampung</option>
-          <option value="Lainnya">Lainnya</option>
-        </select>
-      </div>
-      <div class="form-group" id="wrap-sub" style="display:none"><label>Sub Kategori</label>
-        <select id="sub_kategori_lainnya">
-          <option value="Taman">Taman</option>
-          <option value="Makam">Makam</option>
-          <option value="Sorot Sungai">Sorot Sungai</option>
-          <option value="Hias/Budaya">Hias/Budaya</option>
-        </select>
-      </div>
+      <div class="form-group"><label>Kategori Jalan</label><select id="kategori_jalan" onchange="toggleSubKategori()"><option value="Jalan Kota">Jalan Kota</option><option value="Jalan Lingkungan">Jalan Lingkungan</option><option value="Jalan Lingkungan Kampung">Jalan Lingkungan Kampung</option><option value="Lainnya">Lainnya</option></select></div>
+      <div class="form-group" id="wrap-sub" style="display:none"><label>Sub Kategori</label><select id="sub_kategori_lainnya"><option value="Taman">Taman</option><option value="Makam">Makam</option><option value="Sorot Sungai">Sorot Sungai</option><option value="Hias/Budaya">Hias/Budaya</option></select></div>
     </div>
     <div class="form-row">
       <div class="form-group"><label>Jenis Lampu</label><input type="text" id="jenis_lampu" placeholder="LED, HPS, dll"></div>
@@ -158,34 +133,14 @@ async function loadAset(){
     const data=json.data||[];
     document.getElementById('jumlah-aset').textContent=`${data.length} aset ditemukan`;
     if(!data.length){tbody.innerHTML='<tr><td colspan="8" class="loading">Tidak ada data.</td></tr>';return;}
-    tbody.innerHTML=data.map((a,i)=>`
-      <tr>
-        <td style="color:var(--pju-abu);font-size:0.8rem">${i+1}</td>
-        <td><code style="font-size:0.8rem">${a.kode_aset}</code></td>
-        <td style="max-width:200px;font-size:0.82rem">${a.alamat}</td>
-        <td><span class="badge ${badgeKat[a.kategori_jalan]||'badge-biru'}">${a.kategori_jalan}${a.sub_kategori_lainnya?' / '+a.sub_kategori_lainnya:''}</span></td>
-        <td style="font-size:0.82rem">${a.jenis_lampu||'-'}</td>
-        <td style="font-size:0.82rem">${a.watt?a.watt+'W':'-'}</td>
-        <td><span class="badge ${badgeStatus[a.status]||'badge-biru'}">${a.status}</span></td>
-        <td><a href="laporan.html?aset=${a.id_aset}"><button class="btn btn-primary btn-sm">📋</button></a></td>
-      </tr>`).join('');
+    tbody.innerHTML=data.map((a,i)=>`<tr><td style="color:var(--pju-abu);font-size:0.8rem">${i+1}</td><td><code style="font-size:0.8rem">${a.kode_aset}</code></td><td style="max-width:200px;font-size:0.82rem">${a.alamat}</td><td><span class="badge ${badgeKat[a.kategori_jalan]||'badge-biru'}">${a.kategori_jalan}${a.sub_kategori_lainnya?' / '+a.sub_kategori_lainnya:''}</span></td><td style="font-size:0.82rem">${a.jenis_lampu||'-'}</td><td style="font-size:0.82rem">${a.watt?a.watt+'W':'-'}</td><td><span class="badge ${badgeStatus[a.status]||'badge-biru'}">${a.status}</span></td><td><a href="laporan.html?aset=${a.id_aset}"><button class="btn btn-primary btn-sm">📋</button></a></td></tr>`).join('');
   }catch(e){tbody.innerHTML='<tr><td colspan="8" class="loading">Gagal memuat data.</td></tr>';}
 }
 function bukaModal(){document.getElementById('modal-aset').classList.add('show');}
 function tutupModal(e){if(e.target.classList.contains('modal-overlay'))document.getElementById('modal-aset').classList.remove('show');}
 function toggleSubKategori(){document.getElementById('wrap-sub').style.display=document.getElementById('kategori_jalan').value==='Lainnya'?'block':'none';}
 async function submitTambahAset(){
-  const body={
-    kode_aset:document.getElementById('kode_aset').value.trim(),
-    alamat:document.getElementById('alamat').value.trim(),
-    lat:parseFloat(document.getElementById('lat').value),
-    lng:parseFloat(document.getElementById('lng').value),
-    kategori_jalan:document.getElementById('kategori_jalan').value,
-    sub_kategori_lainnya:document.getElementById('kategori_jalan').value==='Lainnya'?document.getElementById('sub_kategori_lainnya').value:null,
-    jenis_lampu:document.getElementById('jenis_lampu').value||null,
-    watt:document.getElementById('watt').value?parseInt(document.getElementById('watt').value):null,
-    status:document.getElementById('status_aset').value,
-  };
+  const body={kode_aset:document.getElementById('kode_aset').value.trim(),alamat:document.getElementById('alamat').value.trim(),lat:parseFloat(document.getElementById('lat').value),lng:parseFloat(document.getElementById('lng').value),kategori_jalan:document.getElementById('kategori_jalan').value,sub_kategori_lainnya:document.getElementById('kategori_jalan').value==='Lainnya'?document.getElementById('sub_kategori_lainnya').value:null,jenis_lampu:document.getElementById('jenis_lampu').value||null,watt:document.getElementById('watt').value?parseInt(document.getElementById('watt').value):null,status:document.getElementById('status_aset').value};
   if(!body.kode_aset||!body.alamat||isNaN(body.lat)||isNaN(body.lng)){alert('Lengkapi field wajib!');return;}
   try{
     const res=await fetch(`${API}/api/aset`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});

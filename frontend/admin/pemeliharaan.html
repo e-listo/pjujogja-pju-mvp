@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Riwayat Pemeliharaan — PIJAR</title>
+  <script src="js/auth.js"></script>
   <style>
     :root{--pju-biru:#1a56db;--pju-biru-gelap:#1e3a5f;--pju-hijau:#057a55;--pju-merah:#c81e1e;--pju-kuning:#c27803;--pju-abu:#6b7280;--sidebar-w:240px;}
     *{box-sizing:border-box;margin:0;padding:0;}
@@ -18,6 +19,7 @@
     .nav-item.active{border-left:3px solid #facc15;}
     .nav-icon{font-size:1.1rem;width:20px;text-align:center;}
     .sidebar-footer{padding:12px 16px;border-top:1px solid rgba(255,255,255,0.1);font-size:0.75rem;color:#64748b;}
+    .user-info-wrap{padding:10px 16px;border-top:1px solid rgba(255,255,255,0.1);}
     .main{margin-left:var(--sidebar-w);min-height:100vh;}
     .topbar{background:#fff;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e5e7eb;}
     .topbar h2{font-size:1.1rem;font-weight:600;}
@@ -39,8 +41,6 @@
     .badge-biru{background:#dbeafe;color:#1e40af;}
     .loading{color:var(--pju-abu);font-size:0.85rem;padding:20px;text-align:center;}
     .foto-thumb{width:48px;height:48px;object-fit:cover;border-radius:6px;cursor:pointer;border:1px solid #e5e7eb;}
-    .empty-state{text-align:center;padding:48px 20px;color:var(--pju-abu);}
-    .empty-state .emoji{font-size:2.5rem;margin-bottom:12px;}
     @media(max-width:900px){.sidebar{display:none;}.main{margin-left:0;}}
   </style>
 </head>
@@ -55,6 +55,7 @@
     <a href="wilayah.html" class="nav-item"><span class="nav-icon">🗺️</span> Wilayah</a>
     <a href="regu.html" class="nav-item"><span class="nav-icon">👷</span> Regu Lapangan</a>
   </nav>
+  <div class="user-info-wrap" id="user-info"></div>
   <div class="sidebar-footer">Perwal Kota Yogyakarta No. 50/2022</div>
 </aside>
 <div class="main">
@@ -64,12 +65,7 @@
   </div>
   <div class="content">
     <div class="toolbar">
-      <select id="filter-status" onchange="loadPemeliharaan()">
-        <option value="">Semua Status</option>
-        <option value="Dalam Pengerjaan">Dalam Pengerjaan</option>
-        <option value="Selesai">Selesai</option>
-        <option value="Ditunda">Ditunda</option>
-      </select>
+      <select id="filter-status" onchange="loadPemeliharaan()"><option value="">Semua Status</option><option value="Dalam Pengerjaan">Dalam Pengerjaan</option><option value="Selesai">Selesai</option><option value="Ditunda">Ditunda</option></select>
       <select id="filter-regu" onchange="loadPemeliharaan()"><option value="">Semua Regu</option></select>
       <button class="btn btn-primary" onclick="loadPemeliharaan()">Refresh</button>
       <span id="jumlah" style="font-size:0.82rem;color:var(--pju-abu);margin-left:auto"></span>
@@ -85,19 +81,7 @@
 <script>
 const API='https://api.pjujogja.id';
 const badgeStatus={'Dalam Pengerjaan':'badge-kuning','Selesai':'badge-hijau','Ditunda':'badge-merah'};
-async function loadRegu(){
-  try{
-    const res=await fetch(`${API}/api/regu`);
-    const json=await res.json();
-    const sel=document.getElementById('filter-regu');
-    (json.data||[]).forEach(r=>{
-      const opt=document.createElement('option');
-      opt.value=r.id_regu;
-      opt.textContent=r.nama_regu;
-      sel.appendChild(opt);
-    });
-  }catch(e){}
-}
+async function loadRegu(){try{const res=await fetch(`${API}/api/regu`);const json=await res.json();const sel=document.getElementById('filter-regu');(json.data||[]).forEach(r=>{const opt=document.createElement('option');opt.value=r.id_regu;opt.textContent=r.nama_regu;sel.appendChild(opt);});}catch(e){}}
 async function loadPemeliharaan(){
   const status=document.getElementById('filter-status').value;
   const regu=document.getElementById('filter-regu').value;
@@ -111,23 +95,8 @@ async function loadPemeliharaan(){
     const json=await res.json();
     const data=json.data||[];
     document.getElementById('jumlah').textContent=`${data.length} record`;
-    if(!data.length){
-      tbody.innerHTML='<tr><td colspan="7"><div class="empty-state"><div class="emoji">🔧</div><p>Belum ada riwayat pemeliharaan</p></div></td></tr>';
-      return;
-    }
-    tbody.innerHTML=data.map((p,i)=>`
-      <tr>
-        <td style="color:var(--pju-abu);font-size:0.8rem">${i+1}</td>
-        <td><code style="font-size:0.8rem">${p.kode_aset||'-'}</code></td>
-        <td style="max-width:180px;font-size:0.82rem">${p.jenis_pekerjaan}</td>
-        <td style="font-size:0.82rem">${p.nama_regu||'-'}</td>
-        <td><span class="badge ${badgeStatus[p.status_pekerjaan]||'badge-biru'}">${p.status_pekerjaan}</span></td>
-        <td>
-          ${p.foto_sebelum?`<img src="${API}/uploads/${p.foto_sebelum}" class="foto-thumb" onclick="window.open('${API}/uploads/${p.foto_sebelum}')" title="Sebelum">`:'<span style="color:#d1d5db;font-size:0.8rem">-</span>'}
-          ${p.foto_sesudah?`<img src="${API}/uploads/${p.foto_sesudah}" class="foto-thumb" onclick="window.open('${API}/uploads/${p.foto_sesudah}')" title="Sesudah">`:''}         
-        </td>
-        <td style="font-size:0.8rem;white-space:nowrap">${new Date(p.tanggal_pengerjaan).toLocaleDateString('id-ID')}</td>
-      </tr>`).join('');
+    if(!data.length){tbody.innerHTML='<tr><td colspan="7" class="loading">Belum ada riwayat pemeliharaan.</td></tr>';return;}
+    tbody.innerHTML=data.map((p,i)=>`<tr><td style="color:var(--pju-abu);font-size:0.8rem">${i+1}</td><td><code style="font-size:0.8rem">${p.kode_aset||'-'}</code></td><td style="max-width:180px;font-size:0.82rem">${p.jenis_pekerjaan}</td><td style="font-size:0.82rem">${p.nama_regu||'-'}</td><td><span class="badge ${badgeStatus[p.status_pekerjaan]||'badge-biru'}">${p.status_pekerjaan}</span></td><td>${p.foto_sebelum?`<img src="${API}/uploads/${p.foto_sebelum}" class="foto-thumb" onclick="window.open('${API}/uploads/${p.foto_sebelum}')" title="Sebelum">`:'<span style="color:#d1d5db;font-size:0.8rem">-</span>'}${p.foto_sesudah?`<img src="${API}/uploads/${p.foto_sesudah}" class="foto-thumb" onclick="window.open('${API}/uploads/${p.foto_sesudah}')" title="Sesudah">`:''}</td><td style="font-size:0.8rem;white-space:nowrap">${new Date(p.tanggal_pengerjaan).toLocaleDateString('id-ID')}</td></tr>`).join('');
   }catch(e){tbody.innerHTML='<tr><td colspan="7" class="loading">Gagal memuat data.</td></tr>';}
 }
 loadRegu();
