@@ -22,18 +22,77 @@ Dirancang khusus untuk ekosistem **shared hosting** (Dewaweb, cPanel, LiteSpeed,
 
 ```
 .
-├── app.py                 # Entry point Flask (REST API)
-├── config.py              # Konfigurasi environment & bobot prioritas
-├── models.py              # Model SQLAlchemy (AsetPJU, LaporanKerja, StokPins, Pengguna)
-├── passenger_wsgi.py      # WSGI entry point untuk cPanel Python App
-├── requirements.txt       # Dependensi Python
+├── app.py                      # Entry point Flask (REST API)
+├── config.py                   # Konfigurasi environment & bobot prioritas
+├── models.py                   # Model SQLAlchemy (AsetPJU, LaporanKerja, StokPins, Pengguna)
+├── passenger_wsgi.py           # WSGI entry point untuk cPanel Python App
+├── requirements.txt            # Dependensi Python
 ├── database/
-│   └── schema.sql         # DDL MariaDB (3 tabel utama + tabel pendukung)
+│   ├── schema.sql              # DDL MVP awal (tabel dasar)
+│   └── schema_fase1.sql        # Migrasi Fase 1 ERD PIJAR — eksekusi SETELAH schema.sql
 ├── frontend/
-│   ├── admin/index.html   # Dashboard admin (peta Leaflet + task list)
-│   └── lapangan/form.html # Form update status regu lapangan (kompresi foto client-side)
+│   ├── admin/
+│   │   ├── index.html          # Dashboard admin (peta Leaflet + task list)
+│   │   └── tambah_aset.html    # Form tambah aset PJU baru (submit ke POST /api/aset)
+│   └── lapangan/
+│       └── form.html           # Form update status regu lapangan (kompresi foto client-side)
 └── docs/
     └── panduan_deployment_fase1.md  # Panduan setup cPanel & roadmap Fase 2-4
+```
+
+## Database Schema
+
+### `schema.sql` — MVP Awal
+Tabel dasar untuk operasional awal:
+
+| Tabel | Keterangan |
+|---|---|
+| `aset_pju` | Data titik lampu PJU |
+| `laporan_kerja` | Laporan & task pemeliharaan |
+| `stok_pins` | Inventaris komponen/suku cadang |
+| `pengguna` | Akun pengguna sistem |
+
+### `schema_fase1.sql` — Migrasi Fase 1 ERD PIJAR
+File ini **melengkapi** `schema.sql`, bukan mengganti. Eksekusi berurutan setelah `schema.sql`.
+
+| Tabel | Keterangan |
+|---|---|
+| `wilayah` *(baru)* | 45 kelurahan Kota Yogyakarta — kode `CHAR(3)` format `UH1`–`KG3` |
+| `panel_pju` *(baru)* | Gardu/panel distribusi listrik PJU per wilayah |
+| `regu` *(baru)* | 4 regu pelaksana sesuai 4 sektor UPT PJU |
+| `lampu` *(baru)* | Komponen lampu per tiang (dipisah dari `aset_pju`) |
+| `laporan_kerusakan` *(baru)* | Laporan kerusakan (sumber: Lapangan, JSS, Masyarakat, Patroli) |
+| `riwayat_pemeliharaan` *(baru)* | Log pekerjaan + foto sebelum/sesudah |
+| `pengguna` *(dimodifikasi)* | Tambah kolom `id_regu`, `no_hp`, role `koordinator` |
+| `aset_pju` *(dimodifikasi)* | Tambah kolom `id_wilayah`, `id_panel`, `jenis_tiang`, `tinggi_meter`, `foto_url` |
+
+### Format `kode_wilayah`
+
+Menggunakan format **`CHAR(3)`**: 2 huruf prefix kemantren + 1 angka urut kelurahan.
+
+```
+UH1 = Kemantren Umbulharjo, Kelurahan Giwangan (Umbulharjo I)
+UH7 = Kemantren Umbulharjo, Kelurahan Semaki   (Umbulharjo VII)
+GK1 = Kemantren Gondokusuman, Kelurahan Demangan
+KG3 = Kemantren Kotagede, Kelurahan Purbayan
+```
+
+Keunggulan format ini: panjang seragam (efisien di index MariaDB), 0 prefix collision, URL/JS/CSS/shell-safe, angka mengikuti urutan romawi dokumen resmi (Pergub DIY No. 25/2019).
+
+### ERD Fase 1 — Relasi Antar Entitas
+
+```
+WILAYAH ──< PANEL_PJU
+WILAYAH ──< ASET_PJU
+PANEL_PJU ──< ASET_PJU
+ASET_PJU ──< LAMPU
+ASET_PJU ──< LAPORAN_KERUSAKAN
+ASET_PJU ──< RIWAYAT_PEMELIHARAAN
+REGU ──< PENGGUNA
+REGU ──< RIWAYAT_PEMELIHARAAN
+PENGGUNA ──< LAPORAN_KERUSAKAN
+PENGGUNA ──< RIWAYAT_PEMELIHARAAN
+LAPORAN_KERUSAKAN ──o RIWAYAT_PEMELIHARAAN
 ```
 
 ## Kategori Jalan (Perwal Kota Yogyakarta No. 50 Tahun 2022)
@@ -55,7 +114,9 @@ Formula skor prioritas tiket: `skor = bobot_kategori_jalan + bobot_durasi_mati` 
 - Peta geospasial dasar (Leaflet.js) dengan marker warna real-time (merah/kuning/hijau)
 - Sistem ticketing & task list dengan prioritas linier
 - Form update status regu lapangan (dropdown tindakan, kompresi foto client-side <300KB)
+- Form tambah aset PJU baru oleh Admin/Koordinator
 - Integrasi dasar PINS (pemotongan stok otomatis saat komponen diganti)
+- Manajemen wilayah (45 kelurahan, 14 kemantren, 4 sektor regu)
 
 **Di luar scope (fase ini):**
 - Algoritma prediksi kerusakan (preventive maintenance / Fuzzy-PID)
@@ -66,11 +127,34 @@ Formula skor prioritas tiket: `skor = bobot_kategori_jalan + bobot_durasi_mati` 
 
 ```bash
 pip install -r requirements.txt
-cp .env.example .env   # isi kredensial database Anda
+cp .env.example .env        # isi kredensial database Anda
+```
+
+**Inisialisasi database — eksekusi BERURUTAN:**
+
+```bash
+# Langkah 1: Skema MVP dasar
+mysql -u root -p nama_database < database/schema.sql
+
+# Langkah 2: Migrasi Fase 1 ERD PIJAR (jalankan SETELAH schema.sql)
+mysql -u root -p nama_database < database/schema_fase1.sql
+```
+
+```bash
+# Jalankan server lokal
 python app.py
 ```
 
 Lihat `docs/panduan_deployment_fase1.md` untuk panduan lengkap deployment ke cPanel/Dewaweb.
+
+## Dasar Hukum
+
+| Regulasi | Relevansi |
+|---|---|
+| Pergub DIY No. 25 Tahun 2019 | Terminologi kemantren & kalurahan |
+| Perda Kota Yogyakarta No. 4 Tahun 2020 | Pembentukan kemantren |
+| Perwal Kota Yogyakarta No. 37 Tahun 2023 | Tugas & fungsi DPUPKP / UPT PJU |
+| Perwal Kota Yogyakarta No. 50 Tahun 2022 | Kategori & spesifikasi jalan |
 
 ## Lisensi & Kerahasiaan
 

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tambah Aset PJU - Admin</title>
+<style>
+  *{box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;}
+  body{margin:0;background:#f4f4f6;padding:16px;}
+  .card{max-width:520px;margin:0 auto;background:#fff;border-radius:14px;padding:20px;box-shadow:0 1px 6px rgba(0,0,0,.12);}
+  h1{font-size:18px;margin:0 0 4px;color:#0d47a1;}
+  p.sub{color:#666;font-size:13px;margin:0 0 16px;}
+  label{display:block;font-size:13px;font-weight:600;margin:14px 0 6px;color:#333;}
+  input, select{width:100%;padding:11px;border:1px solid #ccc;border-radius:8px;font-size:15px;background:#fff;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  #groupSubKategori{display:none;}
+  .hint{font-size:11px;color:#888;margin-top:4px;}
+  button{width:100%;padding:15px;margin-top:22px;border:none;border-radius:10px;background:#0d47a1;color:#fff;font-size:16px;font-weight:700;cursor:pointer;}
+  button:disabled{background:#aaa;}
+  .status-msg{margin-top:14px;padding:10px;border-radius:8px;font-size:13px;display:none;}
+  .status-msg.ok{background:#e8f5e9;color:#2e7d32;display:block;}
+  .status-msg.err{background:#ffebee;color:#c62828;display:block;}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>Tambah Titik Aset PJU</h1>
+  <p class="sub">Admin/Koordinator — pendaftaran titik lampu baru</p>
+
+  <label for="kode_aset">Kode Aset</label>
+  <input type="text" id="kode_aset" placeholder="contoh: PJU-YK-0007">
+
+  <label for="alamat">Alamat / Lokasi</label>
+  <input type="text" id="alamat" placeholder="contoh: Jl. Kaliurang Km 5">
+
+  <label>Koordinat</label>
+  <div class="grid2">
+    <input type="number" step="0.00000001" id="lat" placeholder="Latitude (-7.xxxx)">
+    <input type="number" step="0.00000001" id="lng" placeholder="Longitude (110.xxxx)">
+  </div>
+  <div class="hint">Tips: buka Google Maps, tekan lama titik lokasi, salin koordinat yang muncul.</div>
+
+  <label for="kategori_jalan">Kategori (sesuai Perwal Kota Yogyakarta No. 50/2022)</label>
+  <select id="kategori_jalan">
+    <option value="Jalan Kota">Jalan Kota</option>
+    <option value="Jalan Lingkungan" selected>Jalan Lingkungan</option>
+    <option value="Jalan Lingkungan Kampung">Jalan Lingkungan Kampung</option>
+    <option value="Lainnya">Lainnya (Taman/Makam/Sorot Sungai/Hias-Budaya)</option>
+  </select>
+
+  <div id="groupSubKategori">
+    <label for="sub_kategori_lainnya">Sub-Kategori Lainnya</label>
+    <select id="sub_kategori_lainnya">
+      <option value="Taman">Taman</option>
+      <option value="Makam">Makam</option>
+      <option value="Sorot Sungai">Sorot Sungai</option>
+      <option value="Hias/Budaya">Hias/Budaya</option>
+    </select>
+  </div>
+
+  <label for="jenis_lampu">Jenis Lampu</label>
+  <select id="jenis_lampu">
+    <option value="LED">LED</option>
+    <option value="SON">SON</option>
+    <option value="Merkuri">Merkuri</option>
+  </select>
+
+  <div class="grid2">
+    <div>
+      <label for="watt">Daya (Watt)</label>
+      <input type="number" id="watt" placeholder="contoh: 50">
+    </div>
+    <div>
+      <label for="status">Status Awal</label>
+      <select id="status">
+        <option value="Menyala" selected>Menyala</option>
+        <option value="Rusak">Rusak</option>
+        <option value="Dalam Pengerjaan">Dalam Pengerjaan</option>
+      </select>
+    </div>
+  </div>
+
+  <button id="btnSimpan">Simpan Aset</button>
+  <div class="status-msg" id="statusMsg"></div>
+</div>
+
+<script>
+const API_BASE = "https://api.pjujogja.id";
+
+const selKategori = document.getElementById('kategori_jalan');
+const groupSub = document.getElementById('groupSubKategori');
+function toggleSubKategori() {
+  groupSub.style.display = selKategori.value === 'Lainnya' ? 'block' : 'none';
+}
+selKategori.addEventListener('change', toggleSubKategori);
+toggleSubKategori();
+
+document.getElementById('btnSimpan').addEventListener('click', async () => {
+  const btn = document.getElementById('btnSimpan');
+  const msg = document.getElementById('statusMsg');
+
+  const kode_aset = document.getElementById('kode_aset').value.trim();
+  const alamat = document.getElementById('alamat').value.trim();
+  const lat = parseFloat(document.getElementById('lat').value);
+  const lng = parseFloat(document.getElementById('lng').value);
+  const kategori_jalan = selKategori.value;
+  const sub_kategori_lainnya = kategori_jalan === 'Lainnya'
+    ? document.getElementById('sub_kategori_lainnya').value : null;
+  const jenis_lampu = document.getElementById('jenis_lampu').value;
+  const watt = parseInt(document.getElementById('watt').value) || null;
+  const status = document.getElementById('status').value;
+
+  if (!kode_aset || !alamat || isNaN(lat) || isNaN(lng)) {
+    alert('Lengkapi kode aset, alamat, dan koordinat terlebih dahulu.');
+    return;
+  }
+
+  btn.disabled = true; btn.textContent = 'Menyimpan...';
+
+  try {
+    const res = await fetch(`${API_BASE}/api/aset`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        kode_aset, alamat, lat, lng, kategori_jalan,
+        sub_kategori_lainnya, jenis_lampu, watt, status
+      })
+    });
+    const json = await res.json();
+    if (json.success) {
+      msg.className = 'status-msg ok';
+      msg.textContent = `Aset ${json.data.kode_aset} berhasil disimpan.`;
+      document.querySelectorAll('input').forEach(i => i.value = '');
+    } else {
+      throw new Error(json.error || 'Gagal menyimpan aset');
+    }
+  } catch (e) {
+    msg.className = 'status-msg err';
+    msg.textContent = 'Gagal: ' + e.message;
+  } finally {
+    btn.disabled = false; btn.textContent = 'Simpan Aset';
+  }
+});
+</script>
+</body>
+</html>
