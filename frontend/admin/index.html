@@ -7,58 +7,73 @@
   <script src="js/auth.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <style>
-    :root{--pju-biru:#1a56db;--pju-biru-muda:#e8f0fe;--pju-hijau:#057a55;--pju-merah:#c81e1e;--pju-kuning:#c27803;--pju-abu:#6b7280;--sidebar-w:240px;}
+    :root{
+      --navy:#1e3a5f;
+      --orange:#f97316;
+      --yellow:#facc15;
+      --biru:#1a56db;
+      --hijau:#057a55;
+      --merah:#c81e1e;
+      --kuning:#c27803;
+      --abu:#6b7280;
+      --sidebar-w:240px;
+    }
     *{box-sizing:border-box;margin:0;padding:0;}
     body{font-family:'Segoe UI',sans-serif;background:#f3f4f6;color:#111827;}
-    .sidebar{position:fixed;top:0;left:0;width:var(--sidebar-w);height:100vh;background:#1e3a5f;color:#fff;display:flex;flex-direction:column;z-index:100;}
-    .sidebar-logo{padding:20px 16px 12px;border-bottom:1px solid rgba(255,255,255,0.1);}
-    .sidebar-logo h1{font-size:1.3rem;font-weight:700;color:#facc15;}
-    .sidebar-logo p{font-size:0.7rem;color:#93c5fd;margin-top:2px;}
-    .sidebar-nav{flex:1;padding:12px 0;}
-    .nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;color:#cbd5e1;text-decoration:none;font-size:0.9rem;transition:background 0.2s;}
-    .nav-item:hover,.nav-item.active{background:rgba(255,255,255,0.1);color:#fff;}
-    .nav-item.active{border-left:3px solid #facc15;}
-    .nav-icon{font-size:1.1rem;width:20px;text-align:center;}
-    .sidebar-footer{padding:12px 16px;border-top:1px solid rgba(255,255,255,0.1);font-size:0.75rem;color:#64748b;}
-    .user-info-wrap{padding:10px 16px;border-top:1px solid rgba(255,255,255,0.1);}
+    .sidebar{position:fixed;top:0;left:0;width:var(--sidebar-w);height:100vh;background:var(--navy);color:#fff;display:flex;flex-direction:column;z-index:100;}
+    .sidebar-logo{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.1);display:flex;align-items:center;gap:10px;}
+    .logo-icon{width:34px;height:34px;flex-shrink:0;}
+    .logo-text h1{font-size:1.15rem;font-weight:800;color:var(--yellow);letter-spacing:0.06em;line-height:1;}
+    .logo-text p{font-size:0.63rem;color:#93c5fd;margin-top:2px;line-height:1.4;}
+    .sidebar-nav{flex:1;padding:6px 0;overflow-y:auto;}
+    .nav-section{padding:10px 16px 3px;font-size:0.63rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.08em;}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;color:#cbd5e1;text-decoration:none;font-size:0.875rem;transition:background 0.15s;border-left:3px solid transparent;}
+    .nav-item:hover{background:rgba(255,255,255,0.07);color:#fff;border-left-color:rgba(249,115,22,0.5);}
+    .nav-item.active{background:rgba(249,115,22,0.12);color:#fff;border-left-color:var(--orange);font-weight:600;}
+    .nav-icon{width:17px;height:17px;flex-shrink:0;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;opacity:0.75;}
+    .nav-item.active .nav-icon,.nav-item:hover .nav-icon{opacity:1;}
+    .user-box{padding:12px 16px;border-top:1px solid rgba(255,255,255,0.08);}
+    .user-name{font-size:0.82rem;color:#e2e8f0;font-weight:600;}
+    .user-role{font-size:0.72rem;color:#64748b;margin-top:1px;text-transform:capitalize;}
+    .btn-keluar{margin-top:8px;width:100%;padding:6px;border-radius:6px;border:1px solid #334155;background:transparent;color:#94a3b8;font-size:0.78rem;cursor:pointer;transition:all 0.15s;}
+    .btn-keluar:hover{background:#334155;color:#fff;}
+    .sidebar-footer{padding:8px 16px;border-top:1px solid rgba(255,255,255,0.06);font-size:0.67rem;color:#334155;}
     .main{margin-left:var(--sidebar-w);min-height:100vh;}
-    .topbar{background:#fff;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e5e7eb;position:sticky;top:0;z-index:50;}
-    .topbar h2{font-size:1.1rem;font-weight:600;}
-    .topbar-meta{font-size:0.8rem;color:var(--pju-abu);}
+    .topbar{background:#fff;padding:12px 24px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e5e7eb;position:sticky;top:0;z-index:50;}
+    .topbar h2{font-size:1rem;font-weight:700;color:var(--navy);}
+    .topbar-meta{font-size:0.8rem;color:var(--abu);}
     .content{padding:20px 24px;}
-    .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
-    .stat-card{background:#fff;border-radius:10px;padding:18px 20px;border-left:4px solid var(--pju-biru);box-shadow:0 1px 3px rgba(0,0,0,0.07);}
-    .stat-card.merah{border-left-color:var(--pju-merah);}
-    .stat-card.kuning{border-left-color:var(--pju-kuning);}
-    .stat-card.hijau{border-left-color:var(--pju-hijau);}
-    .stat-label{font-size:0.78rem;color:var(--pju-abu);font-weight:500;text-transform:uppercase;letter-spacing:0.03em;}
-    .stat-value{font-size:2rem;font-weight:700;margin:4px 0 2px;}
-    .stat-sub{font-size:0.75rem;color:var(--pju-abu);}
-    .stat-card.merah .stat-value{color:var(--pju-merah);}
-    .stat-card.kuning .stat-value{color:var(--pju-kuning);}
-    .stat-card.hijau .stat-value{color:var(--pju-hijau);}
-    .stat-card .stat-value{color:var(--pju-biru);}
-    .map-section{background:#fff;border-radius:10px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,0.07);margin-bottom:24px;}
-    .section-title{font-size:0.95rem;font-weight:600;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;}
-    .legend{display:flex;gap:16px;flex-wrap:wrap;}
-    .legend-item{display:flex;align-items:center;gap:6px;font-size:0.78rem;color:var(--pju-abu);}
-    .legend-dot{width:12px;height:12px;border-radius:50%;}
-    #peta{height:420px;border-radius:8px;}
+    .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
+    .stat-card{background:#fff;border-radius:10px;padding:16px 18px;border-left:4px solid var(--biru);box-shadow:0 1px 3px rgba(0,0,0,0.07);}
+    .stat-card.merah{border-left-color:var(--merah);}
+    .stat-card.kuning{border-left-color:var(--kuning);}
+    .stat-card.hijau{border-left-color:var(--hijau);}
+    .stat-label{font-size:0.72rem;color:var(--abu);font-weight:600;text-transform:uppercase;letter-spacing:0.04em;}
+    .stat-value{font-size:1.9rem;font-weight:800;margin:4px 0 2px;color:var(--biru);}
+    .stat-card.merah .stat-value{color:var(--merah);}
+    .stat-card.kuning .stat-value{color:var(--kuning);}
+    .stat-card.hijau .stat-value{color:var(--hijau);}
+    .stat-sub{font-size:0.73rem;color:var(--abu);}
+    .map-section{background:#fff;border-radius:10px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,0.07);margin-bottom:20px;}
+    .section-title{font-size:0.92rem;font-weight:700;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;color:var(--navy);}
+    .legend{display:flex;gap:14px;flex-wrap:wrap;}
+    .legend-item{display:flex;align-items:center;gap:5px;font-size:0.76rem;color:var(--abu);}
+    .legend-dot{width:10px;height:10px;border-radius:50%;}
+    #peta{height:400px;border-radius:8px;}
     .table-section{background:#fff;border-radius:10px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,0.07);}
     table{width:100%;border-collapse:collapse;font-size:0.875rem;}
-    thead th{background:#f9fafb;padding:10px 12px;text-align:left;font-weight:600;font-size:0.78rem;text-transform:uppercase;letter-spacing:0.03em;color:var(--pju-abu);border-bottom:1px solid #e5e7eb;}
-    tbody td{padding:10px 12px;border-bottom:1px solid #f3f4f6;}
+    thead th{background:#f9fafb;padding:9px 12px;text-align:left;font-weight:700;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--abu);border-bottom:1px solid #e5e7eb;}
+    tbody td{padding:9px 12px;border-bottom:1px solid #f3f4f6;}
     tbody tr:hover{background:#f9fafb;}
-    .badge{display:inline-block;padding:2px 10px;border-radius:99px;font-size:0.75rem;font-weight:500;}
+    .badge{display:inline-block;padding:2px 10px;border-radius:99px;font-size:0.73rem;font-weight:600;}
     .badge-merah{background:#fee2e2;color:#991b1b;}
     .badge-kuning{background:#fef3c7;color:#92400e;}
     .badge-hijau{background:#d1fae5;color:#065f46;}
     .badge-biru{background:#dbeafe;color:#1e40af;}
-    .btn{padding:6px 14px;border-radius:6px;border:none;cursor:pointer;font-size:0.82rem;font-weight:500;}
-    .btn-primary{background:var(--pju-biru);color:#fff;}
+    .btn{padding:5px 12px;border-radius:6px;border:none;cursor:pointer;font-size:0.78rem;font-weight:600;}
+    .btn-primary{background:var(--biru);color:#fff;}
     .btn-primary:hover{background:#1648c2;}
-    .btn-sm{padding:4px 10px;font-size:0.78rem;}
-    .loading{color:var(--pju-abu);font-size:0.85rem;padding:20px;text-align:center;}
+    .loading{color:var(--abu);font-size:0.85rem;padding:20px;text-align:center;}
     @media(max-width:900px){.sidebar{display:none;}.main{margin-left:0;}.stat-grid{grid-template-columns:repeat(2,1fr);}}
     @media(max-width:480px){.stat-grid{grid-template-columns:1fr 1fr;}.content{padding:12px;}}
   </style>
@@ -66,21 +81,64 @@
 <body>
 <aside class="sidebar">
   <div class="sidebar-logo">
-    <h1>⚡ PIJAR</h1>
-    <p>Sistem Manajemen Aset PJU</p>
-    <p style="font-size:0.65rem;color:#64748b;margin-top:4px">UPT PJU Kota Yogyakarta</p>
+    <svg class="logo-icon" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="20" cy="20" r="20" fill="#1e3a5f"/>
+      <circle cx="20" cy="20" r="18.5" stroke="#f97316" stroke-width="1.2" fill="none"/>
+      <rect x="19" y="23" width="2" height="9" rx="1" fill="#facc15"/>
+      <ellipse cx="20" cy="22" rx="5.5" ry="2.5" fill="#facc15"/>
+      <ellipse cx="20" cy="17" rx="2.8" ry="3.8" fill="#f97316" opacity="0.9"/>
+      <ellipse cx="20" cy="15" rx="1.4" ry="2.2" fill="#facc15"/>
+    </svg>
+    <div class="logo-text">
+      <h1>PIJAR</h1>
+      <p>Sistem Manajemen Aset PJU<br>UPT PJU Kota Yogyakarta</p>
+    </div>
   </div>
+
   <nav class="sidebar-nav">
-    <a href="index.html" class="nav-item active"><span class="nav-icon">📊</span> Dashboard</a>
-    <a href="aset.html" class="nav-item"><span class="nav-icon">💡</span> Data Aset</a>
-    <a href="laporan.html" class="nav-item"><span class="nav-icon">📋</span> Laporan Kerusakan</a>
-    <a href="pemeliharaan.html" class="nav-item"><span class="nav-icon">🔧</span> Pemeliharaan</a>
-    <a href="wilayah.html" class="nav-item"><span class="nav-icon">🗺️</span> Wilayah</a>
-    <a href="regu.html" class="nav-item"><span class="nav-icon">👷</span> Regu Lapangan</a>
+    <div class="nav-section">Menu Utama</div>
+
+    <a href="index.html" class="nav-item active">
+      <svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </a>
+
+    <a href="aset.html" class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      Data Aset
+    </a>
+
+    <a href="laporan.html" class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      Laporan Kerusakan
+    </a>
+
+    <a href="pemeliharaan.html" class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+      Pemeliharaan
+    </a>
+
+    <a href="wilayah.html" class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 24 24"><polygon points="3,6 9,3 15,6 21,3 21,18 15,21 9,18 3,21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+      Wilayah
+    </a>
+
+    <a href="regu.html" class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Regu Lapangan
+    </a>
+
+    <div class="nav-section" style="margin-top:6px">Lapangan</div>
+    <a href="lapangan/lapor.html" class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      Form Laporan
+    </a>
   </nav>
-  <div class="user-info-wrap" id="user-info"></div>
+
+  <div class="user-box" id="user-info"></div>
   <div class="sidebar-footer">Perwal Kota Yogyakarta No. 50/2022</div>
 </aside>
+
 <div class="main">
   <div class="topbar">
     <h2>Dashboard Aset PJU</h2>
@@ -95,7 +153,7 @@
     </div>
     <div class="map-section">
       <div class="section-title">
-        <span>🗺️ Peta Sebaran Aset PJU — Kota Yogyakarta</span>
+        <span>Peta Sebaran Aset PJU — Kota Yogyakarta</span>
         <div class="legend">
           <div class="legend-item"><div class="legend-dot" style="background:#16a34a"></div> Menyala</div>
           <div class="legend-item"><div class="legend-dot" style="background:#dc2626"></div> Rusak</div>
@@ -106,8 +164,8 @@
     </div>
     <div class="table-section">
       <div class="section-title">
-        <span>🚨 Aset Memerlukan Perhatian</span>
-        <a href="laporan.html"><button class="btn btn-primary btn-sm">Lihat Semua Laporan</button></a>
+        <span>Aset Memerlukan Perhatian</span>
+        <a href="laporan.html"><button class="btn btn-primary">Lihat Semua Laporan</button></a>
       </div>
       <table>
         <thead><tr><th>Kode Aset</th><th>Alamat</th><th>Kategori</th><th>Status</th><th>Aksi</th></tr></thead>
@@ -116,6 +174,7 @@
     </div>
   </div>
 </div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 const API='https://api.pjujogja.id';
@@ -124,7 +183,13 @@ setInterval(updateWaktu,1000);updateWaktu();
 const peta=L.map('peta').setView([-7.8,110.366],13);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors'}).addTo(peta);
 const warna={'Menyala':'#16a34a','Rusak':'#dc2626','Dalam Pengerjaan':'#d97706'};
-function markerIcon(status){const c=warna[status]||'#6b7280';return L.divIcon({className:'',html:`<div style="width:14px;height:14px;border-radius:50%;background:${c};border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.4)"></div>`,iconSize:[14,14],iconAnchor:[7,7]});}
+function markerIcon(status){const c=warna[status]||'#6b7280';return L.divIcon({className:'',html:`<div style="width:12px;height:12px;border-radius:50%;background:${c};border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.4)"></div>`,iconSize:[12,12],iconAnchor:[6,6]});}
+document.addEventListener('DOMContentLoaded',function(){
+  const el=document.getElementById('user-info');
+  if(el&&window.PIJAR_USER){
+    el.innerHTML=`<div class="user-name">${window.PIJAR_USER.nama}</div><div class="user-role">${window.PIJAR_USER.peran}</div><button class="btn-keluar" onclick="pijarLogout()">Keluar</button>`;
+  }
+});
 async function loadAset(){
   try{
     const res=await fetch(`${API}/api/aset`);
@@ -134,10 +199,10 @@ async function loadAset(){
     document.getElementById('stat-rusak').textContent=data.filter(a=>a.status==='Rusak').length;
     document.getElementById('stat-pengerjaan').textContent=data.filter(a=>a.status==='Dalam Pengerjaan').length;
     document.getElementById('stat-menyala').textContent=data.filter(a=>a.status==='Menyala').length;
-    data.forEach(a=>{if(a.lat&&a.lng){const m=L.marker([a.lat,a.lng],{icon:markerIcon(a.status)}).addTo(peta);m.bindPopup(`<strong>${a.kode_aset}</strong><br>${a.alamat}<br><span style="color:${warna[a.status]||'#333'};font-weight:600">${a.status}</span><br>${a.jenis_lampu||''} ${a.watt?a.watt+'W':''}`);}}); 
+    data.forEach(a=>{if(a.lat&&a.lng){const m=L.marker([a.lat,a.lng],{icon:markerIcon(a.status)}).addTo(peta);m.bindPopup(`<strong>${a.kode_aset}</strong><br>${a.alamat}<br><span style="color:${warna[a.status]||'#333'};font-weight:600">${a.status}</span>`);}}); 
     const perlu=data.filter(a=>a.status!=='Menyala');
     const tbody=document.getElementById('tabel-aset-rusak');
-    tbody.innerHTML=perlu.length?perlu.map(a=>`<tr><td><code style="font-size:0.8rem">${a.kode_aset}</code></td><td>${a.alamat}</td><td><span class="badge badge-biru">${a.kategori_jalan}</span></td><td><span class="badge ${a.status==='Rusak'?'badge-merah':'badge-kuning'}">${a.status}</span></td><td><a href="laporan.html?aset=${a.id_aset}"><button class="btn btn-primary btn-sm">Laporan</button></a></td></tr>`).join(''):'<tr><td colspan="5" class="loading">✅ Semua aset dalam kondisi baik</td></tr>';
+    tbody.innerHTML=perlu.length?perlu.map(a=>`<tr><td><code style="font-size:0.8rem">${a.kode_aset}</code></td><td>${a.alamat}</td><td><span class="badge badge-biru">${a.kategori_jalan}</span></td><td><span class="badge ${a.status==='Rusak'?'badge-merah':'badge-kuning'}">${a.status}</span></td><td><a href="laporan.html?aset=${a.id_aset}"><button class="btn btn-primary">Laporan</button></a></td></tr>`).join(''):'<tr><td colspan="5" class="loading">✅ Semua aset dalam kondisi baik</td></tr>';
   }catch(e){document.getElementById('tabel-aset-rusak').innerHTML='<tr><td colspan="5" class="loading">Gagal memuat data.</td></tr>';}
 }
 loadAset();
