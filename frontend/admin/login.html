@@ -21,6 +21,7 @@
     .btn-login:disabled{background:#93c5fd;cursor:not-allowed;}
     .alert{padding:10px 14px;border-radius:8px;font-size:0.85rem;margin-bottom:14px;display:none;}
     .alert-error{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;}
+    .alert-info{background:#dbeafe;color:#1e40af;border:1px solid #93c5fd;}
     .footer-text{text-align:center;font-size:0.75rem;color:#9ca3af;margin-top:20px;}
     .spinner{display:none;width:18px;height:18px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto;}
     @keyframes spin{to{transform:rotate(360deg);}}
@@ -33,6 +34,7 @@
     <p>Sistem Manajemen Aset PJU<br>UPT PJU Kota Yogyakarta</p>
   </div>
   <div class="alert alert-error" id="alert-error"></div>
+  <div class="alert alert-info" id="alert-info"></div>
   <form id="form-login" onsubmit="doLogin(event)">
     <div class="form-group">
       <label for="username">Username</label>
@@ -61,6 +63,24 @@ if (localStorage.getItem('pijar_token')) {
   } catch(e) { localStorage.removeItem('pijar_token'); }
 }
 
+// Fetch dengan auto-retry 1x (untuk mengatasi cold start shared hosting)
+async function fetchWithRetry(url, options, retries = 1, delayMs = 1500) {
+  try {
+    const res = await fetch(url, options);
+    return res;
+  } catch (err) {
+    if (retries > 0) {
+      const infoEl = document.getElementById('alert-info');
+      infoEl.textContent = '⏳ Server sedang memuat, mencoba kembali...';
+      infoEl.style.display = 'block';
+      await new Promise(r => setTimeout(r, delayMs));
+      infoEl.style.display = 'none';
+      return fetchWithRetry(url, options, retries - 1, delayMs);
+    }
+    throw err;
+  }
+}
+
 async function doLogin(e) {
   e.preventDefault();
   const username = document.getElementById('username').value.trim();
@@ -76,7 +96,7 @@ async function doLogin(e) {
   spinner.style.display = 'block';
 
   try {
-    const res = await fetch(`${API}/api/auth/login`, {
+    const res = await fetchWithRetry(`${API}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password }),
@@ -87,11 +107,11 @@ async function doLogin(e) {
       localStorage.setItem('pijar_user', JSON.stringify(json.pengguna));
       window.location.href = 'index.html';
     } else {
-      alertEl.textContent = json.error || 'Login gagal';
+      alertEl.textContent = json.error || 'Login gagal. Periksa username dan password.';
       alertEl.style.display = 'block';
     }
   } catch(err) {
-    alertEl.textContent = 'Tidak dapat terhubung ke server. Coba lagi.';
+    alertEl.textContent = 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.';
     alertEl.style.display = 'block';
   } finally {
     btn.disabled = false;
