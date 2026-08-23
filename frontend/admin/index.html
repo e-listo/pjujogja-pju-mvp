@@ -1,135 +1,309 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard Admin - PJU Jogja</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<style>
-  :root{--merah:#e53935;--kuning:#fbc02d;--hijau:#43a047;--abu:#f4f4f6;}
-  *{box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;}
-  body{margin:0;background:var(--abu);}
-  header{background:#0d47a1;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;}
-  header h1{font-size:16px;margin:0;}
-  .layout{display:grid;grid-template-columns:1fr;gap:12px;padding:12px;}
-  @media(min-width:900px){.layout{grid-template-columns:1.1fr 1fr;}}
-  #map{height:420px;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.15);}
-  .panel{background:#fff;border-radius:10px;padding:12px;box-shadow:0 1px 4px rgba(0,0,0,.1);}
-  .panel h2{font-size:14px;margin:0 0 8px;color:#333;}
-  table{width:100%;border-collapse:collapse;font-size:13px;}
-  th,td{text-align:left;padding:6px 8px;border-bottom:1px solid #eee;}
-  th{color:#666;font-weight:600;}
-  .badge{padding:2px 8px;border-radius:12px;color:#fff;font-size:11px;font-weight:600;}
-  .badge.tinggi{background:var(--merah);}
-  .badge.sedang{background:var(--kuning);color:#333;}
-  .badge.rendah{background:var(--hijau);}
-  .legend{display:flex;gap:12px;font-size:12px;margin-top:8px;flex-wrap:wrap;}
-  .legend span{display:inline-flex;align-items:center;gap:4px;}
-  .dot{width:10px;height:10px;border-radius:50%;display:inline-block;}
-  .filter-btns{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;}
-  .filter-btns button{border:1px solid #ccc;background:#fff;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;}
-  .filter-btns button.active{background:#0d47a1;color:#fff;border-color:#0d47a1;}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard PIJAR — UPT PJU Kota Yogyakarta</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <style>
+    :root {
+      --pju-biru: #1a56db;
+      --pju-biru-muda: #e8f0fe;
+      --pju-hijau: #057a55;
+      --pju-merah: #c81e1e;
+      --pju-kuning: #c27803;
+      --pju-abu: #6b7280;
+      --sidebar-w: 240px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f3f4f6; color: #111827; }
+
+    /* SIDEBAR */
+    .sidebar {
+      position: fixed; top: 0; left: 0; width: var(--sidebar-w);
+      height: 100vh; background: #1e3a5f; color: #fff;
+      display: flex; flex-direction: column; z-index: 100;
+    }
+    .sidebar-logo {
+      padding: 20px 16px 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .sidebar-logo h1 { font-size: 1.3rem; font-weight: 700; color: #facc15; }
+    .sidebar-logo p { font-size: 0.7rem; color: #93c5fd; margin-top: 2px; }
+    .sidebar-nav { flex: 1; padding: 12px 0; }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 20px; color: #cbd5e1; text-decoration: none;
+      font-size: 0.9rem; transition: background 0.2s;
+    }
+    .nav-item:hover, .nav-item.active { background: rgba(255,255,255,0.1); color: #fff; }
+    .nav-item.active { border-left: 3px solid #facc15; }
+    .nav-icon { font-size: 1.1rem; width: 20px; text-align: center; }
+    .sidebar-footer {
+      padding: 12px 16px; border-top: 1px solid rgba(255,255,255,0.1);
+      font-size: 0.75rem; color: #64748b;
+    }
+
+    /* MAIN */
+    .main { margin-left: var(--sidebar-w); min-height: 100vh; }
+    .topbar {
+      background: #fff; padding: 14px 24px;
+      display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 1px solid #e5e7eb; position: sticky; top: 0; z-index: 50;
+    }
+    .topbar h2 { font-size: 1.1rem; font-weight: 600; }
+    .topbar-meta { font-size: 0.8rem; color: var(--pju-abu); }
+    .content { padding: 20px 24px; }
+
+    /* STAT CARDS */
+    .stat-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;
+    }
+    .stat-card {
+      background: #fff; border-radius: 10px; padding: 18px 20px;
+      border-left: 4px solid var(--pju-biru); box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+    }
+    .stat-card.merah { border-left-color: var(--pju-merah); }
+    .stat-card.kuning { border-left-color: var(--pju-kuning); }
+    .stat-card.hijau { border-left-color: var(--pju-hijau); }
+    .stat-label { font-size: 0.78rem; color: var(--pju-abu); font-weight: 500; text-transform: uppercase; letter-spacing: 0.03em; }
+    .stat-value { font-size: 2rem; font-weight: 700; margin: 4px 0 2px; }
+    .stat-sub { font-size: 0.75rem; color: var(--pju-abu); }
+    .stat-card.merah .stat-value { color: var(--pju-merah); }
+    .stat-card.kuning .stat-value { color: var(--pju-kuning); }
+    .stat-card.hijau .stat-value { color: var(--pju-hijau); }
+    .stat-card .stat-value { color: var(--pju-biru); }
+
+    /* MAP */
+    .map-section { background: #fff; border-radius: 10px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.07); margin-bottom: 24px; }
+    .section-title { font-size: 0.95rem; font-weight: 600; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .legend { display: flex; gap: 16px; flex-wrap: wrap; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: var(--pju-abu); }
+    .legend-dot { width: 12px; height: 12px; border-radius: 50%; }
+    #peta { height: 420px; border-radius: 8px; }
+
+    /* TABLE */
+    .table-section { background: #fff; border-radius: 10px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.07); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    thead th { background: #f9fafb; padding: 10px 12px; text-align: left; font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--pju-abu); border-bottom: 1px solid #e5e7eb; }
+    tbody td { padding: 10px 12px; border-bottom: 1px solid #f3f4f6; }
+    tbody tr:hover { background: #f9fafb; }
+    .badge {
+      display: inline-block; padding: 2px 10px; border-radius: 99px;
+      font-size: 0.75rem; font-weight: 500;
+    }
+    .badge-merah { background: #fee2e2; color: #991b1b; }
+    .badge-kuning { background: #fef3c7; color: #92400e; }
+    .badge-hijau { background: #d1fae5; color: #065f46; }
+    .badge-biru { background: #dbeafe; color: #1e40af; }
+
+    .btn { padding: 6px 14px; border-radius: 6px; border: none; cursor: pointer; font-size: 0.82rem; font-weight: 500; }
+    .btn-primary { background: var(--pju-biru); color: #fff; }
+    .btn-primary:hover { background: #1648c2; }
+    .btn-sm { padding: 4px 10px; font-size: 0.78rem; }
+    .loading { color: var(--pju-abu); font-size: 0.85rem; padding: 20px; text-align: center; }
+
+    @media (max-width: 900px) {
+      .sidebar { display: none; }
+      .main { margin-left: 0; }
+      .stat-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 480px) {
+      .stat-grid { grid-template-columns: 1fr 1fr; }
+      .content { padding: 12px; }
+    }
+  </style>
 </head>
 <body>
-<header>
-  <h1>PJU Jogja — Dashboard Admin</h1>
-  <span id="jam"></span>
-</header>
 
-<div class="layout">
-  <div class="panel">
-    <h2>Peta Titik Lampu (Lokus Perbaikan)</h2>
-    <div id="map"></div>
-    <div class="legend">
-      <span><span class="dot" style="background:#e53935"></span> Rusak / Mati</span>
-      <span><span class="dot" style="background:#fbc02d"></span> Dalam Pengerjaan</span>
-      <span><span class="dot" style="background:#43a047"></span> Menyala / Selesai</span>
-    </div>
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <h1>⚡ PIJAR</h1>
+    <p>Sistem Manajemen Aset PJU</p>
+    <p style="font-size:0.65rem;color:#64748b;margin-top:4px">UPT PJU Kota Yogyakarta</p>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="index.html" class="nav-item active">
+      <span class="nav-icon">📊</span> Dashboard
+    </a>
+    <a href="aset.html" class="nav-item">
+      <span class="nav-icon">💡</span> Data Aset
+    </a>
+    <a href="laporan.html" class="nav-item">
+      <span class="nav-icon">📋</span> Laporan Kerusakan
+    </a>
+    <a href="pemeliharaan.html" class="nav-item">
+      <span class="nav-icon">🔧</span> Pemeliharaan
+    </a>
+    <a href="wilayah.html" class="nav-item">
+      <span class="nav-icon">🗺️</span> Wilayah
+    </a>
+    <a href="regu.html" class="nav-item">
+      <span class="nav-icon">👷</span> Regu Lapangan
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    Perwal Kota Yogyakarta No. 50/2022
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <h2>Dashboard Aset PJU</h2>
+    <span class="topbar-meta" id="waktu-sekarang"></span>
   </div>
 
-  <div class="panel">
-    <h2>Daftar Tugas (Urutan Prioritas)</h2>
-    <div class="filter-btns">
-      <button data-status="" class="active">Semua</button>
-      <button data-status="Baru">Baru</button>
-      <button data-status="Dalam Pengerjaan">Dalam Pengerjaan</button>
-      <button data-status="Selesai">Selesai</button>
+  <div class="content">
+
+    <!-- STAT CARDS -->
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-label">Total Aset</div>
+        <div class="stat-value" id="stat-total">...</div>
+        <div class="stat-sub">titik lampu terdaftar</div>
+      </div>
+      <div class="stat-card merah">
+        <div class="stat-label">Rusak</div>
+        <div class="stat-value" id="stat-rusak">...</div>
+        <div class="stat-sub">perlu penanganan</div>
+      </div>
+      <div class="stat-card kuning">
+        <div class="stat-label">Dalam Pengerjaan</div>
+        <div class="stat-value" id="stat-pengerjaan">...</div>
+        <div class="stat-sub">sedang diperbaiki</div>
+      </div>
+      <div class="stat-card hijau">
+        <div class="stat-label">Menyala</div>
+        <div class="stat-value" id="stat-menyala">...</div>
+        <div class="stat-sub">beroperasi normal</div>
+      </div>
     </div>
-    <table>
-      <thead>
-        <tr><th>#</th><th>Lokasi</th><th>Jalan</th><th>Skor</th><th>Status</th></tr>
-      </thead>
-      <tbody id="tabelTugas"></tbody>
-    </table>
+
+    <!-- PETA -->
+    <div class="map-section">
+      <div class="section-title">
+        <span>🗺️ Peta Sebaran Aset PJU — Kota Yogyakarta</span>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#16a34a"></div> Menyala</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#dc2626"></div> Rusak</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#d97706"></div> Dalam Pengerjaan</div>
+        </div>
+      </div>
+      <div id="peta"></div>
+    </div>
+
+    <!-- TABEL ASET RUSAK -->
+    <div class="table-section">
+      <div class="section-title">
+        <span>🚨 Aset Memerlukan Perhatian</span>
+        <a href="laporan.html"><button class="btn btn-primary btn-sm">Lihat Semua Laporan</button></a>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Kode Aset</th>
+            <th>Alamat</th>
+            <th>Kategori</th>
+            <th>Status</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="tabel-aset-rusak">
+          <tr><td colspan="5" class="loading">🔄 Memuat data...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
   </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-const API_BASE = "https://api.pjujogja.id";
+const API = 'https://api.pjujogja.id';
 
-const map = L.map('map', { preferCanvas: true }).setView([-7.7956, 110.3695], 13);
+// Waktu sekarang
+function updateWaktu() {
+  const el = document.getElementById('waktu-sekarang');
+  const now = new Date();
+  el.textContent = now.toLocaleDateString('id-ID', {weekday:'long', year:'numeric', month:'long', day:'numeric'}) + ' • ' + now.toLocaleTimeString('id-ID');
+}
+setInterval(updateWaktu, 1000);
+updateWaktu();
+
+// Init peta Leaflet
+const peta = L.map('peta').setView([-7.8, 110.366], 13);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19, attribution: '&copy; OpenStreetMap'
-}).addTo(map);
+  attribution: '© OpenStreetMap contributors'
+}).addTo(peta);
 
-const warnaStatus = { 'Rusak': '#e53935', 'Dalam Pengerjaan': '#fbc02d', 'Menyala': '#43a047' };
-let markerLayer = L.layerGroup().addTo(map);
+const warna = { 'Menyala': '#16a34a', 'Rusak': '#dc2626', 'Dalam Pengerjaan': '#d97706' };
 
-function buatMarker(aset) {
-  return L.circleMarker([aset.lat, aset.lng], {
-    radius: 8,
-    fillColor: warnaStatus[aset.status] || '#999',
-    color: '#fff', weight: 2, fillOpacity: 0.95
-  }).bindPopup(`<b>${aset.kode_aset}</b><br>${aset.alamat}<br>Status: ${aset.status}`);
-}
-
-async function muatPeta() {
-  try {
-    const res = await fetch(`${API_BASE}/api/aset`);
-    const json = await res.json();
-    markerLayer.clearLayers();
-    json.data.forEach(a => buatMarker(a).addTo(markerLayer));
-  } catch (e) { console.error('Gagal memuat peta', e); }
-}
-
-function badgeSkor(skor) {
-  if (skor >= 7) return `<span class="badge tinggi">${skor}</span>`;
-  if (skor >= 5) return `<span class="badge sedang">${skor}</span>`;
-  return `<span class="badge rendah">${skor}</span>`;
-}
-
-async function muatTugas(statusFilter = '') {
-  try {
-    const url = statusFilter ? `${API_BASE}/api/laporan?status=${encodeURIComponent(statusFilter)}` : `${API_BASE}/api/laporan`;
-    const res = await fetch(url);
-    const json = await res.json();
-    const tbody = document.getElementById('tabelTugas');
-    tbody.innerHTML = json.data.map((l, i) => `
-      <tr>
-        <td>${i + 1}</td>
-        <td>${l.alamat || '-'} (${l.kode_aset || '-'})</td>
-        <td>${l.kategori_jalan}</td>
-        <td>${badgeSkor(l.skor_prioritas)}</td>
-        <td>${l.status}</td>
-      </tr>`).join('');
-  } catch (e) { console.error('Gagal memuat tugas', e); }
-}
-
-document.querySelectorAll('.filter-btns button').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.filter-btns button').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    muatTugas(btn.dataset.status);
+function markerIcon(status) {
+  const c = warna[status] || '#6b7280';
+  return L.divIcon({
+    className: '',
+    html: `<div style="width:14px;height:14px;border-radius:50%;background:${c};border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.4)"></div>`,
+    iconSize: [14, 14],
+    iconAnchor: [7, 7]
   });
-});
+}
 
-function updateJam(){ document.getElementById('jam').textContent = new Date().toLocaleString('id-ID'); }
-setInterval(updateJam, 1000); updateJam();
+// Load data aset
+async function loadAset() {
+  try {
+    const res = await fetch(`${API}/api/aset`);
+    const json = await res.json();
+    const data = json.data || [];
 
-muatPeta(); muatTugas();
-setInterval(() => { muatPeta(); muatTugas(document.querySelector('.filter-btns button.active').dataset.status); }, 30000);
+    // Stat cards
+    const total = data.length;
+    const rusak = data.filter(a => a.status === 'Rusak').length;
+    const pengerjaan = data.filter(a => a.status === 'Dalam Pengerjaan').length;
+    const menyala = data.filter(a => a.status === 'Menyala').length;
+
+    document.getElementById('stat-total').textContent = total;
+    document.getElementById('stat-rusak').textContent = rusak;
+    document.getElementById('stat-pengerjaan').textContent = pengerjaan;
+    document.getElementById('stat-menyala').textContent = menyala;
+
+    // Marker peta
+    data.forEach(a => {
+      if (a.lat && a.lng) {
+        const marker = L.marker([a.lat, a.lng], { icon: markerIcon(a.status) }).addTo(peta);
+        marker.bindPopup(`
+          <strong>${a.kode_aset}</strong><br>
+          ${a.alamat}<br>
+          <span style="color:${warna[a.status]||'#333'};font-weight:600">${a.status}</span><br>
+          ${a.jenis_lampu || ''} ${a.watt ? a.watt+'W' : ''}
+        `);
+      }
+    });
+
+    // Tabel aset rusak/dalam pengerjaan
+    const perlu = data.filter(a => a.status !== 'Menyala');
+    const tbody = document.getElementById('tabel-aset-rusak');
+    if (perlu.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="loading">✅ Semua aset dalam kondisi baik</td></tr>';
+    } else {
+      tbody.innerHTML = perlu.map(a => `
+        <tr>
+          <td><code style="font-size:0.8rem">${a.kode_aset}</code></td>
+          <td>${a.alamat}</td>
+          <td><span class="badge badge-biru">${a.kategori_jalan}</span></td>
+          <td><span class="badge ${a.status==='Rusak'?'badge-merah':'badge-kuning'}">${a.status}</span></td>
+          <td><a href="laporan.html?aset=${a.id_aset}"><button class="btn btn-primary btn-sm">Laporan</button></a></td>
+        </tr>
+      `).join('');
+    }
+  } catch (e) {
+    console.error(e);
+    document.getElementById('tabel-aset-rusak').innerHTML = '<tr><td colspan="5" class="loading">Gagal memuat data.</td></tr>';
+  }
+}
+
+loadAset();
 </script>
 </body>
 </html>

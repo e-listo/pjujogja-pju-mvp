@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Laporan Kerusakan — PIJAR</title>
+  <style>
+    :root {
+      --pju-biru: #1a56db; --pju-biru-muda: #e8f0fe;
+      --pju-hijau: #057a55; --pju-merah: #c81e1e;
+      --pju-kuning: #c27803; --pju-abu: #6b7280;
+      --sidebar-w: 240px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f3f4f6; color: #111827; }
+    .sidebar {
+      position: fixed; top: 0; left: 0; width: var(--sidebar-w);
+      height: 100vh; background: #1e3a5f; color: #fff;
+      display: flex; flex-direction: column; z-index: 100;
+    }
+    .sidebar-logo { padding: 20px 16px 12px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .sidebar-logo h1 { font-size: 1.3rem; font-weight: 700; color: #facc15; }
+    .sidebar-logo p { font-size: 0.7rem; color: #93c5fd; margin-top: 2px; }
+    .sidebar-nav { flex: 1; padding: 12px 0; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; color: #cbd5e1; text-decoration: none; font-size: 0.9rem; transition: background 0.2s; }
+    .nav-item:hover, .nav-item.active { background: rgba(255,255,255,0.1); color: #fff; }
+    .nav-item.active { border-left: 3px solid #facc15; }
+    .nav-icon { font-size: 1.1rem; width: 20px; text-align: center; }
+    .main { margin-left: var(--sidebar-w); min-height: 100vh; }
+    .topbar { background: #fff; padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e5e7eb; }
+    .topbar h2 { font-size: 1.1rem; font-weight: 600; }
+    .content { padding: 20px 24px; }
+    .toolbar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+    .toolbar select, .toolbar input { padding: 7px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.85rem; }
+    .btn { padding: 7px 16px; border-radius: 6px; border: none; cursor: pointer; font-size: 0.85rem; font-weight: 500; }
+    .btn-primary { background: var(--pju-biru); color: #fff; }
+    .btn-primary:hover { background: #1648c2; }
+    .btn-sm { padding: 4px 10px; font-size: 0.78rem; }
+    .card { background: #fff; border-radius: 10px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.07); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    thead th { background: #f9fafb; padding: 10px 12px; text-align: left; font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--pju-abu); border-bottom: 1px solid #e5e7eb; }
+    tbody td { padding: 10px 12px; border-bottom: 1px solid #f3f4f6; vertical-align: middle; }
+    tbody tr:hover { background: #f9fafb; }
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 99px; font-size: 0.75rem; font-weight: 500; }
+    .badge-merah { background: #fee2e2; color: #991b1b; }
+    .badge-kuning { background: #fef3c7; color: #92400e; }
+    .badge-hijau { background: #d1fae5; color: #065f46; }
+    .badge-biru { background: #dbeafe; color: #1e40af; }
+    .badge-abu { background: #f3f4f6; color: #374151; }
+    .loading { color: var(--pju-abu); font-size: 0.85rem; padding: 20px; text-align: center; }
+
+    /* MODAL */
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:200; align-items:center; justify-content:center; }
+    .modal-overlay.show { display:flex; }
+    .modal { background:#fff; border-radius:12px; padding:24px; width:480px; max-width:95vw; max-height:90vh; overflow-y:auto; }
+    .modal h3 { font-size:1.05rem; font-weight:700; margin-bottom:16px; }
+    .form-group { margin-bottom:14px; }
+    .form-group label { display:block; font-size:0.82rem; font-weight:600; margin-bottom:5px; color:#374151; }
+    .form-group select, .form-group textarea, .form-group input[type=file] {
+      width:100%; padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:0.85rem;
+    }
+    .form-group textarea { min-height:80px; resize:vertical; }
+    .modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:16px; }
+    .btn-secondary { background:#f3f4f6; color:#374151; }
+    .foto-preview { max-width:100%; border-radius:6px; margin-top:6px; display:none; }
+
+    @media (max-width: 900px) { .sidebar { display:none; } .main { margin-left:0; } }
+  </style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <h1>⚡ PIJAR</h1>
+    <p>Sistem Manajemen Aset PJU</p>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="index.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+    <a href="aset.html" class="nav-item"><span class="nav-icon">💡</span> Data Aset</a>
+    <a href="laporan.html" class="nav-item active"><span class="nav-icon">📋</span> Laporan Kerusakan</a>
+    <a href="pemeliharaan.html" class="nav-item"><span class="nav-icon">🔧</span> Pemeliharaan</a>
+    <a href="wilayah.html" class="nav-item"><span class="nav-icon">🗺️</span> Wilayah</a>
+    <a href="regu.html" class="nav-item"><span class="nav-icon">👷</span> Regu Lapangan</a>
+  </nav>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <h2>📋 Laporan Kerusakan</h2>
+    <button class="btn btn-primary btn-sm" onclick="bukaModalBaru()">+ Laporan Baru</button>
+  </div>
+  <div class="content">
+    <div class="toolbar">
+      <select id="filter-status" onchange="loadLaporan()">
+        <option value="">Semua Status</option>
+        <option value="Baru">Baru</option>
+        <option value="Diproses">Diproses</option>
+        <option value="Selesai">Selesai</option>
+        <option value="Ditolak">Ditolak</option>
+      </select>
+      <select id="filter-sumber" onchange="loadLaporan()">
+        <option value="">Semua Sumber</option>
+        <option value="Lapangan">Lapangan</option>
+        <option value="JSS">JSS</option>
+        <option value="Masyarakat">Masyarakat</option>
+        <option value="Patroli">Patroli</option>
+      </select>
+      <button class="btn btn-primary" onclick="loadLaporan()">Refresh</button>
+      <span id="jumlah-laporan" style="font-size:0.82rem;color:var(--pju-abu);margin-left:auto"></span>
+    </div>
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Kode Aset</th>
+            <th>Alamat</th>
+            <th>Sumber</th>
+            <th>Deskripsi</th>
+            <th>Status</th>
+            <th>Tanggal</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-laporan">
+          <tr><td colspan="8" class="loading">🔄 Memuat data...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Update Status -->
+<div class="modal-overlay" id="modal-update" onclick="tutupModal(event)">
+  <div class="modal">
+    <h3>🔄 Update Status Laporan</h3>
+    <div class="form-group">
+      <label>Kode Aset</label>
+      <input type="text" id="modal-kode-aset" disabled style="background:#f9fafb;width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:6px">
+    </div>
+    <div class="form-group">
+      <label>Status Baru</label>
+      <select id="modal-status">
+        <option value="Baru">Baru</option>
+        <option value="Diproses">Diproses</option>
+        <option value="Selesai">Selesai</option>
+        <option value="Ditolak">Ditolak</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="document.getElementById('modal-update').classList.remove('show')">Batal</button>
+      <button class="btn btn-primary" onclick="submitUpdateStatus()">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'https://api.pjujogja.id';
+let idLaporanAktif = null;
+
+const badgeStatus = {
+  'Baru': 'badge-merah', 'Diproses': 'badge-kuning',
+  'Selesai': 'badge-hijau', 'Ditolak': 'badge-abu'
+};
+const badgeSumber = {
+  'Lapangan': 'badge-biru', 'JSS': 'badge-biru',
+  'Masyarakat': 'badge-abu', 'Patroli': 'badge-kuning'
+};
+
+async function loadLaporan() {
+  const status = document.getElementById('filter-status').value;
+  const sumber = document.getElementById('filter-sumber').value;
+  let url = `${API}/api/laporan-kerusakan?`;
+  if (status) url += `status=${status}&`;
+  if (sumber) url += `sumber=${sumber}&`;
+
+  const tbody = document.getElementById('tbody-laporan');
+  tbody.innerHTML = '<tr><td colspan="8" class="loading">🔄 Memuat...</td></tr>';
+
+  try {
+    const res = await fetch(url);
+    const json = await res.json();
+    const data = json.data || [];
+    document.getElementById('jumlah-laporan').textContent = `${data.length} laporan ditemukan`;
+
+    if (data.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="8" class="loading">Tidak ada laporan.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.map((l, i) => `
+      <tr>
+        <td style="color:var(--pju-abu);font-size:0.8rem">${i+1}</td>
+        <td><code style="font-size:0.8rem">${l.kode_aset||'-'}</code></td>
+        <td style="max-width:180px;font-size:0.82rem">${l.alamat||'-'}</td>
+        <td><span class="badge ${badgeSumber[l.sumber_laporan]||'badge-abu'}">${l.sumber_laporan}</span></td>
+        <td style="max-width:200px;font-size:0.82rem">${(l.deskripsi_kerusakan||'').substring(0,60)}${l.deskripsi_kerusakan&&l.deskripsi_kerusakan.length>60?'...':''}</td>
+        <td><span class="badge ${badgeStatus[l.status_laporan]||'badge-abu'}">${l.status_laporan}</span></td>
+        <td style="font-size:0.8rem;white-space:nowrap">${new Date(l.tanggal_lapor).toLocaleDateString('id-ID')}</td>
+        <td>
+          <button class="btn btn-primary btn-sm" onclick="bukaModalUpdate(${l.id_laporan},'${l.kode_aset||''}','${l.status_laporan}')">✏️</button>
+        </td>
+      </tr>
+    `).join('');
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="8" class="loading">Gagal memuat data.</td></tr>';
+  }
+}
+
+function bukaModalUpdate(id, kodeAset, statusSaat) {
+  idLaporanAktif = id;
+  document.getElementById('modal-kode-aset').value = kodeAset;
+  document.getElementById('modal-status').value = statusSaat;
+  document.getElementById('modal-update').classList.add('show');
+}
+
+function tutupModal(e) {
+  if (e.target.classList.contains('modal-overlay')) {
+    document.getElementById('modal-update').classList.remove('show');
+  }
+}
+
+async function submitUpdateStatus() {
+  const status = document.getElementById('modal-status').value;
+  try {
+    const res = await fetch(`${API}/api/laporan-kerusakan/${idLaporanAktif}/status`, {
+      method: 'PATCH',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ status_laporan: status })
+    });
+    const json = await res.json();
+    if (json.success) {
+      document.getElementById('modal-update').classList.remove('show');
+      loadLaporan();
+    } else {
+      alert('Gagal: ' + json.error);
+    }
+  } catch(e) {
+    alert('Error jaringan.');
+  }
+}
+
+loadLaporan();
+</script>
+</body>
+</html>
