@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Regu Lapangan — PIJAR</title>
+  <style>
+    :root{--pju-biru:#1a56db;--pju-biru-gelap:#1e3a5f;--pju-hijau:#057a55;--pju-merah:#c81e1e;--pju-kuning:#c27803;--pju-abu:#6b7280;--sidebar-w:240px;}
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Segoe UI',sans-serif;background:#f3f4f6;color:#111827;}
+    .sidebar{position:fixed;top:0;left:0;width:var(--sidebar-w);height:100vh;background:#1e3a5f;color:#fff;display:flex;flex-direction:column;z-index:100;}
+    .sidebar-logo{padding:20px 16px 12px;border-bottom:1px solid rgba(255,255,255,0.1);}
+    .sidebar-logo h1{font-size:1.3rem;font-weight:700;color:#facc15;}
+    .sidebar-logo p{font-size:0.7rem;color:#93c5fd;margin-top:2px;}
+    .sidebar-nav{flex:1;padding:12px 0;}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;color:#cbd5e1;text-decoration:none;font-size:0.9rem;transition:background 0.2s;}
+    .nav-item:hover,.nav-item.active{background:rgba(255,255,255,0.1);color:#fff;}
+    .nav-item.active{border-left:3px solid #facc15;}
+    .nav-icon{font-size:1.1rem;width:20px;text-align:center;}
+    .sidebar-footer{padding:12px 16px;border-top:1px solid rgba(255,255,255,0.1);font-size:0.75rem;color:#64748b;}
+    .main{margin-left:var(--sidebar-w);min-height:100vh;}
+    .topbar{background:#fff;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e5e7eb;}
+    .topbar h2{font-size:1.1rem;font-weight:600;}
+    .content{padding:20px 24px;}
+    .regu-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;}
+    .regu-card{background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,0.08);overflow:hidden;}
+    .regu-header{background:var(--pju-biru-gelap);color:#fff;padding:16px 20px;}
+    .regu-nama{font-size:1.05rem;font-weight:700;}
+    .regu-wilayah{font-size:0.78rem;color:#93c5fd;margin-top:2px;}
+    .regu-body{padding:16px 20px;}
+    .regu-stat{display:flex;gap:16px;margin-bottom:14px;}
+    .regu-stat-item{text-align:center;}
+    .regu-stat-item .val{font-size:1.4rem;font-weight:700;color:var(--pju-biru);}
+    .regu-stat-item .lab{font-size:0.72rem;color:var(--pju-abu);}
+    .anggota-list{border-top:1px solid #f3f4f6;padding-top:12px;}
+    .anggota-label{font-size:0.78rem;font-weight:600;color:var(--pju-abu);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px;}
+    .anggota-item{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid #f9fafb;}
+    .anggota-avatar{width:32px;height:32px;border-radius:50%;background:var(--pju-biru);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.85rem;font-weight:700;flex-shrink:0;}
+    .anggota-nama{font-size:0.85rem;font-weight:500;}
+    .anggota-peran{font-size:0.75rem;color:var(--pju-abu);}
+    .badge{display:inline-block;padding:2px 10px;border-radius:99px;font-size:0.72rem;font-weight:500;}
+    .badge-hijau{background:#d1fae5;color:#065f46;}
+    .loading{color:var(--pju-abu);font-size:0.85rem;padding:20px;text-align:center;}
+    @media(max-width:900px){.sidebar{display:none;}.main{margin-left:0;}}
+  </style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sidebar-logo"><h1>⚡ PIJAR</h1><p>Sistem Manajemen Aset PJU</p></div>
+  <nav class="sidebar-nav">
+    <a href="index.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+    <a href="aset.html" class="nav-item"><span class="nav-icon">💡</span> Data Aset</a>
+    <a href="laporan.html" class="nav-item"><span class="nav-icon">📋</span> Laporan Kerusakan</a>
+    <a href="pemeliharaan.html" class="nav-item"><span class="nav-icon">🔧</span> Pemeliharaan</a>
+    <a href="wilayah.html" class="nav-item"><span class="nav-icon">🗺️</span> Wilayah</a>
+    <a href="regu.html" class="nav-item active"><span class="nav-icon">👷</span> Regu Lapangan</a>
+  </nav>
+  <div class="sidebar-footer">Perwal Kota Yogyakarta No. 50/2022</div>
+</aside>
+<div class="main">
+  <div class="topbar"><h2>👷 Regu Pelaksana Lapangan</h2></div>
+  <div class="content">
+    <div class="regu-grid" id="regu-grid"><div class="loading">🔄 Memuat data regu...</div></div>
+  </div>
+</div>
+<script>
+const API='https://api.pjujogja.id';
+async function loadRegu(){
+  try{
+    const res=await fetch(`${API}/api/regu`);
+    const json=await res.json();
+    const reguList=json.data||[];
+    const grid=document.getElementById('regu-grid');
+    if(!reguList.length){grid.innerHTML='<div class="loading">Tidak ada data regu.</div>';return;}
+    // Load anggota untuk setiap regu secara paralel
+    const anggotaMap={};
+    await Promise.all(reguList.map(async r=>{
+      try{
+        const res2=await fetch(`${API}/api/regu/${r.id_regu}/anggota`);
+        const json2=await res2.json();
+        anggotaMap[r.id_regu]=json2.data||[];
+      }catch(e){anggotaMap[r.id_regu]=[];}
+    }));
+    grid.innerHTML=reguList.map(r=>{
+      const anggota=anggotaMap[r.id_regu]||[];
+      const inisial=n=>n.split(' ').map(x=>x[0]).join('').substring(0,2).toUpperCase();
+      return `
+      <div class="regu-card">
+        <div class="regu-header">
+          <div class="regu-nama">👷 ${r.nama_regu}</div>
+          <div class="regu-wilayah">${r.wilayah_tugas||'Seluruh Kota Yogyakarta'}</div>
+        </div>
+        <div class="regu-body">
+          <div class="regu-stat">
+            <div class="regu-stat-item"><div class="val">${r.jumlah_anggota}</div><div class="lab">Anggota</div></div>
+            <div class="regu-stat-item"><div class="val"><span class="badge badge-hijau">${r.status_aktif?'Aktif':'Non-Aktif'}</span></div><div class="lab">Status</div></div>
+          </div>
+          <div class="anggota-list">
+            <div class="anggota-label">Anggota Regu</div>
+            ${anggota.length
+              ? anggota.map(a=>`
+                <div class="anggota-item">
+                  <div class="anggota-avatar">${inisial(a.nama_lengkap)}</div>
+                  <div>
+                    <div class="anggota-nama">${a.nama_lengkap}</div>
+                    <div class="anggota-peran">${a.peran} • ${a.no_hp||'-'}</div>
+                  </div>
+                </div>`).join('')
+              : '<div style="font-size:0.82rem;color:var(--pju-abu);padding:8px 0">Belum ada anggota</div>'
+            }
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }catch(e){document.getElementById('regu-grid').innerHTML='<div class="loading">Gagal memuat data.</div>';}
+}
+loadRegu();
+</script>
+</body></html>
