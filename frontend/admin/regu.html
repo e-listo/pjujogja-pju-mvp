@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Regu Lapangan — PIJAR</title>
+  <script src="js/auth.js"></script>
   <style>
     :root{--pju-biru:#1a56db;--pju-biru-gelap:#1e3a5f;--pju-hijau:#057a55;--pju-merah:#c81e1e;--pju-kuning:#c27803;--pju-abu:#6b7280;--sidebar-w:240px;}
     *{box-sizing:border-box;margin:0;padding:0;}
@@ -18,6 +19,7 @@
     .nav-item.active{border-left:3px solid #facc15;}
     .nav-icon{font-size:1.1rem;width:20px;text-align:center;}
     .sidebar-footer{padding:12px 16px;border-top:1px solid rgba(255,255,255,0.1);font-size:0.75rem;color:#64748b;}
+    .user-info-wrap{padding:10px 16px;border-top:1px solid rgba(255,255,255,0.1);}
     .main{margin-left:var(--sidebar-w);min-height:100vh;}
     .topbar{background:#fff;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e5e7eb;}
     .topbar h2{font-size:1.1rem;font-weight:600;}
@@ -55,6 +57,7 @@
     <a href="wilayah.html" class="nav-item"><span class="nav-icon">🗺️</span> Wilayah</a>
     <a href="regu.html" class="nav-item active"><span class="nav-icon">👷</span> Regu Lapangan</a>
   </nav>
+  <div class="user-info-wrap" id="user-info"></div>
   <div class="sidebar-footer">Perwal Kota Yogyakarta No. 50/2022</div>
 </aside>
 <div class="main">
@@ -72,46 +75,10 @@ async function loadRegu(){
     const reguList=json.data||[];
     const grid=document.getElementById('regu-grid');
     if(!reguList.length){grid.innerHTML='<div class="loading">Tidak ada data regu.</div>';return;}
-    // Load anggota untuk setiap regu secara paralel
     const anggotaMap={};
-    await Promise.all(reguList.map(async r=>{
-      try{
-        const res2=await fetch(`${API}/api/regu/${r.id_regu}/anggota`);
-        const json2=await res2.json();
-        anggotaMap[r.id_regu]=json2.data||[];
-      }catch(e){anggotaMap[r.id_regu]=[];}
-    }));
-    grid.innerHTML=reguList.map(r=>{
-      const anggota=anggotaMap[r.id_regu]||[];
-      const inisial=n=>n.split(' ').map(x=>x[0]).join('').substring(0,2).toUpperCase();
-      return `
-      <div class="regu-card">
-        <div class="regu-header">
-          <div class="regu-nama">👷 ${r.nama_regu}</div>
-          <div class="regu-wilayah">${r.wilayah_tugas||'Seluruh Kota Yogyakarta'}</div>
-        </div>
-        <div class="regu-body">
-          <div class="regu-stat">
-            <div class="regu-stat-item"><div class="val">${r.jumlah_anggota}</div><div class="lab">Anggota</div></div>
-            <div class="regu-stat-item"><div class="val"><span class="badge badge-hijau">${r.status_aktif?'Aktif':'Non-Aktif'}</span></div><div class="lab">Status</div></div>
-          </div>
-          <div class="anggota-list">
-            <div class="anggota-label">Anggota Regu</div>
-            ${anggota.length
-              ? anggota.map(a=>`
-                <div class="anggota-item">
-                  <div class="anggota-avatar">${inisial(a.nama_lengkap)}</div>
-                  <div>
-                    <div class="anggota-nama">${a.nama_lengkap}</div>
-                    <div class="anggota-peran">${a.peran} • ${a.no_hp||'-'}</div>
-                  </div>
-                </div>`).join('')
-              : '<div style="font-size:0.82rem;color:var(--pju-abu);padding:8px 0">Belum ada anggota</div>'
-            }
-          </div>
-        </div>
-      </div>`;
-    }).join('');
+    await Promise.all(reguList.map(async r=>{try{const res2=await fetch(`${API}/api/regu/${r.id_regu}/anggota`);const json2=await res2.json();anggotaMap[r.id_regu]=json2.data||[];}catch(e){anggotaMap[r.id_regu]=[];}}));
+    const inisial=n=>n.split(' ').map(x=>x[0]).join('').substring(0,2).toUpperCase();
+    grid.innerHTML=reguList.map(r=>{const anggota=anggotaMap[r.id_regu]||[];return`<div class="regu-card"><div class="regu-header"><div class="regu-nama">👷 ${r.nama_regu}</div><div class="regu-wilayah">${r.wilayah_tugas||'Seluruh Kota Yogyakarta'}</div></div><div class="regu-body"><div class="regu-stat"><div class="regu-stat-item"><div class="val">${r.jumlah_anggota}</div><div class="lab">Anggota</div></div><div class="regu-stat-item"><div class="val"><span class="badge badge-hijau">${r.status_aktif?'Aktif':'Non-Aktif'}</span></div><div class="lab">Status</div></div></div><div class="anggota-list"><div class="anggota-label">Anggota Regu</div>${anggota.length?anggota.map(a=>`<div class="anggota-item"><div class="anggota-avatar">${inisial(a.nama_lengkap)}</div><div><div class="anggota-nama">${a.nama_lengkap}</div><div class="anggota-peran">${a.peran} • ${a.no_hp||'-'}</div></div></div>`).join(''):'<div style="font-size:0.82rem;color:var(--pju-abu);padding:8px 0">Belum ada anggota</div>'}</div></div></div>`}).join('');
   }catch(e){document.getElementById('regu-grid').innerHTML='<div class="loading">Gagal memuat data.</div>';}
 }
 loadRegu();
