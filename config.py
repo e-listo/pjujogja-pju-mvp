@@ -1,49 +1,40 @@
 import os
+from dotenv import load_dotenv
 
-BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+load_dotenv()
 
 class Config:
-    DB_USER = os.environ.get("DB_USER", "pjujogja_user")
-    DB_PASS = os.environ.get("DB_PASS", "CHANGE_ME")
-    DB_HOST = os.environ.get("DB_HOST", "localhost")
-    DB_NAME = os.environ.get("DB_NAME", "pjujogja_db")
-
-    SQLALCHEMY_DATABASE_URI = (
-        f"mysql+pymysql://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}?charset=utf8mb4"
+    # Database
+    SQLALCHEMY_DATABASE_URI = os.getenv(
+        "DATABASE_URL",
+        "mysql+pymysql://suryaci1_pju:Kimprasw1l@localhost/suryaci1_pjudb"
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_ENGINE_OPTIONS = {
-        "pool_recycle": 280,
-        "pool_pre_ping": True,
-    }
 
-    SECRET_KEY = os.environ.get("SECRET_KEY", "ganti-dengan-secret-key-acak")
-
-    UPLOAD_FOLDER = os.environ.get("UPLOAD_FOLDER", os.path.join(BASE_DIR, "uploads"))
-    MAX_CONTENT_LENGTH = 1 * 1024 * 1024
+    # Upload
+    UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), "uploads")
     ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "webp"}
+    MAX_CONTENT_LENGTH = 5 * 1024 * 1024  # 5MB
 
+    # CORS
     CORS_ORIGINS = [
         "https://admin.pjujogja.id",
         "https://pjujogja.id",
-        "https://pins.pjujogja.id",
+        "http://localhost:3000",
+        "http://localhost:5500",
     ]
 
-    # ------------------------------------------------------------------
-    # Kategori jalan Perwal Kota Yogyakarta No. 50/2022, ditambah kategori
-    # "Lainnya" untuk penerangan non-jalan sesuai Pasal 1 ayat 1 & Pasal 13
-    # (taman, makam, sorot sungai, hias/budaya).
-    #   - Jalan Kota (tiang >= 7.000 mm)               -> bobot 3
-    #   - Jalan Lingkungan (tiang <= 7.000 mm)          -> bobot 2
-    #   - Jalan Lingkungan Kampung (tiang <= 4.000 mm)  -> bobot 1
-    #   - Lainnya (Taman/Makam/Sorot Sungai/Hias-Budaya) -> bobot 1
-    # ------------------------------------------------------------------
+    # JWT
+    JWT_SECRET = os.getenv("JWT_SECRET", "GANTI_DENGAN_SECRET_PANJANG_DI_ENV")
+    JWT_EXP_HOURS = int(os.getenv("JWT_EXP_HOURS", "12"))
+
+    # Seed key (untuk endpoint /api/auth/seed)
+    SEED_SECRET = os.getenv("SEED_SECRET", "GANTI_INI")
+
+    # Bobot prioritas Fase 1
     BOBOT_KATEGORI_JALAN = {
         "Jalan Kota": 3,
         "Jalan Lingkungan": 2,
         "Jalan Lingkungan Kampung": 1,
         "Lainnya": 1,
     }
-
-    # Sub-kategori khusus untuk kategori "Lainnya" (Pasal 1 & 13)
-    SUB_KATEGORI_LAINNYA = ("Taman", "Makam", "Sorot Sungai", "Hias/Budaya")
