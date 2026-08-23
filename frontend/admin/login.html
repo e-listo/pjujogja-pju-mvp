@@ -5,10 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Masuk — PIJAR</title>
   <meta name="theme-color" content="#0f2236">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     *{box-sizing:border-box;margin:0;padding:0;}
     body{
-      font-family:'Segoe UI',system-ui,sans-serif;
+      font-family:'Inter','Segoe UI',system-ui,sans-serif;
       min-height:100vh;display:flex;align-items:center;justify-content:center;
       background:#0f2236;
       background-image:
@@ -37,30 +40,43 @@
       margin-bottom:28px;
     }
     .logo-img-wrap{
-      width:80px;height:80px;margin:0 auto 14px;
+      width:88px;height:88px;margin:0 auto 16px;
       display:flex;align-items:center;justify-content:center;
     }
     .logo-img-wrap img{
-      width:80px;height:80px;
+      width:88px;height:88px;
       object-fit:contain;
-      filter:drop-shadow(0 4px 16px rgba(249,115,22,.4));
+      filter:drop-shadow(0 6px 20px rgba(249,115,22,.45));
     }
     .logo-fallback{
-      display:none;width:80px;height:80px;border-radius:50%;
+      display:none;width:88px;height:88px;border-radius:50%;
       background:linear-gradient(135deg,#1e3a5f,#f97316);
       align-items:center;justify-content:center;
       font-size:2.2rem;
     }
-    .logo-area h1{
-      font-size:1.8rem;font-weight:900;
-      color:#facc15;letter-spacing:.1em;line-height:1;
+    /* wordmark */
+    .logo-wordmark-title{
+      font-size:2rem;font-weight:900;
+      letter-spacing:0.12em;line-height:1;
+      background:linear-gradient(135deg,#ffffff 30%,#facc15 80%);
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
+      background-clip:text;
+      margin-bottom:4px;
     }
-    .logo-area .tagline{
-      font-size:.72rem;color:#475569;
-      margin-top:5px;line-height:1.5;
+    .logo-wordmark-sub{
+      font-size:.65rem;font-weight:600;
+      letter-spacing:0.28em;text-transform:uppercase;
+      color:#475569;line-height:1.5;
     }
-    .logo-area .tagline em{
-      color:#f97316;font-style:normal;
+    .logo-divider{
+      width:32px;height:1.5px;
+      background:linear-gradient(90deg,transparent,#f97316,transparent);
+      border:none;margin:10px auto 10px;
+    }
+    .logo-tagline{
+      font-size:.7rem;color:#334155;
+      font-style:italic;line-height:1.5;
     }
 
     /* FORM */
@@ -128,16 +144,18 @@
     <div class="logo-area">
       <div class="logo-img-wrap">
         <img
-          src="https://pjujogja.id/images/pijar.png"
+          src="https://pjujogja.id/images/pijar_square.png"
           alt="Logo PIJAR"
-          width="80" height="80"
+          width="88" height="88"
           fetchpriority="high"
           onerror="this.style.display='none';this.parentElement.querySelector('.logo-fallback').style.display='flex'"
         />
         <div class="logo-fallback">⚡</div>
       </div>
-      <h1>PIJAR</h1>
-      <p class="tagline">Sistem Manajemen Aset PJU<br><em>UPT PJU Kota Yogyakarta</em></p>
+      <div class="logo-wordmark-title">PIJAR</div>
+      <hr class="logo-divider">
+      <div class="logo-wordmark-sub">Penguatan Inventarisasi Jaringan Aset</div>
+      <p class="logo-tagline">&ldquo;Urip Kuwi Urup&rdquo; &mdash; UPT PJU Kota Yogyakarta</p>
     </div>
 
     <div class="alert alert-error" id="alert-error"></div>

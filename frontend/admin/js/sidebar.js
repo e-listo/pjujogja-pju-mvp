@@ -32,11 +32,11 @@
 <aside class="pijar-sidebar" id="pijar-sidebar-el">
   <a href="index.html" class="sidebar-brand">
     <img
-      src="https://pjujogja.id/images/pijar.png"
+      src="https://pjujogja.id/images/pijar_square.png"
       alt="Logo PIJAR"
       width="34" height="34"
       fetchpriority="high"
-      style="width:34px;height:34px;object-fit:contain;flex-shrink:0"
+      style="width:34px;height:34px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 1px 6px rgba(249,115,22,.35))"
       onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
     />
     <span class="brand-fallback" style="display:none;width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#f97316,#facc15);align-items:center;justify-content:center;font-size:16px;flex-shrink:0">⚡</span>
@@ -158,18 +158,13 @@
 }
 </style>`;
 
-  // Inject styles ke <head>
   document.head.insertAdjacentHTML('beforeend', styles);
-
-  // Inject sidebar ke body (prepend)
   document.body.insertAdjacentHTML('afterbegin', sidebarHTML);
 
-  // Set margin-left untuk .pijar-main atau .main
   const style = document.createElement('style');
   style.textContent = '.pijar-main,.main{margin-left:224px;}';
   document.head.appendChild(style);
 
-  // Isi user info dari localStorage
   function fillUser(){
     try{
       const raw = localStorage.getItem('pijar_user');
@@ -192,7 +187,6 @@
     fillUser();
   }
 
-  // pijarLogout global
   window.pijarLogout = function(){
     localStorage.removeItem('pijar_token');
     localStorage.removeItem('pijar_user');
