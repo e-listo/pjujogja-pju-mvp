@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Lapor Kerusakan — PIJAR Lapangan</title>
+  <meta name="theme-color" content="#1e3a5f">
+  <style>
+    :root {
+      --pju-biru: #1a56db;
+      --pju-biru-gelap: #1e3a5f;
+      --pju-hijau: #057a55;
+      --pju-merah: #c81e1e;
+      --pju-abu: #6b7280;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f3f4f6;
+      color: #111827;
+      min-height: 100vh;
+      padding-bottom: 32px;
+    }
+
+    /* HEADER */
+    .header {
+      background: var(--pju-biru-gelap);
+      color: #fff;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .header-logo { font-size: 1.5rem; }
+    .header-text h1 { font-size: 1.05rem; font-weight: 700; color: #facc15; }
+    .header-text p { font-size: 0.72rem; color: #93c5fd; }
+
+    /* FORM CARD */
+    .form-card {
+      margin: 16px;
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+    .form-section {
+      padding: 16px 20px;
+      border-bottom: 1px solid #f3f4f6;
+    }
+    .form-section:last-child { border-bottom: none; }
+    .section-header {
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--pju-abu);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .form-group { margin-bottom: 14px; }
+    .form-group:last-child { margin-bottom: 0; }
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 6px;
+    }
+    label .wajib { color: var(--pju-merah); }
+    select, textarea {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      background: #fff;
+      appearance: none;
+      -webkit-appearance: none;
+      transition: border-color 0.2s;
+    }
+    select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--pju-biru);
+    }
+    textarea { min-height: 100px; resize: none; }
+
+    /* FOTO UPLOAD */
+    .foto-upload-area {
+      border: 2px dashed #d1d5db;
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      position: relative;
+    }
+    .foto-upload-area:active { background: #f0f7ff; border-color: var(--pju-biru); }
+    .foto-upload-area input[type=file] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer;
+    }
+    .foto-upload-icon { font-size: 2rem; margin-bottom: 6px; }
+    .foto-upload-text { font-size: 0.85rem; color: var(--pju-abu); }
+    .foto-upload-text strong { color: var(--pju-biru); }
+    .foto-preview-wrap { margin-top: 12px; display: none; }
+    .foto-preview-wrap img {
+      width: 100%; border-radius: 8px;
+      max-height: 200px; object-fit: cover;
+    }
+    .foto-remove {
+      display: block; text-align: center; color: var(--pju-merah);
+      font-size: 0.82rem; margin-top: 6px; cursor: pointer;
+    }
+
+    /* GPS */
+    .gps-row {
+      display: flex; gap: 8px; align-items: center;
+    }
+    .gps-info {
+      flex: 1; background: #f9fafb; border: 1.5px solid #e5e7eb;
+      border-radius: 8px; padding: 10px 14px; font-size: 0.82rem; color: var(--pju-abu);
+    }
+    .gps-info.aktif { border-color: #bbf7d0; background: #f0fdf4; color: #065f46; }
+    .btn-gps {
+      padding: 10px 14px; background: #f3f4f6; border: 1.5px solid #d1d5db;
+      border-radius: 8px; font-size: 0.85rem; cursor: pointer; white-space: nowrap;
+    }
+    .btn-gps:active { background: var(--pju-biru-muda); }
+
+    /* SUBMIT */
+    .submit-wrap { padding: 16px; }
+    .btn-submit {
+      width: 100%;
+      padding: 16px;
+      background: var(--pju-biru);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.2s;
+    }
+    .btn-submit:active { background: #1648c2; }
+    .btn-submit:disabled { background: #9ca3af; cursor: not-allowed; }
+
+    /* ALERT */
+    .alert {
+      margin: 0 16px 16px;
+      padding: 14px 16px;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      display: none;
+    }
+    .alert.sukses { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+    .alert.error { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+    .alert.show { display: block; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo">⚡</div>
+  <div class="header-text">
+    <h1>Lapor Kerusakan PJU</h1>
+    <p>PIJAR — UPT PJU Kota Yogyakarta</p>
+  </div>
+</div>
+
+<div id="alert-sukses" class="alert sukses">
+  ✅ Laporan berhasil dikirim! Terimakasih, regu akan segera menindaklanjuti.
+</div>
+<div id="alert-error" class="alert error"></div>
+
+<form id="form-lapor" enctype="multipart/form-data">
+
+  <div class="form-card">
+
+    <!-- ASET -->
+    <div class="form-section">
+      <div class="section-header">💡 Data Aset</div>
+      <div class="form-group">
+        <label for="id_aset">Kode / Alamat Aset <span class="wajib">*</span></label>
+        <select id="id_aset" name="id_aset" required>
+          <option value="">-- Pilih Aset --</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- KERUSAKAN -->
+    <div class="form-section">
+      <div class="section-header">🔧 Detail Kerusakan</div>
+      <div class="form-group">
+        <label for="sumber_laporan">Sumber Laporan</label>
+        <select id="sumber_laporan" name="sumber_laporan">
+          <option value="Lapangan">Lapangan (Regu Teknis)</option>
+          <option value="Patroli">Patroli Malam</option>
+          <option value="Masyarakat">Laporan Masyarakat</option>
+          <option value="JSS">JSS (Smart City)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="deskripsi_kerusakan">Deskripsi Kerusakan <span class="wajib">*</span></label>
+        <textarea id="deskripsi_kerusakan" name="deskripsi_kerusakan"
+          placeholder="Contoh: Lampu mati total, tiang miring, kabel terbuka..."
+          required></textarea>
+      </div>
+    </div>
+
+    <!-- FOTO -->
+    <div class="form-section">
+      <div class="section-header">📸 Foto Bukti</div>
+      <div class="form-group">
+        <div class="foto-upload-area" id="foto-area">
+          <input type="file" id="foto" name="foto" accept="image/*" capture="environment" onchange="previewFoto(this)">
+          <div class="foto-upload-icon">📷</div>
+          <div class="foto-upload-text"><strong>Ambil Foto</strong> atau pilih dari galeri<br><span style="font-size:0.75rem">JPG, PNG, WEBP — maks. 5MB</span></div>
+        </div>
+        <div class="foto-preview-wrap" id="foto-preview-wrap">
+          <img id="foto-preview" src="" alt="Preview">
+          <span class="foto-remove" onclick="hapusFoto()">✕ Hapus foto</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="submit-wrap">
+    <button type="submit" class="btn-submit" id="btn-kirim">
+      <span>📤</span> Kirim Laporan
+    </button>
+  </div>
+
+</form>
+
+<script>
+const API = 'https://api.pjujogja.id';
+
+// Load daftar aset
+async function loadAset() {
+  try {
+    const res = await fetch(`${API}/api/aset`);
+    const json = await res.json();
+    const sel = document.getElementById('id_aset');
+    (json.data || []).forEach(a => {
+      const opt = document.createElement('option');
+      opt.value = a.id_aset;
+      opt.textContent = `${a.kode_aset} — ${a.alamat}`;
+      sel.appendChild(opt);
+    });
+  } catch(e) { console.error('Gagal load aset', e); }
+}
+
+// Preview foto
+function previewFoto(input) {
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById('foto-preview').src = e.target.result;
+      document.getElementById('foto-preview-wrap').style.display = 'block';
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+function hapusFoto() {
+  document.getElementById('foto').value = '';
+  document.getElementById('foto-preview-wrap').style.display = 'none';
+  document.getElementById('foto-preview').src = '';
+}
+
+// Submit form
+document.getElementById('form-lapor').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const btn = document.getElementById('btn-kirim');
+  btn.disabled = true;
+  btn.innerHTML = '<span>⏳</span> Mengirim...';
+
+  const formData = new FormData(this);
+
+  try {
+    const res = await fetch(`${API}/api/laporan-kerusakan`, {
+      method: 'POST',
+      body: formData
+    });
+    const json = await res.json();
+    if (json.success) {
+      document.getElementById('alert-sukses').classList.add('show');
+      document.getElementById('alert-error').classList.remove('show');
+      this.reset();
+      hapusFoto();
+      window.scrollTo({top: 0, behavior: 'smooth'});
+    } else {
+      throw new Error(json.error || 'Gagal mengirim laporan');
+    }
+  } catch(err) {
+    const alertErr = document.getElementById('alert-error');
+    alertErr.textContent = '❌ ' + err.message;
+    alertErr.classList.add('show');
+    window.scrollTo({top: 0, behavior: 'smooth'});
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<span>📤</span> Kirim Laporan';
+  }
+});
+
+loadAset();
+</script>
+</body>
+</html>
