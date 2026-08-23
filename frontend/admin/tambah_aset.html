@@ -1,164 +1,77 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tambah Aset PJU - Admin</title>
-<script src="js/auth.js"></script>
-<style>
-  *{box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;}
-  body{margin:0;background:#f4f4f6;padding:16px;}
-  .card{max-width:520px;margin:0 auto;background:#fff;border-radius:14px;padding:20px;box-shadow:0 1px 6px rgba(0,0,0,.12);}
-  h1{font-size:18px;margin:0 0 4px;color:#0d47a1;}
-  p.sub{color:#666;font-size:13px;margin:0 0 16px;}
-  label{display:block;font-size:13px;font-weight:600;margin:14px 0 6px;color:#333;}
-  input, select{width:100%;padding:11px;border:1px solid #ccc;border-radius:8px;font-size:15px;background:#fff;}
-  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-  #groupSubKategori{display:none;}
-  .hint{font-size:11px;color:#888;margin-top:4px;}
-  button{width:100%;padding:15px;margin-top:22px;border:none;border-radius:10px;background:#0d47a1;color:#fff;font-size:16px;font-weight:700;cursor:pointer;}
-  button:disabled{background:#aaa;}
-  .status-msg{margin-top:14px;padding:10px;border-radius:8px;font-size:13px;display:none;}
-  .status-msg.ok{background:#e8f5e9;color:#2e7d32;display:block;}
-  .status-msg.err{background:#ffebee;color:#c62828;display:block;}
-  .topbar-mini{background:#1e3a5f;color:#fff;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;margin:-16px -16px 16px;border-radius:0;font-size:0.82rem;}
-  .topbar-mini a{color:#93c5fd;text-decoration:none;font-size:0.8rem;}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tambah Aset — PIJAR</title>
+  <script src="js/auth.js"></script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Segoe UI',system-ui,sans-serif;background:#f1f5f9;color:#0f172a;}
+    .pijar-main{margin-left:224px;min-height:100vh;}
+    .topbar{background:#fff;padding:11px 24px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:50;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+    .topbar a{color:#94a3b8;text-decoration:none;font-size:.82rem;}
+    .topbar a:hover{color:#1a56db;}
+    .topbar h2{font-size:.95rem;font-weight:700;}
+    .content{padding:20px 24px;}
+    .form-card{background:#fff;border-radius:12px;padding:24px;box-shadow:0 1px 4px rgba(0,0,0,.06);max-width:600px;}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+    .form-group{margin-bottom:14px;}
+    .form-group label{display:block;font-size:.72rem;font-weight:700;margin-bottom:4px;color:#64748b;text-transform:uppercase;letter-spacing:.05em;}
+    .form-group input,.form-group select{width:100%;padding:9px 11px;border:1px solid #e2e8f0;border-radius:7px;font-size:.87rem;font-family:inherit;transition:border .2s;}
+    .form-group input:focus,.form-group select:focus{outline:none;border-color:#1a56db;box-shadow:0 0 0 3px rgba(26,86,219,.1);}
+    .btn{padding:10px 20px;border-radius:8px;border:none;cursor:pointer;font-size:.88rem;font-weight:700;transition:opacity .15s;}
+    .btn-primary{background:#1a56db;color:#fff;}
+    .btn-primary:hover{opacity:.88;}
+    .btn-secondary{background:#f1f5f9;color:#374151;border:1px solid #e2e8f0;}
+    .wajib{color:#dc2626;}
+    @media(max-width:768px){.pijar-main{margin-left:0;}.form-row{grid-template-columns:1fr;}}
+  </style>
 </head>
 <body>
-<div class="topbar-mini">
-  <span>⚡ PIJAR — Tambah Aset</span>
-  <div style="display:flex;gap:12px;align-items:center">
-    <span id="user-info" style="color:#cbd5e1"></span>
-    <a href="aset.html">← Kembali ke Data Aset</a>
+<script src="js/sidebar.js" data-page="aset"></script>
+<div class="pijar-main">
+  <div class="topbar">
+    <a href="aset.html">← Kembali</a>
+    <h2>Tambah Aset PJU Baru</h2>
   </div>
-</div>
-<div class="card">
-  <h1>Tambah Titik Aset PJU</h1>
-  <p class="sub">Admin/Koordinator — pendaftaran titik lampu baru</p>
-
-  <label for="kode_aset">Kode Aset</label>
-  <input type="text" id="kode_aset" placeholder="contoh: PJU-YK-0007">
-
-  <label for="alamat">Alamat / Lokasi</label>
-  <input type="text" id="alamat" placeholder="contoh: Jl. Kaliurang Km 5">
-
-  <label>Koordinat</label>
-  <div class="grid2">
-    <input type="number" step="0.00000001" id="lat" placeholder="Latitude (-7.xxxx)">
-    <input type="number" step="0.00000001" id="lng" placeholder="Longitude (110.xxxx)">
-  </div>
-  <div class="hint">Tips: buka Google Maps, tekan lama titik lokasi, salin koordinat yang muncul.</div>
-
-  <label for="kategori_jalan">Kategori (sesuai Perwal Kota Yogyakarta No. 50/2022)</label>
-  <select id="kategori_jalan">
-    <option value="Jalan Kota">Jalan Kota</option>
-    <option value="Jalan Lingkungan" selected>Jalan Lingkungan</option>
-    <option value="Jalan Lingkungan Kampung">Jalan Lingkungan Kampung</option>
-    <option value="Lainnya">Lainnya (Taman/Makam/Sorot Sungai/Hias-Budaya)</option>
-  </select>
-
-  <div id="groupSubKategori">
-    <label for="sub_kategori_lainnya">Sub-Kategori Lainnya</label>
-    <select id="sub_kategori_lainnya">
-      <option value="Taman">Taman</option>
-      <option value="Makam">Makam</option>
-      <option value="Sorot Sungai">Sorot Sungai</option>
-      <option value="Hias/Budaya">Hias/Budaya</option>
-    </select>
-  </div>
-
-  <label for="jenis_lampu">Jenis Lampu</label>
-  <select id="jenis_lampu">
-    <option value="LED">LED</option>
-    <option value="SON">SON</option>
-    <option value="Merkuri">Merkuri</option>
-  </select>
-
-  <div class="grid2">
-    <div>
-      <label for="watt">Daya (Watt)</label>
-      <input type="number" id="watt" placeholder="contoh: 50">
-    </div>
-    <div>
-      <label for="status">Status Awal</label>
-      <select id="status">
-        <option value="Menyala" selected>Menyala</option>
-        <option value="Rusak">Rusak</option>
-        <option value="Dalam Pengerjaan">Dalam Pengerjaan</option>
-      </select>
+  <div class="content">
+    <div class="form-card">
+      <div class="form-row">
+        <div class="form-group"><label>Kode Aset <span class="wajib">*</span></label><input type="text" id="kode_aset" placeholder="PJU-YK-XXXX"></div>
+        <div class="form-group"><label>Status</label><select id="status_aset"><option>Menyala</option><option>Rusak</option><option>Dalam Pengerjaan</option></select></div>
+      </div>
+      <div class="form-group"><label>Alamat <span class="wajib">*</span></label><input type="text" id="alamat" placeholder="Nama jalan / lokasi"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Latitude <span class="wajib">*</span></label><input type="number" id="lat" step="0.000001" placeholder="-7.800000"></div>
+        <div class="form-group"><label>Longitude <span class="wajib">*</span></label><input type="number" id="lng" step="0.000001" placeholder="110.366000"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Kategori Jalan</label><select id="kategori_jalan" onchange="toggleSub()"><option>Jalan Kota</option><option>Jalan Lingkungan</option><option>Jalan Lingkungan Kampung</option><option>Lainnya</option></select></div>
+        <div class="form-group" id="wrap-sub" style="display:none"><label>Sub Kategori</label><select id="sub_kat"><option>Taman</option><option>Makam</option><option>Sorot Sungai</option><option>Hias/Budaya</option></select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Jenis Lampu</label><input type="text" id="jenis_lampu" placeholder="LED, HPS, dll"></div>
+        <div class="form-group"><label>Daya (Watt)</label><input type="number" id="watt" placeholder="50"></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:4px">
+        <button class="btn btn-secondary" onclick="location.href='aset.html'">Batal</button>
+        <button class="btn btn-primary" onclick="submitAset()">Simpan Aset</button>
+      </div>
     </div>
   </div>
-
-  <button id="btnSimpan">Simpan Aset</button>
-  <div class="status-msg" id="statusMsg"></div>
 </div>
-
 <script>
-const API_BASE = "https://api.pjujogja.id";
-
-// Render nama user di topbar
-document.addEventListener('DOMContentLoaded', function() {
-  const el = document.getElementById('user-info');
-  if (el && window.PIJAR_USER) {
-    el.textContent = '👤 ' + window.PIJAR_USER.nama;
-  }
-});
-
-const selKategori = document.getElementById('kategori_jalan');
-const groupSub = document.getElementById('groupSubKategori');
-function toggleSubKategori() {
-  groupSub.style.display = selKategori.value === 'Lainnya' ? 'block' : 'none';
+const API='https://api.pjujogja.id';
+function toggleSub(){document.getElementById('wrap-sub').style.display=document.getElementById('kategori_jalan').value==='Lainnya'?'block':'none';}
+async function submitAset(){
+  const body={kode_aset:document.getElementById('kode_aset').value.trim(),alamat:document.getElementById('alamat').value.trim(),lat:parseFloat(document.getElementById('lat').value),lng:parseFloat(document.getElementById('lng').value),kategori_jalan:document.getElementById('kategori_jalan').value,sub_kategori_lainnya:document.getElementById('kategori_jalan').value==='Lainnya'?document.getElementById('sub_kat').value:null,jenis_lampu:document.getElementById('jenis_lampu').value||null,watt:document.getElementById('watt').value?parseInt(document.getElementById('watt').value):null,status:document.getElementById('status_aset').value};
+  if(!body.kode_aset||!body.alamat||isNaN(body.lat)||isNaN(body.lng)){alert('Lengkapi field wajib!');return;}
+  try{
+    const res=await fetch(`${API}/api/aset`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+localStorage.getItem('pijar_token')},body:JSON.stringify(body)});
+    const json=await res.json();
+    if(json.success){alert('Aset berhasil ditambahkan!');location.href='aset.html';}else{alert('Gagal: '+json.error);}
+  }catch(e){alert('Error jaringan.');}
 }
-selKategori.addEventListener('change', toggleSubKategori);
-toggleSubKategori();
-
-document.getElementById('btnSimpan').addEventListener('click', async () => {
-  const btn = document.getElementById('btnSimpan');
-  const msg = document.getElementById('statusMsg');
-
-  const kode_aset = document.getElementById('kode_aset').value.trim();
-  const alamat = document.getElementById('alamat').value.trim();
-  const lat = parseFloat(document.getElementById('lat').value);
-  const lng = parseFloat(document.getElementById('lng').value);
-  const kategori_jalan = selKategori.value;
-  const sub_kategori_lainnya = kategori_jalan === 'Lainnya'
-    ? document.getElementById('sub_kategori_lainnya').value : null;
-  const jenis_lampu = document.getElementById('jenis_lampu').value;
-  const watt = parseInt(document.getElementById('watt').value) || null;
-  const status = document.getElementById('status').value;
-
-  if (!kode_aset || !alamat || isNaN(lat) || isNaN(lng)) {
-    alert('Lengkapi kode aset, alamat, dan koordinat terlebih dahulu.');
-    return;
-  }
-
-  btn.disabled = true; btn.textContent = 'Menyimpan...';
-
-  try {
-    const res = await apiFetch(`${API_BASE}/api/aset`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        kode_aset, alamat, lat, lng, kategori_jalan,
-        sub_kategori_lainnya, jenis_lampu, watt, status
-      })
-    });
-    const json = await res.json();
-    if (json.success) {
-      msg.className = 'status-msg ok';
-      msg.textContent = `✅ Aset ${json.data.kode_aset} berhasil disimpan.`;
-      document.querySelectorAll('input').forEach(i => i.value = '');
-    } else {
-      throw new Error(json.error || 'Gagal menyimpan aset');
-    }
-  } catch (e) {
-    msg.className = 'status-msg err';
-    msg.textContent = 'Gagal: ' + e.message;
-  } finally {
-    btn.disabled = false; btn.textContent = 'Simpan Aset';
-  }
-});
 </script>
-</body>
-</html>
+</body></html>

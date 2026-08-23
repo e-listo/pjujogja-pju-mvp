@@ -6,81 +6,55 @@
   <title>Wilayah — PIJAR</title>
   <script src="js/auth.js"></script>
   <style>
-    :root{--pju-biru:#1a56db;--pju-biru-gelap:#1e3a5f;--pju-hijau:#057a55;--pju-merah:#c81e1e;--pju-kuning:#c27803;--pju-abu:#6b7280;--sidebar-w:240px;}
     *{box-sizing:border-box;margin:0;padding:0;}
-    body{font-family:'Segoe UI',sans-serif;background:#f3f4f6;color:#111827;}
-    .sidebar{position:fixed;top:0;left:0;width:var(--sidebar-w);height:100vh;background:#1e3a5f;color:#fff;display:flex;flex-direction:column;z-index:100;}
-    .sidebar-logo{padding:20px 16px 12px;border-bottom:1px solid rgba(255,255,255,0.1);}
-    .sidebar-logo h1{font-size:1.3rem;font-weight:700;color:#facc15;}
-    .sidebar-logo p{font-size:0.7rem;color:#93c5fd;margin-top:2px;}
-    .sidebar-nav{flex:1;padding:12px 0;}
-    .nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;color:#cbd5e1;text-decoration:none;font-size:0.9rem;transition:background 0.2s;}
-    .nav-item:hover,.nav-item.active{background:rgba(255,255,255,0.1);color:#fff;}
-    .nav-item.active{border-left:3px solid #facc15;}
-    .nav-icon{font-size:1.1rem;width:20px;text-align:center;}
-    .sidebar-footer{padding:12px 16px;border-top:1px solid rgba(255,255,255,0.1);font-size:0.75rem;color:#64748b;}
-    .user-info-wrap{padding:10px 16px;border-top:1px solid rgba(255,255,255,0.1);}
-    .main{margin-left:var(--sidebar-w);min-height:100vh;}
-    .topbar{background:#fff;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e5e7eb;}
-    .topbar h2{font-size:1.1rem;font-weight:600;}
+    body{font-family:'Segoe UI',system-ui,sans-serif;background:#f1f5f9;color:#0f172a;}
+    .pijar-main{margin-left:224px;min-height:100vh;}
+    .topbar{background:#fff;padding:11px 24px;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:50;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+    .topbar h2{font-size:.95rem;font-weight:700;}
     .content{padding:20px 24px;}
-    .toolbar{display:flex;gap:10px;margin-bottom:16px;}
-    .toolbar input{padding:7px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem;}
-    .stat-bar{display:flex;gap:16px;margin-bottom:20px;}
-    .stat-mini{background:#fff;border-radius:8px;padding:12px 16px;flex:1;box-shadow:0 1px 3px rgba(0,0,0,0.07);text-align:center;}
-    .stat-mini-val{font-size:1.5rem;font-weight:700;color:var(--pju-biru);}
-    .stat-mini-lab{font-size:0.75rem;color:var(--pju-abu);}
-    .card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;}
-    .wilayah-card{background:#fff;border-radius:10px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,0.07);border-left:4px solid var(--pju-biru);}
-    .wilayah-kode{font-size:0.75rem;font-weight:700;color:var(--pju-biru);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;}
-    .wilayah-kelurahan{font-size:1rem;font-weight:700;margin-bottom:2px;}
-    .wilayah-kemantren{font-size:0.8rem;color:var(--pju-abu);}
-    .loading{color:var(--pju-abu);font-size:0.85rem;padding:20px;text-align:center;}
-    @media(max-width:900px){.sidebar{display:none;}.main{margin-left:0;}.stat-bar{flex-wrap:wrap;}}
+    .sektor-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}
+    .sektor-card{background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.06);border-top:3px solid #1a56db;}
+    .sektor-card h3{font-size:.95rem;font-weight:700;color:#0f172a;margin-bottom:4px;}
+    .sektor-card .sektor-num{font-size:2rem;font-weight:900;color:#1a56db;line-height:1;margin-bottom:6px;}
+    .sektor-card p{font-size:.8rem;color:#64748b;line-height:1.6;}
+    .sektor-card .meta{margin-top:10px;display:flex;gap:10px;flex-wrap:wrap;}
+    .meta-item{font-size:.72rem;background:#f1f5f9;color:#475569;padding:3px 9px;border-radius:99px;}
+    .info-box{background:#fff;border-radius:12px;padding:18px 20px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:16px;border-left:4px solid #f97316;}
+    .info-box h3{font-size:.88rem;font-weight:700;color:#0f172a;margin-bottom:6px;}
+    .info-box p{font-size:.82rem;color:#64748b;line-height:1.7;}
+    @media(max-width:768px){.pijar-main{margin-left:0;}.sektor-grid{grid-template-columns:1fr;}}
   </style>
 </head>
 <body>
-<aside class="sidebar">
-  <div class="sidebar-logo"><h1>⚡ PIJAR</h1><p>Sistem Manajemen Aset PJU</p></div>
-  <nav class="sidebar-nav">
-    <a href="index.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
-    <a href="aset.html" class="nav-item"><span class="nav-icon">💡</span> Data Aset</a>
-    <a href="laporan.html" class="nav-item"><span class="nav-icon">📋</span> Laporan Kerusakan</a>
-    <a href="pemeliharaan.html" class="nav-item"><span class="nav-icon">🔧</span> Pemeliharaan</a>
-    <a href="wilayah.html" class="nav-item active"><span class="nav-icon">🗺️</span> Wilayah</a>
-    <a href="regu.html" class="nav-item"><span class="nav-icon">👷</span> Regu Lapangan</a>
-  </nav>
-  <div class="user-info-wrap" id="user-info"></div>
-  <div class="sidebar-footer">Perwal Kota Yogyakarta No. 50/2022</div>
-</aside>
-<div class="main">
-  <div class="topbar"><h2>🗺️ Data Wilayah — Kota Yogyakarta</h2><span id="total-wilayah" style="font-size:0.85rem;color:var(--pju-abu)"></span></div>
+<script src="js/sidebar.js" data-page="wilayah"></script>
+<div class="pijar-main">
+  <div class="topbar"><h2>Wilayah Kerja PJU</h2></div>
   <div class="content">
-    <div class="stat-bar" id="stat-bar"></div>
-    <div class="toolbar"><input type="text" id="cari" placeholder="🔍 Cari kelurahan / kemantren..." oninput="filterWilayah()" style="min-width:240px"></div>
-    <div class="card-grid" id="grid-wilayah"><div class="loading">🔄 Memuat data...</div></div>
+    <div class="info-box">
+      <h3>Pembagian 4 Sektor</h3>
+      <p>Wilayah Kota Yogyakarta dibagi menjadi <strong>4 sektor</strong> menggunakan batas <em>melintang</em> (Jl. Kusumanegara – Jl. RE Martadinata) dan batas <em>membujur</em> (Sungai Code). Penomoran dimulai dari kuadran Utara–Timur, searah jarum jam.</p>
+    </div>
+    <div class="sektor-grid">
+      <div class="sektor-card"><div class="sektor-num">1</div><h3>Sektor 1 — Utara Timur</h3><p>Wilayah di utara Jl. Kusumanegara dan di timur Sungai Code. Meliputi kawasan Gondokusuman, Umbulharjo bagian utara, dan sekitarnya.</p><div class="meta"><span class="meta-item">Utara × Timur</span><span class="meta-item" id="jml-s1">Memuat...</span></div></div>
+      <div class="sektor-card" style="border-top-color:#f97316"><div class="sektor-num" style="color:#f97316">2</div><h3>Sektor 2 — Selatan Timur</h3><p>Wilayah di selatan Jl. RE Martadinata dan di timur Sungai Code. Meliputi kawasan Mergangsan, Umbulharjo selatan, Kotagede.</p><div class="meta"><span class="meta-item">Selatan × Timur</span><span class="meta-item" id="jml-s2">Memuat...</span></div></div>
+      <div class="sektor-card" style="border-top-color:#059669"><div class="sektor-num" style="color:#059669">3</div><h3>Sektor 3 — Selatan Barat</h3><p>Wilayah di selatan Jl. RE Martadinata dan di barat Sungai Code. Meliputi kawasan Mantrijeron, Kraton, Pakualaman.</p><div class="meta"><span class="meta-item">Selatan × Barat</span><span class="meta-item" id="jml-s3">Memuat...</span></div></div>
+      <div class="sektor-card" style="border-top-color:#d97706"><div class="sektor-num" style="color:#d97706">4</div><h3>Sektor 4 — Utara Barat</h3><p>Wilayah di utara Jl. Kusumanegara dan di barat Sungai Code. Meliputi kawasan Jetis, Danurejan, Gedongtengen, Tegalrejo.</p><div class="meta"><span class="meta-item">Utara × Barat</span><span class="meta-item" id="jml-s4">Memuat...</span></div></div>
+    </div>
   </div>
 </div>
 <script>
 const API='https://api.pjujogja.id';
-let allWilayah=[];
 async function loadWilayah(){
   try{
-    const res=await fetch(`${API}/api/wilayah`);
-    const json=await res.json();
-    allWilayah=json.data||[];
-    document.getElementById('total-wilayah').textContent=`${allWilayah.length} kelurahan / 14 kemantren`;
-    const kemantren=[...new Set(allWilayah.map(w=>w.nama_kemantren))];
-    document.getElementById('stat-bar').innerHTML=`<div class="stat-mini"><div class="stat-mini-val">${allWilayah.length}</div><div class="stat-mini-lab">Kelurahan</div></div><div class="stat-mini"><div class="stat-mini-val">${kemantren.length}</div><div class="stat-mini-lab">Kemantren</div></div>`;
-    renderGrid(allWilayah);
-  }catch(e){document.getElementById('grid-wilayah').innerHTML='<div class="loading">Gagal memuat data.</div>';}
+    const res=await fetch(`${API}/api/aset`);
+    const json=await res.json();const data=json.data||[];
+    for(let s=1;s<=4;s++){
+      const el=document.getElementById(`jml-s${s}`);
+      const jml=data.filter(a=>a.sektor===s).length;
+      if(el)el.textContent=`${jml} titik lampu`;
+    }
+  }catch(e){}
 }
-function renderGrid(data){
-  const grid=document.getElementById('grid-wilayah');
-  if(!data.length){grid.innerHTML='<div class="loading">Tidak ada data.</div>';return;}
-  grid.innerHTML=data.map(w=>`<div class="wilayah-card"><div class="wilayah-kode">${w.kode_wilayah}</div><div class="wilayah-kelurahan">${w.nama_kelurahan}</div><div class="wilayah-kemantren">🏠 Kemantren ${w.nama_kemantren}</div></div>`).join('');
-}
-function filterWilayah(){const q=document.getElementById('cari').value.toLowerCase();renderGrid(allWilayah.filter(w=>w.nama_kelurahan.toLowerCase().includes(q)||w.nama_kemantren.toLowerCase().includes(q)||w.kode_wilayah.toLowerCase().includes(q)));}
 loadWilayah();
 </script>
 </body></html>

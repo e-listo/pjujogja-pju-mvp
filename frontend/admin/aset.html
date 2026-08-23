@@ -3,75 +3,52 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Data Aset PJU — PIJAR</title>
+  <title>Data Aset — PIJAR</title>
   <script src="js/auth.js"></script>
   <style>
-    :root{--pju-biru:#1a56db;--pju-biru-gelap:#1e3a5f;--pju-hijau:#057a55;--pju-merah:#c81e1e;--pju-kuning:#c27803;--pju-abu:#6b7280;--sidebar-w:240px;}
     *{box-sizing:border-box;margin:0;padding:0;}
-    body{font-family:'Segoe UI',sans-serif;background:#f3f4f6;color:#111827;}
-    .sidebar{position:fixed;top:0;left:0;width:var(--sidebar-w);height:100vh;background:#1e3a5f;color:#fff;display:flex;flex-direction:column;z-index:100;}
-    .sidebar-logo{padding:20px 16px 12px;border-bottom:1px solid rgba(255,255,255,0.1);}
-    .sidebar-logo h1{font-size:1.3rem;font-weight:700;color:#facc15;}
-    .sidebar-logo p{font-size:0.7rem;color:#93c5fd;margin-top:2px;}
-    .sidebar-nav{flex:1;padding:12px 0;}
-    .nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;color:#cbd5e1;text-decoration:none;font-size:0.9rem;transition:background 0.2s;}
-    .nav-item:hover,.nav-item.active{background:rgba(255,255,255,0.1);color:#fff;}
-    .nav-item.active{border-left:3px solid #facc15;}
-    .nav-icon{font-size:1.1rem;width:20px;text-align:center;}
-    .sidebar-footer{padding:12px 16px;border-top:1px solid rgba(255,255,255,0.1);font-size:0.75rem;color:#64748b;}
-    .user-info-wrap{padding:10px 16px;border-top:1px solid rgba(255,255,255,0.1);}
-    .main{margin-left:var(--sidebar-w);min-height:100vh;}
-    .topbar{background:#fff;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e5e7eb;position:sticky;top:0;z-index:50;}
-    .topbar h2{font-size:1.1rem;font-weight:600;}
+    body{font-family:'Segoe UI',system-ui,sans-serif;background:#f1f5f9;color:#0f172a;}
+    .pijar-main{margin-left:224px;min-height:100vh;}
+    .topbar{background:#fff;padding:11px 24px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:50;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+    .topbar h2{font-size:.95rem;font-weight:700;color:#0f172a;}
     .content{padding:20px 24px;}
-    .toolbar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center;}
-    .toolbar select,.toolbar input{padding:7px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem;}
-    .btn{padding:7px 16px;border-radius:6px;border:none;cursor:pointer;font-size:0.85rem;font-weight:500;}
-    .btn-primary{background:var(--pju-biru);color:#fff;}
-    .btn-primary:hover{background:#1648c2;}
-    .btn-sm{padding:4px 10px;font-size:0.78rem;}
-    .btn-secondary{background:#f3f4f6;color:#374151;}
-    .card{background:#fff;border-radius:10px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,0.07);}
-    table{width:100%;border-collapse:collapse;font-size:0.875rem;}
-    thead th{background:#f9fafb;padding:10px 12px;text-align:left;font-weight:600;font-size:0.78rem;text-transform:uppercase;letter-spacing:0.03em;color:var(--pju-abu);border-bottom:1px solid #e5e7eb;}
-    tbody td{padding:10px 12px;border-bottom:1px solid #f3f4f6;vertical-align:middle;}
-    tbody tr:hover{background:#f9fafb;}
-    .badge{display:inline-block;padding:2px 10px;border-radius:99px;font-size:0.75rem;font-weight:500;}
+    .toolbar{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center;}
+    .toolbar select{padding:7px 11px;border:1px solid #e2e8f0;border-radius:7px;font-size:.82rem;background:#fff;color:#0f172a;}
+    .btn{padding:7px 14px;border-radius:7px;border:none;cursor:pointer;font-size:.82rem;font-weight:600;transition:opacity .15s;}
+    .btn-primary{background:#1a56db;color:#fff;}
+    .btn-primary:hover{opacity:.88;}
+    .btn-sm{padding:4px 10px;font-size:.75rem;}
+    .btn-secondary{background:#f1f5f9;color:#374151;border:1px solid #e2e8f0;}
+    .card{background:#fff;border-radius:12px;padding:0;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden;}
+    table{width:100%;border-collapse:collapse;font-size:.875rem;}
+    thead th{background:#f8fafc;padding:9px 12px;text-align:left;font-weight:700;font-size:.67rem;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;border-bottom:1px solid #e2e8f0;}
+    tbody td{padding:9px 12px;border-bottom:1px solid #f1f5f9;vertical-align:middle;}
+    tbody tr:hover{background:#f8fafc;}
+    .badge{display:inline-block;padding:2px 9px;border-radius:99px;font-size:.72rem;font-weight:600;}
     .badge-merah{background:#fee2e2;color:#991b1b;}
     .badge-kuning{background:#fef3c7;color:#92400e;}
     .badge-hijau{background:#d1fae5;color:#065f46;}
     .badge-biru{background:#dbeafe;color:#1e40af;}
-    .loading{color:var(--pju-abu);font-size:0.85rem;padding:20px;text-align:center;}
-    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:center;justify-content:center;}
+    .loading{color:#94a3b8;font-size:.85rem;padding:20px;text-align:center;}
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;align-items:center;justify-content:center;backdrop-filter:blur(2px);}
     .modal-overlay.show{display:flex;}
-    .modal{background:#fff;border-radius:12px;padding:24px;width:520px;max-width:95vw;max-height:90vh;overflow-y:auto;}
-    .modal h3{font-size:1.05rem;font-weight:700;margin-bottom:16px;}
+    .modal{background:#fff;border-radius:14px;padding:24px;width:520px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 24px 48px rgba(0,0,0,.18);}
+    .modal h3{font-size:1rem;font-weight:700;margin-bottom:16px;color:#0f172a;}
     .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
     .form-group{margin-bottom:12px;}
-    .form-group label{display:block;font-size:0.82rem;font-weight:600;margin-bottom:5px;color:#374151;}
-    .form-group input,.form-group select,.form-group textarea{width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem;font-family:inherit;}
+    .form-group label{display:block;font-size:.75rem;font-weight:600;margin-bottom:4px;color:#64748b;text-transform:uppercase;letter-spacing:.04em;}
+    .form-group input,.form-group select,.form-group textarea{width:100%;padding:8px 11px;border:1px solid #e2e8f0;border-radius:7px;font-size:.85rem;font-family:inherit;transition:border .2s;}
+    .form-group input:focus,.form-group select:focus{outline:none;border-color:#1a56db;box-shadow:0 0 0 3px rgba(26,86,219,.1);}
     .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:16px;}
-    .wajib{color:var(--pju-merah);}
-    @media(max-width:900px){.sidebar{display:none;}.main{margin-left:0;}.form-row{grid-template-columns:1fr;}}
+    .wajib{color:#dc2626;}
+    @media(max-width:768px){.pijar-main{margin-left:0;}.form-row{grid-template-columns:1fr;}}
   </style>
 </head>
 <body>
-<aside class="sidebar">
-  <div class="sidebar-logo"><h1>⚡ PIJAR</h1><p>Sistem Manajemen Aset PJU</p></div>
-  <nav class="sidebar-nav">
-    <a href="index.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
-    <a href="aset.html" class="nav-item active"><span class="nav-icon">💡</span> Data Aset</a>
-    <a href="laporan.html" class="nav-item"><span class="nav-icon">📋</span> Laporan Kerusakan</a>
-    <a href="pemeliharaan.html" class="nav-item"><span class="nav-icon">🔧</span> Pemeliharaan</a>
-    <a href="wilayah.html" class="nav-item"><span class="nav-icon">🗺️</span> Wilayah</a>
-    <a href="regu.html" class="nav-item"><span class="nav-icon">👷</span> Regu Lapangan</a>
-  </nav>
-  <div class="user-info-wrap" id="user-info"></div>
-  <div class="sidebar-footer">Perwal Kota Yogyakarta No. 50/2022</div>
-</aside>
-<div class="main">
+<script src="js/sidebar.js" data-page="aset"></script>
+<div class="pijar-main">
   <div class="topbar">
-    <h2>💡 Data Aset PJU</h2>
+    <h2>Data Aset PJU</h2>
     <button class="btn btn-primary btn-sm" onclick="bukaModal()">+ Tambah Aset</button>
   </div>
   <div class="content">
@@ -79,7 +56,7 @@
       <select id="filter-status" onchange="loadAset()"><option value="">Semua Status</option><option value="Menyala">Menyala</option><option value="Rusak">Rusak</option><option value="Dalam Pengerjaan">Dalam Pengerjaan</option></select>
       <select id="filter-kategori" onchange="loadAset()"><option value="">Semua Kategori</option><option value="Jalan Kota">Jalan Kota</option><option value="Jalan Lingkungan">Jalan Lingkungan</option><option value="Jalan Lingkungan Kampung">Jalan Lingkungan Kampung</option><option value="Lainnya">Lainnya</option></select>
       <button class="btn btn-primary" onclick="loadAset()">Refresh</button>
-      <span id="jumlah-aset" style="font-size:0.82rem;color:var(--pju-abu);margin-left:auto"></span>
+      <span id="jumlah-aset" style="font-size:.8rem;color:#94a3b8;margin-left:auto"></span>
     </div>
     <div class="card">
       <table>
@@ -91,10 +68,10 @@
 </div>
 <div class="modal-overlay" id="modal-aset" onclick="tutupModal(event)">
   <div class="modal">
-    <h3>💡 Tambah Aset PJU Baru</h3>
+    <h3>Tambah Aset PJU Baru</h3>
     <div class="form-row">
       <div class="form-group"><label>Kode Aset <span class="wajib">*</span></label><input type="text" id="kode_aset" placeholder="PJU-YK-XXXX"></div>
-      <div class="form-group"><label>Status</label><select id="status_aset"><option value="Menyala">Menyala</option><option value="Rusak">Rusak</option><option value="Dalam Pengerjaan">Dalam Pengerjaan</option></select></div>
+      <div class="form-group"><label>Status</label><select id="status_aset"><option>Menyala</option><option>Rusak</option><option>Dalam Pengerjaan</option></select></div>
     </div>
     <div class="form-group"><label>Alamat <span class="wajib">*</span></label><input type="text" id="alamat" placeholder="Nama jalan / lokasi"></div>
     <div class="form-row">
@@ -102,8 +79,8 @@
       <div class="form-group"><label>Longitude <span class="wajib">*</span></label><input type="number" id="lng" step="0.000001" placeholder="110.366000"></div>
     </div>
     <div class="form-row">
-      <div class="form-group"><label>Kategori Jalan</label><select id="kategori_jalan" onchange="toggleSubKategori()"><option value="Jalan Kota">Jalan Kota</option><option value="Jalan Lingkungan">Jalan Lingkungan</option><option value="Jalan Lingkungan Kampung">Jalan Lingkungan Kampung</option><option value="Lainnya">Lainnya</option></select></div>
-      <div class="form-group" id="wrap-sub" style="display:none"><label>Sub Kategori</label><select id="sub_kategori_lainnya"><option value="Taman">Taman</option><option value="Makam">Makam</option><option value="Sorot Sungai">Sorot Sungai</option><option value="Hias/Budaya">Hias/Budaya</option></select></div>
+      <div class="form-group"><label>Kategori Jalan</label><select id="kategori_jalan" onchange="toggleSubKategori()"><option>Jalan Kota</option><option>Jalan Lingkungan</option><option>Jalan Lingkungan Kampung</option><option>Lainnya</option></select></div>
+      <div class="form-group" id="wrap-sub" style="display:none"><label>Sub Kategori</label><select id="sub_kategori_lainnya"><option>Taman</option><option>Makam</option><option>Sorot Sungai</option><option>Hias/Budaya</option></select></div>
     </div>
     <div class="form-row">
       <div class="form-group"><label>Jenis Lampu</label><input type="text" id="jenis_lampu" placeholder="LED, HPS, dll"></div>
@@ -117,8 +94,8 @@
 </div>
 <script>
 const API='https://api.pjujogja.id';
-const badgeStatus={'Menyala':'badge-hijau','Rusak':'badge-merah','Dalam Pengerjaan':'badge-kuning'};
-const badgeKat={'Jalan Kota':'badge-biru','Jalan Lingkungan':'badge-biru','Jalan Lingkungan Kampung':'badge-biru','Lainnya':'badge-kuning'};
+const bS={'Menyala':'badge-hijau','Rusak':'badge-merah','Dalam Pengerjaan':'badge-kuning'};
+const bK={'Jalan Kota':'badge-biru','Jalan Lingkungan':'badge-biru','Jalan Lingkungan Kampung':'badge-biru','Lainnya':'badge-kuning'};
 async function loadAset(){
   const status=document.getElementById('filter-status').value;
   const kat=document.getElementById('filter-kategori').value;
@@ -128,12 +105,10 @@ async function loadAset(){
   const tbody=document.getElementById('tbody-aset');
   tbody.innerHTML='<tr><td colspan="8" class="loading">🔄 Memuat...</td></tr>';
   try{
-    const res=await fetch(url);
-    const json=await res.json();
-    const data=json.data||[];
+    const res=await fetch(url);const json=await res.json();const data=json.data||[];
     document.getElementById('jumlah-aset').textContent=`${data.length} aset ditemukan`;
     if(!data.length){tbody.innerHTML='<tr><td colspan="8" class="loading">Tidak ada data.</td></tr>';return;}
-    tbody.innerHTML=data.map((a,i)=>`<tr><td style="color:var(--pju-abu);font-size:0.8rem">${i+1}</td><td><code style="font-size:0.8rem">${a.kode_aset}</code></td><td style="max-width:200px;font-size:0.82rem">${a.alamat}</td><td><span class="badge ${badgeKat[a.kategori_jalan]||'badge-biru'}">${a.kategori_jalan}${a.sub_kategori_lainnya?' / '+a.sub_kategori_lainnya:''}</span></td><td style="font-size:0.82rem">${a.jenis_lampu||'-'}</td><td style="font-size:0.82rem">${a.watt?a.watt+'W':'-'}</td><td><span class="badge ${badgeStatus[a.status]||'badge-biru'}">${a.status}</span></td><td><a href="laporan.html?aset=${a.id_aset}"><button class="btn btn-primary btn-sm">📋</button></a></td></tr>`).join('');
+    tbody.innerHTML=data.map((a,i)=>`<tr><td style="color:#94a3b8;font-size:.78rem">${i+1}</td><td><code style="font-size:.78rem;color:#1a56db">${a.kode_aset}</code></td><td style="max-width:200px;font-size:.82rem">${a.alamat}</td><td><span class="badge ${bK[a.kategori_jalan]||'badge-biru'}">${a.kategori_jalan}${a.sub_kategori_lainnya?' / '+a.sub_kategori_lainnya:''}</span></td><td style="font-size:.82rem">${a.jenis_lampu||'-'}</td><td style="font-size:.82rem">${a.watt?a.watt+'W':'-'}</td><td><span class="badge ${bS[a.status]||'badge-biru'}">${a.status}</span></td><td><a href="laporan.html?aset=${a.id_aset}"><button class="btn btn-primary btn-sm">📋</button></a></td></tr>`).join('');
   }catch(e){tbody.innerHTML='<tr><td colspan="8" class="loading">Gagal memuat data.</td></tr>';}
 }
 function bukaModal(){document.getElementById('modal-aset').classList.add('show');}
@@ -143,7 +118,7 @@ async function submitTambahAset(){
   const body={kode_aset:document.getElementById('kode_aset').value.trim(),alamat:document.getElementById('alamat').value.trim(),lat:parseFloat(document.getElementById('lat').value),lng:parseFloat(document.getElementById('lng').value),kategori_jalan:document.getElementById('kategori_jalan').value,sub_kategori_lainnya:document.getElementById('kategori_jalan').value==='Lainnya'?document.getElementById('sub_kategori_lainnya').value:null,jenis_lampu:document.getElementById('jenis_lampu').value||null,watt:document.getElementById('watt').value?parseInt(document.getElementById('watt').value):null,status:document.getElementById('status_aset').value};
   if(!body.kode_aset||!body.alamat||isNaN(body.lat)||isNaN(body.lng)){alert('Lengkapi field wajib!');return;}
   try{
-    const res=await fetch(`${API}/api/aset`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const res=await fetch(`${API}/api/aset`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+localStorage.getItem('pijar_token')},body:JSON.stringify(body)});
     const json=await res.json();
     if(json.success){document.getElementById('modal-aset').classList.remove('show');loadAset();}else{alert('Gagal: '+json.error);}
   }catch(e){alert('Error jaringan.');}
