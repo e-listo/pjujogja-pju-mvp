@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tambah Aset PJU - Admin</title>
+<script src="js/auth.js"></script>
 <style>
   *{box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;}
   body{margin:0;background:#f4f4f6;padding:16px;}
@@ -20,9 +21,18 @@
   .status-msg{margin-top:14px;padding:10px;border-radius:8px;font-size:13px;display:none;}
   .status-msg.ok{background:#e8f5e9;color:#2e7d32;display:block;}
   .status-msg.err{background:#ffebee;color:#c62828;display:block;}
+  .topbar-mini{background:#1e3a5f;color:#fff;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;margin:-16px -16px 16px;border-radius:0;font-size:0.82rem;}
+  .topbar-mini a{color:#93c5fd;text-decoration:none;font-size:0.8rem;}
 </style>
 </head>
 <body>
+<div class="topbar-mini">
+  <span>⚡ PIJAR — Tambah Aset</span>
+  <div style="display:flex;gap:12px;align-items:center">
+    <span id="user-info" style="color:#cbd5e1"></span>
+    <a href="aset.html">← Kembali ke Data Aset</a>
+  </div>
+</div>
 <div class="card">
   <h1>Tambah Titik Aset PJU</h1>
   <p class="sub">Admin/Koordinator — pendaftaran titik lampu baru</p>
@@ -87,6 +97,14 @@
 <script>
 const API_BASE = "https://api.pjujogja.id";
 
+// Render nama user di topbar
+document.addEventListener('DOMContentLoaded', function() {
+  const el = document.getElementById('user-info');
+  if (el && window.PIJAR_USER) {
+    el.textContent = '👤 ' + window.PIJAR_USER.nama;
+  }
+});
+
 const selKategori = document.getElementById('kategori_jalan');
 const groupSub = document.getElementById('groupSubKategori');
 function toggleSubKategori() {
@@ -118,7 +136,7 @@ document.getElementById('btnSimpan').addEventListener('click', async () => {
   btn.disabled = true; btn.textContent = 'Menyimpan...';
 
   try {
-    const res = await fetch(`${API_BASE}/api/aset`, {
+    const res = await apiFetch(`${API_BASE}/api/aset`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -129,7 +147,7 @@ document.getElementById('btnSimpan').addEventListener('click', async () => {
     const json = await res.json();
     if (json.success) {
       msg.className = 'status-msg ok';
-      msg.textContent = `Aset ${json.data.kode_aset} berhasil disimpan.`;
+      msg.textContent = `✅ Aset ${json.data.kode_aset} berhasil disimpan.`;
       document.querySelectorAll('input').forEach(i => i.value = '');
     } else {
       throw new Error(json.error || 'Gagal menyimpan aset');
