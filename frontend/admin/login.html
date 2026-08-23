@@ -176,9 +176,10 @@
       </button>
     </form>
   </div>
-  <p class="login-footer">Perwal Kota Yogyakarta No. 50/2022</p>
+  <p class="login-footer">&copy; <span id="yr"></span> UPT Penerangan Jalan Umum &middot; Dinas PUPKP Kota Yogyakarta</p>
 </div>
 <script>
+document.getElementById('yr').textContent = new Date().getFullYear();
 const API='https://api.pjujogja.id';
 if(localStorage.getItem('pijar_token')){
   try{
