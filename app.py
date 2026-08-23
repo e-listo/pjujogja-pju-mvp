@@ -1,7 +1,9 @@
 """
-app.py — Entry point Flask untuk pjujogja.id
+app.py — Entry point Flask untuk api.pjujogja.id
 Kategori jalan mengikuti Perwal Kota Yogyakarta No. 50/2022 (Jalan Kota,
 Jalan Lingkungan, Jalan Lingkungan Kampung, Lainnya).
+
+Fase 2: Tambah endpoint Wilayah, Regu, LaporanKerusakan, RiwayatPemeliharaan.
 """
 import os
 import uuid
@@ -12,11 +14,23 @@ from flask_cors import CORS
 from werkzeug.utils import secure_filename
 
 from config import Config
-from models import db, AsetPJU, LaporanKerja, StokPins, Pengguna, SUB_KATEGORI_LAINNYA
+from models import (
+    db,
+    AsetPJU, LaporanKerja, StokPins, Pengguna, SUB_KATEGORI_LAINNYA,
+    Wilayah, PanelPJU, Regu, Lampu, LaporanKerusakan, RiwayatPemeliharaan,
+)
 
 
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in Config.ALLOWED_EXTENSIONS
+
+
+def save_upload(file_obj, upload_folder):
+    """Simpan file upload, return nama file tersimpan."""
+    ext = file_obj.filename.rsplit(".", 1)[1].lower()
+    nama_file = f"{uuid.uuid4().hex}.{ext}"
+    file_obj.save(os.path.join(upload_folder, secure_filename(nama_file)))
+    return nama_file
 
 
 def create_app():
@@ -27,20 +41,27 @@ def create_app():
     db.init_app(app)
     CORS(app, origins=Config.CORS_ORIGINS, supports_credentials=True)
 
-    # -------------------------------------------------------------
+    # =================================================================
+    # FASE 1 — Endpoint yang sudah ada (tidak diubah)
+    # =================================================================
+
+    # -----------------------------------------------------------------
     # 1) ASET PJU
-    # -------------------------------------------------------------
+    # -----------------------------------------------------------------
     @app.route("/api/aset", methods=["GET"])
     def list_aset():
         q = AsetPJU.query
         status_filter = request.args.get("status")
         kategori_filter = request.args.get("kategori_jalan")
+        id_wilayah_filter = request.args.get("id_wilayah", type=int)
         if status_filter:
             q = q.filter(AsetPJU.status == status_filter)
         else:
             q = q.filter(AsetPJU.status.in_(["Rusak", "Dalam Pengerjaan", "Menyala"]))
         if kategori_filter:
             q = q.filter(AsetPJU.kategori_jalan == kategori_filter)
+        if id_wilayah_filter:
+            q = q.filter(AsetPJU.id_wilayah == id_wilayah_filter)
         data = [a.to_dict() for a in q.all()]
         return jsonify({"success": True, "data": data})
 
@@ -66,6 +87,10 @@ def create_app():
                 lokasi_lng=body["lng"],
                 kategori_jalan=kategori_jalan,
                 sub_kategori_lainnya=sub_kategori,
+                id_wilayah=body.get("id_wilayah"),
+                id_panel=body.get("id_panel"),
+                jenis_tiang=body.get("jenis_tiang"),
+                tinggi_meter=body.get("tinggi_meter"),
                 jenis_lampu=body.get("jenis_lampu"),
                 watt=body.get("watt"),
                 status=body.get("status", "Menyala"),
@@ -77,9 +102,17 @@ def create_app():
             db.session.rollback()
             return jsonify({"success": False, "error": str(e)}), 400
 
-    # -------------------------------------------------------------
-    # 2) LAPORAN KERJA — Ticketing & Prioritas Linier
-    # -------------------------------------------------------------
+    @app.route("/api/aset/<int:id_aset>/lampu", methods=["GET"])
+    def list_lampu_aset(id_aset):
+        aset = AsetPJU.query.get(id_aset)
+        if not aset:
+            return jsonify({"success": False, "error": "Aset tidak ditemukan"}), 404
+        data = [l.to_dict() for l in aset.lampu.all()]
+        return jsonify({"success": True, "data": data})
+
+    # -----------------------------------------------------------------
+    # 2) LAPORAN KERJA — Fase 1 (dipertahankan)
+    # -----------------------------------------------------------------
     @app.route("/api/laporan", methods=["GET"])
     def list_laporan():
         q = LaporanKerja.query
@@ -113,9 +146,6 @@ def create_app():
             db.session.rollback()
             return jsonify({"success": False, "error": str(e)}), 400
 
-    # -------------------------------------------------------------
-    # 3) UPDATE STATUS OLEH REGU LAPANGAN + TRIGGER POTONG STOK PINS
-    # -------------------------------------------------------------
     @app.route("/api/laporan/<int:id_laporan>/status", methods=["PATCH"])
     def update_status_laporan(id_laporan):
         laporan = LaporanKerja.query.get(id_laporan)
@@ -131,19 +161,13 @@ def create_app():
 
         try:
             if foto and allowed_file(foto.filename):
-                ext = foto.filename.rsplit(".", 1)[1].lower()
-                nama_file = f"{uuid.uuid4().hex}.{ext}"
-                foto.save(os.path.join(app.config["UPLOAD_FOLDER"], secure_filename(nama_file)))
-                laporan.foto_bukti = nama_file
+                laporan.foto_bukti = save_upload(foto, app.config["UPLOAD_FOLDER"])
 
             laporan.tindakan_perbaikan = tindakan
             laporan.id_teknisi = id_teknisi
             laporan.status = status_baru or laporan.status
 
-            warna_status = {
-                "Dalam Pengerjaan": "Dalam Pengerjaan",
-                "Selesai": "Menyala",
-            }
+            warna_status = {"Dalam Pengerjaan": "Dalam Pengerjaan", "Selesai": "Menyala"}
             if laporan.status in warna_status:
                 laporan.aset.status = warna_status[laporan.status]
 
@@ -171,14 +195,187 @@ def create_app():
             db.session.rollback()
             return jsonify({"success": False, "error": str(e)}), 400
 
-    # -------------------------------------------------------------
-    # 4) STOK PINS
-    # -------------------------------------------------------------
+    # -----------------------------------------------------------------
+    # 3) STOK PINS — Fase 1 (dipertahankan)
+    # -----------------------------------------------------------------
     @app.route("/api/pins", methods=["GET"])
     def list_pins():
         data = [p.to_dict() for p in StokPins.query.all()]
         return jsonify({"success": True, "data": data})
 
+    # =================================================================
+    # FASE 2 — Endpoint baru
+    # =================================================================
+
+    # -----------------------------------------------------------------
+    # 4) WILAYAH — 45 kelurahan Kota Yogyakarta
+    # -----------------------------------------------------------------
+    @app.route("/api/wilayah", methods=["GET"])
+    def list_wilayah():
+        q = Wilayah.query
+        kemantren_filter = request.args.get("kemantren")
+        if kemantren_filter:
+            q = q.filter(Wilayah.nama_kemantren.ilike(f"%{kemantren_filter}%"))
+        data = [w.to_dict() for w in q.order_by(Wilayah.kode_wilayah).all()]
+        return jsonify({"success": True, "total": len(data), "data": data})
+
+    @app.route("/api/wilayah/<string:kode>", methods=["GET"])
+    def get_wilayah(kode):
+        wilayah = Wilayah.query.filter_by(kode_wilayah=kode.upper()).first()
+        if not wilayah:
+            return jsonify({"success": False, "error": f"Wilayah '{kode}' tidak ditemukan"}), 404
+        result = wilayah.to_dict()
+        result["jumlah_aset"] = wilayah.aset.count()
+        result["jumlah_panel"] = wilayah.panel.count()
+        return jsonify({"success": True, "data": result})
+
+    # -----------------------------------------------------------------
+    # 5) REGU — 4 regu pelaksana UPT PJU
+    # -----------------------------------------------------------------
+    @app.route("/api/regu", methods=["GET"])
+    def list_regu():
+        data = [r.to_dict() for r in Regu.query.filter_by(status_aktif=True).all()]
+        return jsonify({"success": True, "data": data})
+
+    @app.route("/api/regu/<int:id_regu>/anggota", methods=["GET"])
+    def list_anggota_regu(id_regu):
+        regu = Regu.query.get(id_regu)
+        if not regu:
+            return jsonify({"success": False, "error": "Regu tidak ditemukan"}), 404
+        data = [p.to_dict() for p in regu.anggota.filter_by(status_aktif=True).all()]
+        return jsonify({"success": True, "regu": regu.nama_regu, "data": data})
+
+    # -----------------------------------------------------------------
+    # 6) LAPORAN KERUSAKAN — Fase 2
+    # -----------------------------------------------------------------
+    @app.route("/api/laporan-kerusakan", methods=["GET"])
+    def list_laporan_kerusakan():
+        q = LaporanKerusakan.query
+        status_filter = request.args.get("status")
+        sumber_filter = request.args.get("sumber")
+        id_aset_filter = request.args.get("id_aset", type=int)
+        if status_filter:
+            q = q.filter(LaporanKerusakan.status_laporan == status_filter)
+        if sumber_filter:
+            q = q.filter(LaporanKerusakan.sumber_laporan == sumber_filter)
+        if id_aset_filter:
+            q = q.filter(LaporanKerusakan.id_aset == id_aset_filter)
+        data = [l.to_dict() for l in q.order_by(LaporanKerusakan.tanggal_lapor.desc()).all()]
+        return jsonify({"success": True, "total": len(data), "data": data})
+
+    @app.route("/api/laporan-kerusakan", methods=["POST"])
+    def create_laporan_kerusakan():
+        id_aset = request.form.get("id_aset", type=int)
+        aset = AsetPJU.query.get(id_aset)
+        if not aset:
+            return jsonify({"success": False, "error": "Aset tidak ditemukan"}), 404
+
+        foto = request.files.get("foto")
+        foto_url = None
+        if foto and allowed_file(foto.filename):
+            foto_url = save_upload(foto, app.config["UPLOAD_FOLDER"])
+
+        try:
+            laporan = LaporanKerusakan(
+                id_aset=id_aset,
+                id_user=request.form.get("id_user", type=int),
+                deskripsi_kerusakan=request.form.get("deskripsi_kerusakan", ""),
+                foto_url=foto_url,
+                sumber_laporan=request.form.get("sumber_laporan", "Lapangan"),
+                status_laporan="Baru",
+            )
+            aset.status = "Rusak"
+            db.session.add(laporan)
+            db.session.commit()
+            return jsonify({"success": True, "data": laporan.to_dict()}), 201
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({"success": False, "error": str(e)}), 400
+
+    @app.route("/api/laporan-kerusakan/<int:id_laporan>/status", methods=["PATCH"])
+    def update_status_laporan_kerusakan(id_laporan):
+        laporan = LaporanKerusakan.query.get(id_laporan)
+        if not laporan:
+            return jsonify({"success": False, "error": "Laporan tidak ditemukan"}), 404
+        body = request.get_json(force=True)
+        try:
+            laporan.status_laporan = body.get("status_laporan", laporan.status_laporan)
+            db.session.commit()
+            return jsonify({"success": True, "data": laporan.to_dict()})
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({"success": False, "error": str(e)}), 400
+
+    # -----------------------------------------------------------------
+    # 7) RIWAYAT PEMELIHARAAN — log pekerjaan + foto sebelum/sesudah
+    # -----------------------------------------------------------------
+    @app.route("/api/pemeliharaan", methods=["GET"])
+    def list_pemeliharaan():
+        q = RiwayatPemeliharaan.query
+        id_aset_filter = request.args.get("id_aset", type=int)
+        id_regu_filter = request.args.get("id_regu", type=int)
+        status_filter = request.args.get("status")
+        if id_aset_filter:
+            q = q.filter(RiwayatPemeliharaan.id_aset == id_aset_filter)
+        if id_regu_filter:
+            q = q.filter(RiwayatPemeliharaan.id_regu == id_regu_filter)
+        if status_filter:
+            q = q.filter(RiwayatPemeliharaan.status_pekerjaan == status_filter)
+        data = [p.to_dict() for p in q.order_by(RiwayatPemeliharaan.tanggal_pengerjaan.desc()).all()]
+        return jsonify({"success": True, "total": len(data), "data": data})
+
+    @app.route("/api/pemeliharaan", methods=["POST"])
+    def create_pemeliharaan():
+        id_aset = request.form.get("id_aset", type=int)
+        aset = AsetPJU.query.get(id_aset)
+        if not aset:
+            return jsonify({"success": False, "error": "Aset tidak ditemukan"}), 404
+
+        foto_sebelum_url = None
+        foto_sesudah_url = None
+        foto_sebelum = request.files.get("foto_sebelum")
+        foto_sesudah = request.files.get("foto_sesudah")
+        if foto_sebelum and allowed_file(foto_sebelum.filename):
+            foto_sebelum_url = save_upload(foto_sebelum, app.config["UPLOAD_FOLDER"])
+        if foto_sesudah and allowed_file(foto_sesudah.filename):
+            foto_sesudah_url = save_upload(foto_sesudah, app.config["UPLOAD_FOLDER"])
+
+        try:
+            pemeliharaan = RiwayatPemeliharaan(
+                id_aset=id_aset,
+                id_regu=request.form.get("id_regu", type=int),
+                id_user=request.form.get("id_user", type=int),
+                id_laporan=request.form.get("id_laporan", type=int),
+                jenis_pekerjaan=request.form.get("jenis_pekerjaan", ""),
+                deskripsi_pekerjaan=request.form.get("deskripsi_pekerjaan"),
+                foto_sebelum=foto_sebelum_url,
+                foto_sesudah=foto_sesudah_url,
+                status_pekerjaan=request.form.get("status_pekerjaan", "Dalam Pengerjaan"),
+            )
+            # Update status laporan kerusakan jika terkait
+            id_laporan = request.form.get("id_laporan", type=int)
+            if id_laporan:
+                lap = LaporanKerusakan.query.get(id_laporan)
+                if lap:
+                    lap.status_laporan = "Diproses"
+            # Update status aset jika pekerjaan selesai
+            if pemeliharaan.status_pekerjaan == "Selesai":
+                aset.status = "Menyala"
+                if id_laporan:
+                    lap = LaporanKerusakan.query.get(id_laporan)
+                    if lap:
+                        lap.status_laporan = "Selesai"
+
+            db.session.add(pemeliharaan)
+            db.session.commit()
+            return jsonify({"success": True, "data": pemeliharaan.to_dict()}), 201
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({"success": False, "error": str(e)}), 400
+
+    # -----------------------------------------------------------------
+    # UTILS
+    # -----------------------------------------------------------------
     @app.route("/uploads/<filename>")
     def serve_upload(filename):
         return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
