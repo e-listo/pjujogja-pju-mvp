@@ -1,4 +1,15 @@
-# PJU Jogja — Sistem Dashboard Manajemen Aset & Pemeliharaan PJU
+# PIJAR — Sistem Manajemen Aset & Pemeliharaan PJU Kota Yogyakarta
+
+<p align="center">
+  <img src="https://pjujogja.id/images/pijar_square.png" alt="Logo PIJAR" width="96">
+</p>
+
+<p align="center">
+  <strong>Penguatan Inventarisasi Jaringan Aset</strong><br>
+  <em>"Urip Kuwi Urup" — UPT Penerangan Jalan Umum, Dinas PUPKP Kota Yogyakarta</em>
+</p>
+
+---
 
 Sistem dashboard manajemen aset, pemeliharaan Penerangan Jalan Umum (PJU), dan integrasi inventaris (PINS) untuk operasional UPT PJU Kota Yogyakarta (DPUPKP).
 
@@ -6,10 +17,12 @@ Dirancang khusus untuk ekosistem **shared hosting** (Dewaweb, cPanel, LiteSpeed,
 
 ## Domain & Subdomain
 
-- `pjujogja.id` — domain utama
-- `admin.pjujogja.id` — dashboard admin (peta + task list)
-- `api.pjujogja.id` — REST API backend (Flask via Passenger WSGI)
-- `pins.pjujogja.id` — integrasi sistem inventaris PINS
+| Subdomain | Fungsi |
+|---|---|
+| `pjujogja.id` | Domain utama |
+| `admin.pjujogja.id` | Dashboard admin PIJAR (peta + task list + login) |
+| `api.pjujogja.id` | REST API backend (Flask via Passenger WSGI) |
+| `pins.pjujogja.id` | Integrasi sistem inventaris PINS |
 
 ## Tech Stack
 
@@ -23,6 +36,7 @@ Dirancang khusus untuk ekosistem **shared hosting** (Dewaweb, cPanel, LiteSpeed,
 ```
 .
 ├── app.py                      # Entry point Flask (REST API)
+├── auth_routes.py              # Route autentikasi (login/logout, JWT)
 ├── config.py                   # Konfigurasi environment & bobot prioritas
 ├── models.py                   # Model SQLAlchemy (AsetPJU, LaporanKerja, StokPins, Pengguna)
 ├── passenger_wsgi.py           # WSGI entry point untuk cPanel Python App
@@ -32,13 +46,16 @@ Dirancang khusus untuk ekosistem **shared hosting** (Dewaweb, cPanel, LiteSpeed,
 │   └── schema_fase1.sql        # Migrasi Fase 1 ERD PIJAR — eksekusi SETELAH schema.sql
 ├── frontend/
 │   ├── admin/
-│   │   ├── index.html          # Dashboard admin (peta Leaflet + task list)
-│   │   └── tambah_aset.html    # Form tambah aset PJU baru (submit ke POST /api/aset)
+│   │   ├── login.html          # Halaman login PIJAR (JWT, redirect ke index)
+│   │   └── index.html          # Dashboard admin (peta Leaflet + task list)
 │   └── lapangan/
-│       └── form.html           # Form update status regu lapangan (kompresi foto client-side)
+│       ├── lapor.html          # Form lapor kerusakan baru (dari regu/masyarakat/JSS)
+│       └── form.html           # Form update status selesai perbaikan + potong stok PINS
 └── docs/
     └── panduan_deployment_fase1.md  # Panduan setup cPanel & roadmap Fase 2-4
 ```
+
+> **Catatan alur lapangan:** `lapor.html` → input kerusakan baru → tiket masuk sistem → `form.html` → regu tandai tiket selesai + stok PINS terpotong otomatis.
 
 ## Database Schema
 
@@ -111,9 +128,11 @@ Formula skor prioritas tiket: `skor = bobot_kategori_jalan + bobot_durasi_mati` 
 ## MVP Scope
 
 **Termasuk:**
+- Halaman login PIJAR (JWT, auto-redirect jika token valid)
 - Peta geospasial dasar (Leaflet.js) dengan marker warna real-time (merah/kuning/hijau)
 - Sistem ticketing & task list dengan prioritas linier
-- Form update status regu lapangan (dropdown tindakan, kompresi foto client-side <300KB)
+- Form lapor kerusakan baru dari regu lapangan/masyarakat/JSS
+- Form update status selesai perbaikan (kompresi foto client-side <300KB, potong stok PINS otomatis)
 - Form tambah aset PJU baru oleh Admin/Koordinator
 - Integrasi dasar PINS (pemotongan stok otomatis saat komponen diganti)
 - Manajemen wilayah (45 kelurahan, 14 kemantren, 4 sektor regu)
@@ -159,3 +178,7 @@ Lihat `docs/panduan_deployment_fase1.md` untuk panduan lengkap deployment ke cPa
 ## Lisensi & Kerahasiaan
 
 Repository ini bersifat **privat** karena menyangkut infrastruktur pemerintah. Jangan commit kredensial database asli — gunakan `.env` (sudah di-gitignore) berdasarkan `.env.example`.
+
+---
+
+<p align="center">© UPT Penerangan Jalan Umum · Dinas PUPKP Kota Yogyakarta</p>
