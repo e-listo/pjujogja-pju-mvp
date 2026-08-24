@@ -1,12 +1,22 @@
-# PIJAR — Sistem Manajemen Aset & Pemeliharaan PJU Kota Yogyakarta
-
+<!-- HERO -->
 <p align="center">
   <img src="https://pjujogja.id/images/pijar_square.png" alt="Logo PIJAR" width="96">
 </p>
 
+<h1 align="center">PIJAR</h1>
 <p align="center">
-  <strong>Penguatan Inventarisasi Jaringan Aset</strong><br>
-  <em>"Urip Kuwi Urup" — UPT Penerangan Jalan Umum, Dinas PUPKP Kota Yogyakarta</em>
+  <sub><b>Penguatan Inventarisasi Jaringan Aset yang Responsif</b></sub>
+</p>
+
+<p align="center">
+  ────────────────────────
+</p>
+
+<p align="center">
+  <em><b>“Urip Kuwi Urup”</b></em>
+</p>
+<p align="center">
+  <b>MENYALAKAN DATA &nbsp;&middot;&nbsp; MENERANGI PELAYANAN</b>
 </p>
 
 ---
@@ -181,4 +191,4 @@ Repository ini bersifat **privat** karena menyangkut infrastruktur pemerintah. J
 
 ---
 
-<p align="center">© UPT Penerangan Jalan Umum · Dinas PUPKP Kota Yogyakarta</p>
+<p align="center">&copy; UPT Penerangan Jalan Umum &middot; Dinas PUPKP Kota Yogyakarta</p>
