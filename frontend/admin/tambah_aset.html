@@ -20,10 +20,20 @@
     .form-group label{display:block;font-size:.72rem;font-weight:700;margin-bottom:4px;color:#64748b;text-transform:uppercase;letter-spacing:.05em;}
     .form-group input,.form-group select{width:100%;padding:9px 11px;border:1px solid #e2e8f0;border-radius:7px;font-size:.87rem;font-family:inherit;transition:border .2s;}
     .form-group input:focus,.form-group select:focus{outline:none;border-color:#1a56db;box-shadow:0 0 0 3px rgba(26,86,219,.1);}
-    .kode-preview{background:#f8fafc;border:1.5px dashed #cbd5e1;border-radius:8px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px;}
-    .kode-preview .label{font-size:.7rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;}
-    .kode-preview .kode-val{font-size:1.1rem;font-weight:700;color:#1a56db;font-family:monospace;letter-spacing:.04em;}
-    .kode-preview .kode-val.empty{color:#94a3b8;font-weight:400;font-size:.85rem;}
+    /* Kode aset input + status badge */
+    .kode-wrap{position:relative;margin-bottom:14px;}
+    .kode-wrap label{display:block;font-size:.72rem;font-weight:700;margin-bottom:4px;color:#64748b;text-transform:uppercase;letter-spacing:.05em;}
+    .kode-input-row{display:flex;gap:8px;align-items:center;}
+    .kode-input-row input{flex:1;padding:9px 11px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:.97rem;font-family:monospace;font-weight:700;letter-spacing:.04em;transition:border .2s;}
+    .kode-input-row input.ok   {border-color:#16a34a;background:#f0fdf4;}
+    .kode-input-row input.error{border-color:#dc2626;background:#fef2f2;}
+    .kode-input-row input.checking{border-color:#f59e0b;background:#fffbeb;}
+    .kode-badge{font-size:.75rem;font-weight:700;white-space:nowrap;padding:4px 10px;border-radius:20px;}
+    .kode-badge.ok     {background:#dcfce7;color:#16a34a;}
+    .kode-badge.error  {background:#fee2e2;color:#dc2626;}
+    .kode-badge.empty  {background:#f1f5f9;color:#94a3b8;}
+    .kode-badge.checking{background:#fef9c3;color:#b45309;}
+    .kode-hint{font-size:.7rem;color:#64748b;margin-top:3px;}
     .btn{padding:10px 20px;border-radius:8px;border:none;cursor:pointer;font-size:.88rem;font-weight:700;transition:opacity .15s;}
     .btn-primary{background:#1a56db;color:#fff;}
     .btn-primary:hover{opacity:.88;}
@@ -42,23 +52,29 @@
   <div class="content">
     <div class="form-card">
 
-      <!-- Preview Kode Otomatis -->
-      <div class="kode-preview">
-        <span class="label">Kode Aset</span>
-        <span class="kode-val empty" id="kode-preview-val">Pilih kategori &amp; wilayah dulu</span>
+      <!-- Input Kode Aset (manual + cek availability) -->
+      <div class="kode-wrap">
+        <label>Kode Aset <span class="wajib">*</span></label>
+        <div class="kode-input-row">
+          <input type="text" id="kode_aset" placeholder="contoh: PJUP-UH2-26-001"
+            oninput="onKodeInput()" autocomplete="off" spellcheck="false">
+          <span class="kode-badge empty" id="kode-badge">—</span>
+        </div>
+        <div class="kode-hint" id="kode-hint">Isi manual atau pilih Kategori + Wilayah untuk saran otomatis</div>
       </div>
 
       <!-- Baris 1: Kategori PJU + Tahun -->
       <div class="form-row">
         <div class="form-group">
           <label>Kategori PJU <span class="wajib">*</span></label>
-          <select id="id_kategori" onchange="updateKodePreview()">
+          <select id="id_kategori" onchange="updateKodeSuggest()">
             <option value="">— Pilih Kategori —</option>
           </select>
         </div>
         <div class="form-group">
           <label>Tahun Pemasangan <span class="wajib">*</span></label>
-          <input type="number" id="tahun_pemasangan" min="2000" max="2099" placeholder="2026" value="2026" oninput="updateKodePreview()">
+          <input type="number" id="tahun_pemasangan" min="2000" max="2099"
+            placeholder="2026" value="2026" oninput="updateKodeSuggest()">
         </div>
       </div>
 
@@ -66,16 +82,14 @@
       <div class="form-row">
         <div class="form-group">
           <label>Wilayah (Kelurahan) <span class="wajib">*</span></label>
-          <select id="id_wilayah" onchange="updateKodePreview()">
+          <select id="id_wilayah" onchange="updateKodeSuggest()">
             <option value="">— Pilih Wilayah —</option>
           </select>
         </div>
         <div class="form-group">
           <label>Status</label>
           <select id="status_aset">
-            <option>Menyala</option>
-            <option>Rusak</option>
-            <option>Dalam Pengerjaan</option>
+            <option>Menyala</option><option>Rusak</option><option>Dalam Pengerjaan</option>
           </select>
         </div>
       </div>
@@ -92,15 +106,13 @@
         <div class="form-group"><label>Longitude <span class="wajib">*</span></label><input type="number" id="lng" step="0.000001" placeholder="110.366000"></div>
       </div>
 
-      <!-- Kategori Jalan (legacy enum, tetap dipakai) -->
+      <!-- Kategori Jalan -->
       <div class="form-row">
         <div class="form-group">
           <label>Kategori Jalan</label>
           <select id="kategori_jalan" onchange="toggleSub()">
-            <option>Jalan Kota</option>
-            <option>Jalan Lingkungan</option>
-            <option>Jalan Lingkungan Kampung</option>
-            <option>Lainnya</option>
+            <option>Jalan Kota</option><option>Jalan Lingkungan</option>
+            <option>Jalan Lingkungan Kampung</option><option>Lainnya</option>
           </select>
         </div>
         <div class="form-group" id="wrap-sub" style="display:none">
@@ -120,7 +132,7 @@
 
       <div style="display:flex;gap:10px;margin-top:4px">
         <button class="btn btn-secondary" onclick="location.href='aset.html'">Batal</button>
-        <button class="btn btn-primary" onclick="submitAset()">Simpan Aset</button>
+        <button class="btn btn-primary" id="btn-simpan" onclick="submitAset()">Simpan Aset</button>
       </div>
     </div>
   </div>
@@ -128,64 +140,48 @@
 
 <script>
 const API = 'https://api.pjujogja.id';
-let _suggestKode = null; // hasil suggest dari backend: string kode lengkap
+let _kodeStatus = null; // 'ok' | 'error' | null
+let _cekTimeout = null;
 
 // ─── Init ───────────────────────────────────────────────
 async function init() {
   const token = localStorage.getItem('pijar_token');
   const h = { 'Authorization': 'Bearer ' + token };
 
-  // Load kategori dari GET /api/kategori-pju
   try {
     const r = await fetch(`${API}/api/kategori-pju`, { headers: h });
     const j = await r.json();
     const sel = document.getElementById('id_kategori');
     (j.data || []).forEach(k => {
       const o = document.createElement('option');
-      o.value = k.id;
-      o.dataset.kode = k.kode;          // contoh: "PJUP"
+      o.value = k.id; o.dataset.kode = k.kode;
       o.textContent = `${k.kode} — ${k.nama}`;
       sel.appendChild(o);
     });
   } catch(e) { console.warn('Gagal load kategori', e); }
 
-  // Load wilayah dari GET /api/wilayah
-  // to_dict() mengembalikan: id_wilayah, kode_wilayah, nama_kemantren, nama_kelurahan
   try {
     const r = await fetch(`${API}/api/wilayah`, { headers: h });
     const j = await r.json();
     const sel = document.getElementById('id_wilayah');
     (j.data || []).forEach(w => {
       const o = document.createElement('option');
-      o.value = w.id_wilayah;           // PK integer
-      o.dataset.kode = w.kode_wilayah;  // contoh: "UH2" — dipakai untuk suggest-kode
+      o.value = w.id_wilayah; o.dataset.kode = w.kode_wilayah;
       o.textContent = `${w.kode_wilayah} — ${w.nama_kelurahan} (${w.nama_kemantren})`;
       sel.appendChild(o);
     });
   } catch(e) { console.warn('Gagal load wilayah', e); }
 }
 
-// ─── Preview Kode ─────────────────────────────────────────
-// Memanggil GET /api/aset/suggest-kode?kategori=PJUP&wilayah=UH2&tahun=2026
-async function updateKodePreview() {
-  const katSel    = document.getElementById('id_kategori');
-  const wilSel    = document.getElementById('id_wilayah');
-  const tahunVal  = document.getElementById('tahun_pemasangan').value;
-  const previewEl = document.getElementById('kode-preview-val');
-
+// ─── Suggest kode dari kategori+wilayah+tahun ──────────────────
+async function updateKodeSuggest() {
+  const katSel  = document.getElementById('id_kategori');
+  const wilSel  = document.getElementById('id_wilayah');
+  const tahun   = parseInt(document.getElementById('tahun_pemasangan').value);
   const katKode = katSel.options[katSel.selectedIndex]?.dataset.kode;
   const wilKode = wilSel.options[wilSel.selectedIndex]?.dataset.kode;
-  const tahun   = parseInt(tahunVal);
 
-  if (!katSel.value || !wilSel.value || !tahun || tahun < 2000) {
-    previewEl.textContent = 'Pilih kategori & wilayah dulu';
-    previewEl.className = 'kode-val empty';
-    _suggestKode = null;
-    return;
-  }
-
-  previewEl.textContent = 'Menghitung...';
-  previewEl.className = 'kode-val empty';
+  if (!katSel.value || !wilSel.value || !tahun || tahun < 2000) return;
 
   try {
     const token = localStorage.getItem('pijar_token');
@@ -193,19 +189,59 @@ async function updateKodePreview() {
     const r = await fetch(url, { headers: { 'Authorization': 'Bearer ' + token } });
     const j = await r.json();
     if (j.success && j.suggest) {
-      _suggestKode = j.suggest;
-      previewEl.textContent = j.suggest;
-      previewEl.className = 'kode-val';
+      // Isi input hanya kalau masih kosong (tidak override yang sudah diketik manual)
+      const inp = document.getElementById('kode_aset');
+      if (!inp.value.trim()) {
+        inp.value = j.suggest;
+        cekKode(j.suggest);
+      }
+    }
+  } catch(e) { console.warn('Gagal suggest kode', e); }
+}
+
+// ─── Cek availability kode (debounce 500ms) ──────────────────
+function onKodeInput() {
+  clearTimeout(_cekTimeout);
+  const val = document.getElementById('kode_aset').value.trim().toUpperCase();
+  document.getElementById('kode_aset').value = val;
+  if (!val) {
+    setBadge('empty', '—', 'Isi manual atau pilih Kategori + Wilayah untuk saran otomatis');
+    _kodeStatus = null; return;
+  }
+  setBadge('checking', 'Mengecek...', '');
+  _cekTimeout = setTimeout(() => cekKode(val), 500);
+}
+
+async function cekKode(kode) {
+  try {
+    const token = localStorage.getItem('pijar_token');
+    const r = await fetch(
+      `${API}/api/aset/cek-kode?kode=${encodeURIComponent(kode)}`,
+      { headers: { 'Authorization': 'Bearer ' + token } }
+    );
+    const j = await r.json();
+    if (!j.success) { setBadge('error', 'Error', j.error || ''); _kodeStatus = null; return; }
+    if (j.tersedia) {
+      setBadge('ok', '✅ Tersedia', 'Kode ini belum dipakai');
+      _kodeStatus = 'ok';
+    } else if (j.alasan === 'format_invalid') {
+      setBadge('error', '❌ Format salah', j.pesan || 'Format tidak valid');
+      _kodeStatus = 'error';
     } else {
-      previewEl.textContent = j.error || 'Gagal generate kode';
-      previewEl.className = 'kode-val empty';
-      _suggestKode = null;
+      setBadge('error', '❌ Sudah dipakai', `Dipakai oleh: ${j.dipakai_oleh || '-'}`);
+      _kodeStatus = 'error';
     }
   } catch(e) {
-    previewEl.textContent = 'Error koneksi';
-    previewEl.className = 'kode-val empty';
-    _suggestKode = null;
+    setBadge('error', 'Error koneksi', ''); _kodeStatus = null;
   }
+}
+
+function setBadge(state, text, hint) {
+  const badge = document.getElementById('kode-badge');
+  const hintEl = document.getElementById('kode-hint');
+  badge.className = `kode-badge ${state}`;
+  badge.textContent = text;
+  if (hint !== undefined) hintEl.textContent = hint;
 }
 
 // ─── Toggle sub-kategori ────────────────────────────────
@@ -216,13 +252,13 @@ function toggleSub() {
 
 // ─── Submit ─────────────────────────────────────────────
 async function submitAset() {
-  if (!_suggestKode) {
-    alert('Lengkapi Kategori, Wilayah, dan Tahun agar kode aset bisa digenerate!'); return;
-  }
+  const kode = document.getElementById('kode_aset').value.trim();
+  if (!kode) { alert('Kode aset wajib diisi!'); return; }
+  if (_kodeStatus !== 'ok') { alert('Kode aset tidak valid atau belum dicek ketersediaannya!'); return; }
 
   const body = {
     id_kategori      : parseInt(document.getElementById('id_kategori').value) || null,
-    kode_aset        : _suggestKode,
+    kode_aset        : kode,
     tahun_pemasangan : parseInt(document.getElementById('tahun_pemasangan').value) || null,
     id_wilayah       : parseInt(document.getElementById('id_wilayah').value) || null,
     alamat           : document.getElementById('alamat').value.trim(),
@@ -243,19 +279,14 @@ async function submitAset() {
   try {
     const res = await fetch(`${API}/api/aset`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + localStorage.getItem('pijar_token')
-      },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('pijar_token') },
       body: JSON.stringify(body)
     });
     const json = await res.json();
     if (json.success) {
-      alert('Aset berhasil ditambahkan! Kode: ' + _suggestKode);
+      alert('Aset berhasil ditambahkan! Kode: ' + kode);
       location.href = 'aset.html';
-    } else {
-      alert('Gagal: ' + json.error);
-    }
+    } else { alert('Gagal: ' + json.error); }
   } catch(e) { alert('Error jaringan.'); }
 }
 
