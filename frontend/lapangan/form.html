@@ -25,11 +25,32 @@
   .status-msg{margin-top:14px;padding:10px;border-radius:8px;font-size:13px;display:none;}
   .status-msg.ok{background:#e8f5e9;color:#2e7d32;display:block;}
   .status-msg.err{background:#ffebee;color:#c62828;display:block;}
+
+  /* HEADER */
+  .header{
+    display:flex;align-items:center;gap:10px;
+    margin:-16px -16px 16px;
+    background:#1e3a5f;
+    padding:14px 18px;
+    border-radius:0;
+  }
+  .header img{width:32px;height:32px;object-fit:contain;filter:drop-shadow(0 2px 6px rgba(249,115,22,.5));}
+  .header-text h2{font-size:1rem;font-weight:700;color:#facc15;margin:0;}
+  .header-text p{font-size:0.7rem;color:#93c5fd;margin:0;}
 </style>
 </head>
 <body>
 <div class="card">
-  <h1>Form Update Perbaikan</h1>
+  <div class="header">
+    <img src="/images/pijar_square.png" alt="PIJAR"
+         onerror="this.style.display='none';this.nextElementSibling.style.display='inline'">
+    <span style="display:none;font-size:1.5rem">🔆</span>
+    <div class="header-text">
+      <h2>Update Perbaikan</h2>
+      <p>PIJAR — UPT PJU Kota Yogyakarta</p>
+    </div>
+  </div>
+
   <p class="sub">Regu Lapangan — isi singkat, minim ketikan</p>
 
   <div class="lokasi-info" id="infoAset">Memuat data tugas...</div>
