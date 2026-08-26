@@ -10,6 +10,14 @@ class Config:
         "mysql+pymysql://suryaci1_pju:Kimprasw1l@localhost/suryaci1_pjudb"
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    # Shared hosting: recycle koneksi tiap 5 menit, ping sebelum pakai
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_recycle": 280,
+        "pool_pre_ping": True,
+        "pool_timeout": 20,
+        "pool_size": 5,
+        "max_overflow": 2,
+    }
 
     # Upload
     UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), "uploads")
