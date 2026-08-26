@@ -20,6 +20,10 @@
     .form-group label{display:block;font-size:.72rem;font-weight:700;margin-bottom:4px;color:#64748b;text-transform:uppercase;letter-spacing:.05em;}
     .form-group input,.form-group select{width:100%;padding:9px 11px;border:1px solid #e2e8f0;border-radius:7px;font-size:.87rem;font-family:inherit;transition:border .2s;}
     .form-group input:focus,.form-group select:focus{outline:none;border-color:#1a56db;box-shadow:0 0 0 3px rgba(26,86,219,.1);}
+    .kode-preview{background:#f8fafc;border:1.5px dashed #cbd5e1;border-radius:8px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+    .kode-preview .label{font-size:.7rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;}
+    .kode-preview .kode-val{font-size:1.1rem;font-weight:700;color:#1a56db;font-family:monospace;letter-spacing:.04em;}
+    .kode-preview .kode-val.empty{color:#94a3b8;font-weight:400;font-size:.85rem;}
     .btn{padding:10px 20px;border-radius:8px;border:none;cursor:pointer;font-size:.88rem;font-weight:700;transition:opacity .15s;}
     .btn-primary{background:#1a56db;color:#fff;}
     .btn-primary:hover{opacity:.88;}
@@ -37,23 +41,83 @@
   </div>
   <div class="content">
     <div class="form-card">
-      <div class="form-row">
-        <div class="form-group"><label>Kode Aset <span class="wajib">*</span></label><input type="text" id="kode_aset" placeholder="PJU-YK-XXXX"></div>
-        <div class="form-group"><label>Status</label><select id="status_aset"><option>Menyala</option><option>Rusak</option><option>Dalam Pengerjaan</option></select></div>
+
+      <!-- Preview Kode Otomatis -->
+      <div class="kode-preview">
+        <span class="label">Kode Aset</span>
+        <span class="kode-val empty" id="kode-preview-val">Pilih kategori &amp; wilayah dulu</span>
       </div>
-      <div class="form-group"><label>Alamat <span class="wajib">*</span></label><input type="text" id="alamat" placeholder="Nama jalan / lokasi"></div>
+
+      <!-- Baris 1: Kategori PJU + Tahun -->
+      <div class="form-row">
+        <div class="form-group">
+          <label>Kategori PJU <span class="wajib">*</span></label>
+          <select id="id_kategori" onchange="updateKodePreview()">
+            <option value="">— Pilih Kategori —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Tahun Pemasangan <span class="wajib">*</span></label>
+          <input type="number" id="tahun_pemasangan" min="2000" max="2099" placeholder="2026" value="2026" oninput="updateKodePreview()">
+        </div>
+      </div>
+
+      <!-- Baris 2: Wilayah + Status -->
+      <div class="form-row">
+        <div class="form-group">
+          <label>Wilayah (Kelurahan) <span class="wajib">*</span></label>
+          <select id="id_wilayah" onchange="updateKodePreview()">
+            <option value="">— Pilih Wilayah —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="status_aset">
+            <option>Menyala</option>
+            <option>Rusak</option>
+            <option>Dalam Pengerjaan</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Alamat -->
+      <div class="form-group">
+        <label>Alamat <span class="wajib">*</span></label>
+        <input type="text" id="alamat" placeholder="Nama jalan / lokasi">
+      </div>
+
+      <!-- Koordinat -->
       <div class="form-row">
         <div class="form-group"><label>Latitude <span class="wajib">*</span></label><input type="number" id="lat" step="0.000001" placeholder="-7.800000"></div>
         <div class="form-group"><label>Longitude <span class="wajib">*</span></label><input type="number" id="lng" step="0.000001" placeholder="110.366000"></div>
       </div>
+
+      <!-- Kategori Jalan (legacy enum, tetap dipakai) -->
       <div class="form-row">
-        <div class="form-group"><label>Kategori Jalan</label><select id="kategori_jalan" onchange="toggleSub()"><option>Jalan Kota</option><option>Jalan Lingkungan</option><option>Jalan Lingkungan Kampung</option><option>Lainnya</option></select></div>
-        <div class="form-group" id="wrap-sub" style="display:none"><label>Sub Kategori</label><select id="sub_kat"><option>Taman</option><option>Makam</option><option>Sorot Sungai</option><option>Hias/Budaya</option></select></div>
+        <div class="form-group">
+          <label>Kategori Jalan</label>
+          <select id="kategori_jalan" onchange="toggleSub()">
+            <option>Jalan Kota</option>
+            <option>Jalan Lingkungan</option>
+            <option>Jalan Lingkungan Kampung</option>
+            <option>Lainnya</option>
+          </select>
+        </div>
+        <div class="form-group" id="wrap-sub" style="display:none">
+          <label>Sub Kategori</label>
+          <select id="sub_kat">
+            <option>Taman</option><option>Makam</option>
+            <option>Sorot Sungai</option><option>Hias/Budaya</option>
+          </select>
+        </div>
       </div>
+
+      <!-- Lampu -->
       <div class="form-row">
         <div class="form-group"><label>Jenis Lampu</label><input type="text" id="jenis_lampu" placeholder="LED, HPS, dll"></div>
         <div class="form-group"><label>Daya (Watt)</label><input type="number" id="watt" placeholder="50"></div>
       </div>
+
       <div style="display:flex;gap:10px;margin-top:4px">
         <button class="btn btn-secondary" onclick="location.href='aset.html'">Batal</button>
         <button class="btn btn-primary" onclick="submitAset()">Simpan Aset</button>
@@ -61,17 +125,130 @@
     </div>
   </div>
 </div>
+
 <script>
-const API='https://api.pjujogja.id';
-function toggleSub(){document.getElementById('wrap-sub').style.display=document.getElementById('kategori_jalan').value==='Lainnya'?'block':'none';}
-async function submitAset(){
-  const body={kode_aset:document.getElementById('kode_aset').value.trim(),alamat:document.getElementById('alamat').value.trim(),lat:parseFloat(document.getElementById('lat').value),lng:parseFloat(document.getElementById('lng').value),kategori_jalan:document.getElementById('kategori_jalan').value,sub_kategori_lainnya:document.getElementById('kategori_jalan').value==='Lainnya'?document.getElementById('sub_kat').value:null,jenis_lampu:document.getElementById('jenis_lampu').value||null,watt:document.getElementById('watt').value?parseInt(document.getElementById('watt').value):null,status:document.getElementById('status_aset').value};
-  if(!body.kode_aset||!body.alamat||isNaN(body.lat)||isNaN(body.lng)){alert('Lengkapi field wajib!');return;}
-  try{
-    const res=await fetch(`${API}/api/aset`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+localStorage.getItem('pijar_token')},body:JSON.stringify(body)});
-    const json=await res.json();
-    if(json.success){alert('Aset berhasil ditambahkan!');location.href='aset.html';}else{alert('Gagal: '+json.error);}
-  }catch(e){alert('Error jaringan.');}
+const API = 'https://api.pjujogja.id';
+let _kategori = [];  // [{id, kode, nama}]
+let _wilayah  = [];  // [{id, nama, kode_singkat}]
+let _nextIndex = 1;
+
+// ─── Init ───────────────────────────────────────────────
+async function init() {
+  const token = localStorage.getItem('pijar_token');
+  const h = { 'Authorization': 'Bearer ' + token };
+
+  // Load kategori
+  try {
+    const r = await fetch(`${API}/api/kategori-pju`, { headers: h });
+    const j = await r.json();
+    _kategori = j.data || [];
+    const sel = document.getElementById('id_kategori');
+    _kategori.forEach(k => {
+      const o = document.createElement('option');
+      o.value = k.id; o.dataset.kode = k.kode; o.textContent = `${k.kode} — ${k.nama}`;
+      sel.appendChild(o);
+    });
+  } catch(e) { console.warn('Gagal load kategori', e); }
+
+  // Load wilayah
+  try {
+    const r = await fetch(`${API}/api/wilayah`, { headers: h });
+    const j = await r.json();
+    _wilayah = j.data || [];
+    const sel = document.getElementById('id_wilayah');
+    _wilayah.forEach(w => {
+      const o = document.createElement('option');
+      o.value = w.id; o.dataset.kode = w.kode_singkat || w.kode || '???';
+      o.textContent = w.nama;
+      sel.appendChild(o);
+    });
+  } catch(e) { console.warn('Gagal load wilayah', e); }
 }
+
+// ─── Preview Kode ────────────────────────────────────────
+async function updateKodePreview() {
+  const katSel   = document.getElementById('id_kategori');
+  const wilSel   = document.getElementById('id_wilayah');
+  const tahunEl  = document.getElementById('tahun_pemasangan');
+  const previewEl = document.getElementById('kode-preview-val');
+
+  const katOpt = katSel.options[katSel.selectedIndex];
+  const wilOpt = wilSel.options[wilSel.selectedIndex];
+  const tahun  = String(tahunEl.value || '').slice(-2);
+
+  if (!katSel.value || !wilSel.value || tahun.length !== 2) {
+    previewEl.textContent = 'Pilih kategori & wilayah dulu';
+    previewEl.className = 'kode-val empty';
+    return;
+  }
+
+  const katKode = katOpt.dataset.kode;
+  const wilKode = wilOpt.dataset.kode;
+  const prefix  = `${katKode}-${wilKode}-${tahun}`;
+
+  // Tanya backend nomor urut berikutnya
+  try {
+    const token = localStorage.getItem('pijar_token');
+    const r = await fetch(
+      `${API}/api/aset/suggest-kode?prefix=${encodeURIComponent(prefix)}`,
+      { headers: { 'Authorization': 'Bearer ' + token } }
+    );
+    const j = await r.json();
+    _nextIndex = j.next_index || 1;
+  } catch(e) {
+    _nextIndex = 1;
+  }
+
+  const nomorStr = String(_nextIndex).padStart(3, '0');
+  const kodeFull = `${prefix}-${nomorStr}`;
+  previewEl.textContent = kodeFull;
+  previewEl.className = 'kode-val';
+}
+
+// ─── Toggle sub-kategori ────────────────────────────────
+function toggleSub() {
+  document.getElementById('wrap-sub').style.display =
+    document.getElementById('kategori_jalan').value === 'Lainnya' ? 'block' : 'none';
+}
+
+// ─── Submit ─────────────────────────────────────────────
+async function submitAset() {
+  const kodePreview = document.getElementById('kode-preview-val').textContent;
+  const isKodeReady = !kodePreview.includes('Pilih');
+
+  const body = {
+    id_kategori      : parseInt(document.getElementById('id_kategori').value) || null,
+    kode_aset        : isKodeReady ? kodePreview : null,
+    tahun_pemasangan : parseInt(document.getElementById('tahun_pemasangan').value) || null,
+    id_wilayah       : parseInt(document.getElementById('id_wilayah').value) || null,
+    alamat           : document.getElementById('alamat').value.trim(),
+    lat              : parseFloat(document.getElementById('lat').value),
+    lng              : parseFloat(document.getElementById('lng').value),
+    kategori_jalan   : document.getElementById('kategori_jalan').value,
+    sub_kategori_lainnya: document.getElementById('kategori_jalan').value === 'Lainnya'
+                          ? document.getElementById('sub_kat').value : null,
+    jenis_lampu      : document.getElementById('jenis_lampu').value || null,
+    watt             : document.getElementById('watt').value ? parseInt(document.getElementById('watt').value) : null,
+    status           : document.getElementById('status_aset').value
+  };
+
+  if (!body.id_kategori || !body.id_wilayah || !body.alamat || isNaN(body.lat) || isNaN(body.lng)) {
+    alert('Lengkapi field wajib: Kategori, Wilayah, Alamat, dan Koordinat!'); return;
+  }
+
+  try {
+    const res = await fetch(`${API}/api/aset`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('pijar_token') },
+      body: JSON.stringify(body)
+    });
+    const json = await res.json();
+    if (json.success) { alert('Aset berhasil ditambahkan! Kode: ' + (json.kode_aset || kodePreview)); location.href = 'aset.html'; }
+    else { alert('Gagal: ' + json.error); }
+  } catch(e) { alert('Error jaringan.'); }
+}
+
+init();
 </script>
-</body></html>
+</body>
+</html>
