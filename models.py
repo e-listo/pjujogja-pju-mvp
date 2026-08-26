@@ -1,11 +1,11 @@
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import func
 
 db = SQLAlchemy()
 
 # ---------------------------------------------------------------------------
 # Konstanta kategori jalan — Perwal Kota Yogyakarta No. 50/2022 Pasal 33
-# ditambah "Lainnya" untuk penerangan non-jalan (Pasal 1 & 13)
 # ---------------------------------------------------------------------------
 KATEGORI_JALAN = ("Jalan Kota", "Jalan Lingkungan", "Jalan Lingkungan Kampung", "Lainnya")
 SUB_KATEGORI_LAINNYA = ("Taman", "Makam", "Sorot Sungai", "Hias/Budaya")
@@ -45,7 +45,6 @@ class Wilayah(db.Model):
     """
     45 kelurahan Kota Yogyakarta dalam 14 kemantren.
     kode_wilayah: CHAR(3) — 2 huruf prefix kemantren + 1 angka urut.
-    Contoh: UH1 (Umbulharjo I/Giwangan), GK3 (Gondokusuman III/Kotabaru).
     Dasar: Pergub DIY No. 25/2019, Perda Kota Yogyakarta No. 4/2020.
     """
     __tablename__ = "wilayah"
@@ -113,9 +112,6 @@ class Regu(db.Model):
 
 
 class Pengguna(db.Model):
-    """
-    Pengguna sistem — update Fase 2: tambah id_regu, no_hp, peran koordinator.
-    """
     __tablename__ = "pengguna"
     id_pengguna = db.Column(db.Integer, primary_key=True)
     id_regu = db.Column(db.Integer, db.ForeignKey("regu.id_regu"), nullable=True)
@@ -139,16 +135,53 @@ class Pengguna(db.Model):
         }
 
 
+# ===========================================================================
+# FASE 3 — KategoriPJU (master kategori aset, dikelola admin)
+# ===========================================================================
+
+class KategoriPJU(db.Model):
+    """
+    Master kategori PJU — ditentukan admin.
+    Kode dipakai sebagai prefix kode aset: PJUP, PJUL, PJUK, PJUM, dll.
+    """
+    __tablename__ = "kategori_pju"
+    id = db.Column(db.Integer, primary_key=True)
+    kode = db.Column(db.String(6), unique=True, nullable=False)
+    nama = db.Column(db.String(100), nullable=False)
+    deskripsi = db.Column(db.String(255), nullable=True)
+    aktif = db.Column(db.Boolean, default=True)
+    urutan = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    aset = db.relationship("AsetPJU", backref="kategori_pju", lazy="dynamic")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "kode": self.kode,
+            "nama": self.nama,
+            "deskripsi": self.deskripsi,
+            "aktif": self.aktif,
+            "urutan": self.urutan,
+            "jumlah_aset": self.aset.count(),
+        }
+
+
 class AsetPJU(db.Model):
     """
-    Aset tiang PJU — update Fase 2: tambah relasi wilayah, panel,
-    jenis_tiang, tinggi_meter, foto_url.
+    Aset tiang PJU.
+    Fase 3: tambah id_kategori, kode_aset format baru, tahun_pemasangan.
+    kode_aset_legacy: backup kode lama format PJU-YK-XXXX.
     """
     __tablename__ = "aset_pju"
     id_aset = db.Column(db.Integer, primary_key=True)
+    id_kategori = db.Column(db.Integer, db.ForeignKey("kategori_pju.id"), nullable=True)
     id_wilayah = db.Column(db.Integer, db.ForeignKey("wilayah.id_wilayah"), nullable=True)
     id_panel = db.Column(db.Integer, db.ForeignKey("panel_pju.id_panel"), nullable=True)
-    kode_aset = db.Column(db.String(30), unique=True, nullable=False)
+    kode_aset = db.Column(db.String(20), unique=True, nullable=True)
+    kode_aset_legacy = db.Column(db.String(50), nullable=True)
+    tahun_pemasangan = db.Column(db.SmallInteger, nullable=True)
     alamat = db.Column(db.String(255), nullable=False)
     lokasi_lat = db.Column(db.Numeric(10, 8), nullable=False)
     lokasi_lng = db.Column(db.Numeric(11, 8), nullable=False)
@@ -175,9 +208,15 @@ class AsetPJU(db.Model):
     def to_dict(self):
         return {
             "id_aset": self.id_aset,
+            "id_kategori": self.id_kategori,
+            "kode_kategori": self.kategori_pju.kode if self.kategori_pju else None,
+            "nama_kategori": self.kategori_pju.nama if self.kategori_pju else None,
             "id_wilayah": self.id_wilayah,
+            "kode_wilayah": self.wilayah.kode_wilayah if self.wilayah else None,
             "id_panel": self.id_panel,
             "kode_aset": self.kode_aset,
+            "kode_aset_legacy": self.kode_aset_legacy,
+            "tahun_pemasangan": self.tahun_pemasangan,
             "alamat": self.alamat,
             "lat": float(self.lokasi_lat),
             "lng": float(self.lokasi_lng),
@@ -191,9 +230,28 @@ class AsetPJU(db.Model):
             "foto_url": self.foto_url,
         }
 
+    @staticmethod
+    def generate_suggest_kode(kode_kategori, kode_wilayah, tahun):
+        """
+        Hitung saran kode berikutnya untuk kombinasi kategori+wilayah+tahun.
+        Contoh: PJUP-UH2-26-003
+        """
+        tahun_2digit = str(tahun)[-2:]
+        prefix = f"{kode_kategori}-{kode_wilayah}-{tahun_2digit}-"
+        last = AsetPJU.query.filter(
+            AsetPJU.kode_aset.like(f"{prefix}%")
+        ).order_by(AsetPJU.kode_aset.desc()).first()
+        next_index = 1
+        if last and last.kode_aset:
+            try:
+                next_index = int(last.kode_aset.rsplit("-", 1)[-1]) + 1
+            except ValueError:
+                pass
+        return f"{prefix}{str(next_index).zfill(3)}", next_index - 1
+
 
 class Lampu(db.Model):
-    """Komponen lampu per tiang — dipisah dari AsetPJU untuk mendukung multi-lampu per tiang."""
+    """Komponen lampu per tiang."""
     __tablename__ = "lampu"
     id_lampu = db.Column(db.Integer, primary_key=True)
     id_aset = db.Column(db.Integer, db.ForeignKey("aset_pju.id_aset"), nullable=False)
@@ -218,10 +276,6 @@ class Lampu(db.Model):
 
 
 class LaporanKerusakan(db.Model):
-    """
-    Laporan kerusakan Fase 2 — lebih detail dari LaporanKerja.
-    Mendukung sumber: Lapangan, JSS (Smart City), Masyarakat, Patroli.
-    """
     __tablename__ = "laporan_kerusakan"
     id_laporan = db.Column(db.Integer, primary_key=True)
     id_aset = db.Column(db.Integer, db.ForeignKey("aset_pju.id_aset"), nullable=False)
@@ -257,10 +311,6 @@ class LaporanKerusakan(db.Model):
 
 
 class RiwayatPemeliharaan(db.Model):
-    """
-    Log pekerjaan perbaikan/pemeliharaan oleh regu lapangan.
-    Mendukung foto sebelum/sesudah sebagai bukti kerja.
-    """
     __tablename__ = "riwayat_pemeliharaan"
     id_pemeliharaan = db.Column(db.Integer, primary_key=True)
     id_aset = db.Column(db.Integer, db.ForeignKey("aset_pju.id_aset"), nullable=False)
@@ -297,7 +347,7 @@ class RiwayatPemeliharaan(db.Model):
 
 
 # ===========================================================================
-# FASE 1 — LaporanKerja (dipertahankan sebagai arsip, tidak diubah)
+# FASE 1 — LaporanKerja (arsip, tidak diubah)
 # ===========================================================================
 
 class LaporanKerja(db.Model):
