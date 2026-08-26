@@ -128,81 +128,84 @@
 
 <script>
 const API = 'https://api.pjujogja.id';
-let _kategori = [];  // [{id, kode, nama}]
-let _wilayah  = [];  // [{id, nama, kode_singkat}]
-let _nextIndex = 1;
+let _suggestKode = null; // hasil suggest dari backend: string kode lengkap
 
 // ─── Init ───────────────────────────────────────────────
 async function init() {
   const token = localStorage.getItem('pijar_token');
   const h = { 'Authorization': 'Bearer ' + token };
 
-  // Load kategori
+  // Load kategori dari GET /api/kategori-pju
   try {
     const r = await fetch(`${API}/api/kategori-pju`, { headers: h });
     const j = await r.json();
-    _kategori = j.data || [];
     const sel = document.getElementById('id_kategori');
-    _kategori.forEach(k => {
+    (j.data || []).forEach(k => {
       const o = document.createElement('option');
-      o.value = k.id; o.dataset.kode = k.kode; o.textContent = `${k.kode} — ${k.nama}`;
+      o.value = k.id;
+      o.dataset.kode = k.kode;          // contoh: "PJUP"
+      o.textContent = `${k.kode} — ${k.nama}`;
       sel.appendChild(o);
     });
   } catch(e) { console.warn('Gagal load kategori', e); }
 
-  // Load wilayah
+  // Load wilayah dari GET /api/wilayah
+  // to_dict() mengembalikan: id_wilayah, kode_wilayah, nama_kemantren, nama_kelurahan
   try {
     const r = await fetch(`${API}/api/wilayah`, { headers: h });
     const j = await r.json();
-    _wilayah = j.data || [];
     const sel = document.getElementById('id_wilayah');
-    _wilayah.forEach(w => {
+    (j.data || []).forEach(w => {
       const o = document.createElement('option');
-      o.value = w.id; o.dataset.kode = w.kode_singkat || w.kode || '???';
-      o.textContent = w.nama;
+      o.value = w.id_wilayah;           // PK integer
+      o.dataset.kode = w.kode_wilayah;  // contoh: "UH2" — dipakai untuk suggest-kode
+      o.textContent = `${w.kode_wilayah} — ${w.nama_kelurahan} (${w.nama_kemantren})`;
       sel.appendChild(o);
     });
   } catch(e) { console.warn('Gagal load wilayah', e); }
 }
 
-// ─── Preview Kode ────────────────────────────────────────
+// ─── Preview Kode ─────────────────────────────────────────
+// Memanggil GET /api/aset/suggest-kode?kategori=PJUP&wilayah=UH2&tahun=2026
 async function updateKodePreview() {
-  const katSel   = document.getElementById('id_kategori');
-  const wilSel   = document.getElementById('id_wilayah');
-  const tahunEl  = document.getElementById('tahun_pemasangan');
+  const katSel    = document.getElementById('id_kategori');
+  const wilSel    = document.getElementById('id_wilayah');
+  const tahunVal  = document.getElementById('tahun_pemasangan').value;
   const previewEl = document.getElementById('kode-preview-val');
 
-  const katOpt = katSel.options[katSel.selectedIndex];
-  const wilOpt = wilSel.options[wilSel.selectedIndex];
-  const tahun  = String(tahunEl.value || '').slice(-2);
+  const katKode = katSel.options[katSel.selectedIndex]?.dataset.kode;
+  const wilKode = wilSel.options[wilSel.selectedIndex]?.dataset.kode;
+  const tahun   = parseInt(tahunVal);
 
-  if (!katSel.value || !wilSel.value || tahun.length !== 2) {
+  if (!katSel.value || !wilSel.value || !tahun || tahun < 2000) {
     previewEl.textContent = 'Pilih kategori & wilayah dulu';
     previewEl.className = 'kode-val empty';
+    _suggestKode = null;
     return;
   }
 
-  const katKode = katOpt.dataset.kode;
-  const wilKode = wilOpt.dataset.kode;
-  const prefix  = `${katKode}-${wilKode}-${tahun}`;
+  previewEl.textContent = 'Menghitung...';
+  previewEl.className = 'kode-val empty';
 
-  // Tanya backend nomor urut berikutnya
   try {
     const token = localStorage.getItem('pijar_token');
-    const r = await fetch(
-      `${API}/api/aset/suggest-kode?prefix=${encodeURIComponent(prefix)}`,
-      { headers: { 'Authorization': 'Bearer ' + token } }
-    );
+    const url = `${API}/api/aset/suggest-kode?kategori=${encodeURIComponent(katKode)}&wilayah=${encodeURIComponent(wilKode)}&tahun=${tahun}`;
+    const r = await fetch(url, { headers: { 'Authorization': 'Bearer ' + token } });
     const j = await r.json();
-    _nextIndex = j.next_index || 1;
+    if (j.success && j.suggest) {
+      _suggestKode = j.suggest;
+      previewEl.textContent = j.suggest;
+      previewEl.className = 'kode-val';
+    } else {
+      previewEl.textContent = j.error || 'Gagal generate kode';
+      previewEl.className = 'kode-val empty';
+      _suggestKode = null;
+    }
   } catch(e) {
-    _nextIndex = 1;
+    previewEl.textContent = 'Error koneksi';
+    previewEl.className = 'kode-val empty';
+    _suggestKode = null;
   }
-
-  const nomorStr = String(_nextIndex).padStart(3, '0');
-  const kodeFull = `${prefix}-${nomorStr}`;
-  previewEl.textContent = kodeFull;
-  previewEl.className = 'kode-val';
 }
 
 // ─── Toggle sub-kategori ────────────────────────────────
@@ -213,12 +216,13 @@ function toggleSub() {
 
 // ─── Submit ─────────────────────────────────────────────
 async function submitAset() {
-  const kodePreview = document.getElementById('kode-preview-val').textContent;
-  const isKodeReady = !kodePreview.includes('Pilih');
+  if (!_suggestKode) {
+    alert('Lengkapi Kategori, Wilayah, dan Tahun agar kode aset bisa digenerate!'); return;
+  }
 
   const body = {
     id_kategori      : parseInt(document.getElementById('id_kategori').value) || null,
-    kode_aset        : isKodeReady ? kodePreview : null,
+    kode_aset        : _suggestKode,
     tahun_pemasangan : parseInt(document.getElementById('tahun_pemasangan').value) || null,
     id_wilayah       : parseInt(document.getElementById('id_wilayah').value) || null,
     alamat           : document.getElementById('alamat').value.trim(),
@@ -239,12 +243,19 @@ async function submitAset() {
   try {
     const res = await fetch(`${API}/api/aset`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('pijar_token') },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + localStorage.getItem('pijar_token')
+      },
       body: JSON.stringify(body)
     });
     const json = await res.json();
-    if (json.success) { alert('Aset berhasil ditambahkan! Kode: ' + (json.kode_aset || kodePreview)); location.href = 'aset.html'; }
-    else { alert('Gagal: ' + json.error); }
+    if (json.success) {
+      alert('Aset berhasil ditambahkan! Kode: ' + _suggestKode);
+      location.href = 'aset.html';
+    } else {
+      alert('Gagal: ' + json.error);
+    }
   } catch(e) { alert('Error jaringan.'); }
 }
 
