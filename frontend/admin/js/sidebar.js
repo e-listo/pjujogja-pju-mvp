@@ -1,20 +1,31 @@
 /**
  * PIJAR — Shared Sidebar
- * Inject sidebar + topbar ke semua halaman admin
- * Usage: <script src="js/sidebar.js" data-page="dashboard"></script>
+ * Inject sidebar ke semua halaman admin & lapangan
+ * Usage: <script src="js/sidebar.js?v=20260826" data-page="dashboard"></script>
+ *
+ * Deteksi otomatis apakah halaman berada di subfolder /lapangan/
+ * sehingga path menu menyesuaikan dan tidak terjadi double-path.
  */
 (function(){
+
+  // Deteksi: apakah halaman ini berada di dalam subfolder /lapangan/ ?
+  const isLapangan = window.location.pathname.indexOf('/lapangan/') !== -1;
+  // Prefix untuk link menu utama (admin)
+  const adminBase  = isLapangan ? '../' : '';
+  // Prefix untuk link menu lapangan
+  const lapBase    = isLapangan ? ''    : 'lapangan/';
+
   const PAGES = [
-    { id:'dashboard',   label:'Dashboard',        href:'index.html',        icon:'M3 3h7v7H3zm11 0h7v7h-7zM3 14h7v7H3zm11 0h7v7h-7z' },
-    { id:'aset',        label:'Data Aset',         href:'aset.html',         icon:'M12 2a7 7 0 1 1 0 14A7 7 0 0 1 12 2zm0 2a5 5 0 1 0 0 10A5 5 0 0 0 12 4zm0 2v4l3 2' },
-    { id:'laporan',     label:'Laporan Kerusakan', href:'laporan.html',      icon:'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8' },
-    { id:'pemeliharaan',label:'Pemeliharaan',      href:'pemeliharaan.html', icon:'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z' },
-    { id:'wilayah',     label:'Wilayah',           href:'wilayah.html',      icon:'M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3zM9 3v15M15 6v15' },
-    { id:'regu',        label:'Regu Lapangan',     href:'regu.html',         icon:'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75' },
+    { id:'dashboard',    label:'Dashboard',        href: adminBase + 'index.html',        icon:'M3 3h7v7H3zm11 0h7v7h-7zM3 14h7v7H3zm11 0h7v7h-7z' },
+    { id:'aset',         label:'Data Aset',         href: adminBase + 'aset.html',         icon:'M12 2a7 7 0 1 1 0 14A7 7 0 0 1 12 2zm0 2a5 5 0 1 0 0 10A5 5 0 0 0 12 4zm0 2v4l3 2' },
+    { id:'laporan',      label:'Laporan Kerusakan', href: adminBase + 'laporan.html',      icon:'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8' },
+    { id:'pemeliharaan', label:'Pemeliharaan',      href: adminBase + 'pemeliharaan.html', icon:'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z' },
+    { id:'wilayah',      label:'Wilayah',           href: adminBase + 'wilayah.html',      icon:'M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3zM9 3v15M15 6v15' },
+    { id:'regu',         label:'Regu Lapangan',     href: adminBase + 'regu.html',         icon:'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75' },
   ];
   const LAPANGAN = [
-    { id:'form-laporan',    label:'Form Laporan',    href:'lapangan/lapor.html', icon:'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z' },
-    { id:'form-penanganan', label:'Form Penanganan', href:'lapangan/form.html',  icon:'M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11' },
+    { id:'form-laporan',    label:'Form Laporan',    href: lapBase + 'lapor.html', icon:'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z' },
+    { id:'form-penanganan', label:'Form Penanganan', href: lapBase + 'form.html',  icon:'M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11' },
   ];
 
   const currentPage = (document.currentScript && document.currentScript.dataset.page) || '';
@@ -28,9 +39,13 @@
     return `<a href="${p.href}" class="nav-item${active}" aria-current="${active?'page':'false'}">${svgIcon(p.icon)}<span>${p.label}</span></a>`;
   }
 
+  // Brand link juga disesuaikan
+  const brandHref = adminBase + 'index.html';
+  const logoutHref = adminBase + 'login.html';
+
   const sidebarHTML = `
 <aside class="pijar-sidebar" id="pijar-sidebar-el">
-  <a href="index.html" class="sidebar-brand">
+  <a href="${brandHref}" class="sidebar-brand">
     <img
       src="/images/pijar_square.png"
       alt="Logo PIJAR"
@@ -59,7 +74,7 @@
       <span class="user-name" id="pijar-user-name">—</span>
       <span class="user-role" id="pijar-user-role">—</span>
     </div>
-    <button class="btn-logout" onclick="pijarLogout()" title="Keluar">&#x2715;</button>
+    <button class="btn-logout" id="pijar-btn-logout" title="Keluar">&#x2715;</button>
   </div>
   <div class="sidebar-footer">Perwal Kota Yogyakarta No.&nbsp;50/2022</div>
 </aside>`;
@@ -165,6 +180,13 @@
   style.textContent = '.pijar-main,.main{margin-left:224px;}';
   document.head.appendChild(style);
 
+  // Logout button — href disesuaikan dengan posisi folder
+  document.getElementById('pijar-btn-logout').addEventListener('click', function(){
+    localStorage.removeItem('pijar_token');
+    localStorage.removeItem('pijar_user');
+    window.location.href = logoutHref;
+  });
+
   function fillUser(){
     try{
       const raw = localStorage.getItem('pijar_user');
@@ -187,10 +209,11 @@
     fillUser();
   }
 
+  // Legacy support
   window.pijarLogout = function(){
     localStorage.removeItem('pijar_token');
     localStorage.removeItem('pijar_user');
-    window.location.href = 'login.html';
+    window.location.href = logoutHref;
   };
 
 })();
