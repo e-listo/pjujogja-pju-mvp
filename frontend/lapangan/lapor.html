@@ -20,7 +20,9 @@
       color: #111827;
       min-height: 100vh;
       padding-bottom: 32px;
+      margin-left: 224px;
     }
+    @media(max-width:768px){ body { margin-left: 0; } }
 
     /* HEADER */
     .header {
@@ -118,21 +120,6 @@
       font-size: 0.82rem; margin-top: 6px; cursor: pointer;
     }
 
-    /* GPS */
-    .gps-row {
-      display: flex; gap: 8px; align-items: center;
-    }
-    .gps-info {
-      flex: 1; background: #f9fafb; border: 1.5px solid #e5e7eb;
-      border-radius: 8px; padding: 10px 14px; font-size: 0.82rem; color: var(--pju-abu);
-    }
-    .gps-info.aktif { border-color: #bbf7d0; background: #f0fdf4; color: #065f46; }
-    .btn-gps {
-      padding: 10px 14px; background: #f3f4f6; border: 1.5px solid #d1d5db;
-      border-radius: 8px; font-size: 0.85rem; cursor: pointer; white-space: nowrap;
-    }
-    .btn-gps:active { background: var(--pju-biru-muda); }
-
     /* SUBMIT */
     .submit-wrap { padding: 16px; }
     .btn-submit {
@@ -168,20 +155,7 @@
   </style>
 </head>
 <body>
-
-<div class="header">
-  <div class="header-logo">
-    <img src="/images/pijar_square.png"
-         alt="PIJAR" width="36" height="36"
-         style="object-fit:contain;filter:drop-shadow(0 2px 8px rgba(249,115,22,.5))"
-         onerror="this.style.display='none';this.nextElementSibling.style.display='inline'">
-    <span style="display:none">🔆</span>
-  </div>
-  <div class="header-text">
-    <h1>Lapor Kerusakan PJU</h1>
-    <p>PIJAR — UPT PJU Kota Yogyakarta</p>
-  </div>
-</div>
+<script src="../js/sidebar.js?v=20260826" data-page="form-laporan"></script>
 
 <div id="alert-sukses" class="alert sukses">
   ✅ Laporan berhasil dikirim! Terimakasih, regu akan segera menindaklanjuti.
