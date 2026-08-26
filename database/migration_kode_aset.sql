@@ -1,13 +1,13 @@
 -- ============================================================
 -- Migration: Kategori PJU + Kode Aset Baru
 -- Format baru: PJUP-UH2-26-001
--- Jalankan SETELAH schema_fase1.sql
+-- v2: Disesuaikan struktur aktual (PK=id_aset, kode_aset_legacy sudah ada)
 -- ============================================================
 
 -- 1. Tabel kategori_pju (master, dikelola admin)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS kategori_pju (
-  id           INT PRIMARY KEY AUTO_INCREMENT,
+  id           INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
   kode         VARCHAR(6)   NOT NULL UNIQUE COMMENT 'Misal: PJUP, PJUL, PJUK, PJUM',
   nama         VARCHAR(100) NOT NULL        COMMENT 'Nama lengkap kategori',
   deskripsi    VARCHAR(255) DEFAULT NULL,
@@ -28,33 +28,29 @@ INSERT IGNORE INTO kategori_pju (kode, nama, deskripsi, urutan) VALUES
 
 -- ============================================================
 -- 2. Update tabel aset_pju
--- Tambah kolom id_kategori + format kode baru
+-- Struktur aktual: PK = id_aset, kode_aset_legacy sudah ada
 -- ============================================================
 
--- Tambah kolom id_kategori (FK ke kategori_pju)
+-- Tambah kolom id_kategori (FK ke kategori_pju), AFTER id_aset
 ALTER TABLE aset_pju
-  ADD COLUMN id_kategori INT DEFAULT NULL
+  ADD COLUMN id_kategori INT UNSIGNED DEFAULT NULL
     COMMENT 'FK ke kategori_pju'
-    AFTER id;
+    AFTER id_aset;
 
--- Rename kolom kode_aset lama → kode_aset_legacy (backup)
-ALTER TABLE aset_pju
-  CHANGE COLUMN kode_aset kode_aset_legacy VARCHAR(50) DEFAULT NULL
-    COMMENT 'Kode lama format PJU-YK-XXXX (legacy)';
-
--- Tambah kolom kode_aset baru dengan format baru
+-- Tambah kolom kode_aset baru (format baru), AFTER id_kategori
+-- (kode_aset_legacy sudah ada di tabel, tidak perlu RENAME)
 ALTER TABLE aset_pju
   ADD COLUMN kode_aset VARCHAR(20) DEFAULT NULL UNIQUE
     COMMENT 'Format baru: PJUP-UH2-26-001'
     AFTER id_kategori;
 
--- Tambah kolom tahun_pemasangan
+-- Tambah kolom tahun_pemasangan, AFTER kode_aset
 ALTER TABLE aset_pju
   ADD COLUMN tahun_pemasangan YEAR DEFAULT NULL
     COMMENT 'Tahun pemasangan aset, dipakai untuk generate kode'
     AFTER kode_aset;
 
--- Foreign key kategori
+-- Foreign key kategori (tipe harus match: INT UNSIGNED)
 ALTER TABLE aset_pju
   ADD CONSTRAINT fk_aset_kategori
     FOREIGN KEY (id_kategori) REFERENCES kategori_pju(id)
