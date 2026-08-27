@@ -1,7 +1,9 @@
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+# override=False: env var yang sudah di-set cPanel/Passenger TIDAK ditimpa
+# oleh nilai dari .env file. .env hanya berlaku untuk development lokal.
+load_dotenv(override=False)
 
 class Config:
     # Database
