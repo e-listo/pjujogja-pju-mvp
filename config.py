@@ -33,7 +33,12 @@ class Config:
     ]
 
     # JWT
-    JWT_SECRET = os.getenv("JWT_SECRET", "GANTI_DENGAN_SECRET_PANJANG_DI_ENV")
+    # Fallback ke SECRET_KEY jika JWT_SECRET tidak di-set secara terpisah.
+    # Ini memastikan deployment cPanel yang hanya punya SECRET_KEY tetap berfungsi.
+    JWT_SECRET = (
+        os.getenv("JWT_SECRET")
+        or os.getenv("SECRET_KEY", "GANTI_DENGAN_SECRET_PANJANG_DI_ENV")
+    )
     JWT_EXP_HOURS = int(os.getenv("JWT_EXP_HOURS", "12"))
 
     # Seed key (untuk endpoint /api/auth/seed)
