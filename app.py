@@ -1,7 +1,8 @@
 """
 app.py — Entry point Flask untuk api.pjujogja.id
+Fase 1: Model aset, laporan kerja, stok PINS.
 Fase 2: Proteksi JWT, endpoint baru, pagination, atomisitas stok PINS.
-Fase 3: Tambah endpoint KategoriPJU, suggest-kode, cek-kode, update POST /api/aset.
+Fase 3: Endpoint KategoriPJU, suggest-kode, cek-kode.
 """
 import os
 import re
@@ -37,17 +38,30 @@ def save_upload(file_obj, upload_folder):
 
 
 def _paginate(query, default_per_page=20):
-    """Helper pagination: kembalikan (items, meta) dari query SQLAlchemy."""
+    """
+    Helper pagination: kembalikan (items, meta) dari query SQLAlchemy.
+    Fix #2: gunakan len(items) untuk total jika page pertama dan hasilnya < per_page,
+    sehingga menghindari double round-trip ke DB pada halaman pertama yang kecil.
+    Untuk halaman lain tetap pakai .count() karena diperlukan untuk total_pages.
+    """
     page     = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", default_per_page, type=int)
-    per_page = min(per_page, 100)  # batas maksimal 100
-    total    = query.count()
-    items    = query.offset((page - 1) * per_page).limit(per_page).all()
+    per_page = min(per_page, 100)
+    items    = query.offset((page - 1) * per_page).limit(per_page + 1).all()
+    # Ambil satu item ekstra untuk deteksi apakah ada halaman berikutnya
+    has_next = len(items) > per_page
+    items    = items[:per_page]
+    if page == 1 and not has_next:
+        # Halaman pertama dan tidak ada next page: total = len(items), tanpa count()
+        total = len(items)
+    else:
+        total = query.count()
     return items, {
-        "page": page,
-        "per_page": per_page,
-        "total": total,
-        "total_pages": (total + per_page - 1) // per_page,
+        "page":        page,
+        "per_page":    per_page,
+        "total":       total,
+        "total_pages": max(1, (total + per_page - 1) // per_page),
+        "has_next":    has_next,
     }
 
 
@@ -68,9 +82,9 @@ def create_app():
     @jwt_required
     def list_aset():
         q = AsetPJU.query
-        status_filter     = request.args.get("status")
-        kategori_filter   = request.args.get("kategori_jalan")
-        id_wilayah_filter = request.args.get("id_wilayah", type=int)
+        status_filter      = request.args.get("status")
+        kategori_filter    = request.args.get("kategori_jalan")
+        id_wilayah_filter  = request.args.get("id_wilayah", type=int)
         id_kategori_filter = request.args.get("id_kategori", type=int)
         if status_filter:
             q = q.filter(AsetPJU.status == status_filter)
@@ -163,7 +177,6 @@ def create_app():
                 aset.lokasi_lat = body["lat"]
             if "lng" in body:
                 aset.lokasi_lng = body["lng"]
-            # Validasi sub_kategori jika kategori_jalan diubah ke Lainnya
             if aset.kategori_jalan == "Lainnya" and aset.sub_kategori_lainnya not in SUB_KATEGORI_LAINNYA:
                 return jsonify({"success": False,
                     "error": f"sub_kategori_lainnya wajib: {SUB_KATEGORI_LAINNYA}"}), 400
@@ -184,7 +197,7 @@ def create_app():
         return jsonify({"success": True, "data": [l.to_dict() for l in aset.lampu.all()]})
 
     # =================================================================
-    # KODE ASET — suggest + validasi (Fase 3, tidak diubah)
+    # KODE ASET — suggest + validasi (Fase 3)
     # =================================================================
 
     @app.route("/api/aset/suggest-kode", methods=["GET"])
@@ -381,7 +394,7 @@ def create_app():
             warna_status = {"Dalam Pengerjaan": "Dalam Pengerjaan", "Selesai": "Menyala"}
             if laporan.status in warna_status:
                 laporan.aset.status = warna_status[laporan.status]
-            # ---- Atomisitas potong stok PINS (Fase 2) ----
+            # ---- Atomisitas potong stok PINS ----
             if status_baru == "Selesai" and id_komponen:
                 komponen = StokPins.query.with_for_update().get(id_komponen)
                 if not komponen:
@@ -480,7 +493,7 @@ def create_app():
         if not wilayah:
             return jsonify({"success": False, "error": f"Wilayah '{kode}' tidak ditemukan"}), 404
         result = wilayah.to_dict()
-        result["jumlah_aset"] = wilayah.aset.count()
+        result["jumlah_aset"]  = wilayah.aset.count()
         result["jumlah_panel"] = wilayah.panel.count()
         return jsonify({"success": True, "data": result})
 
@@ -542,8 +555,8 @@ def create_app():
     @app.route("/api/laporan-kerusakan", methods=["POST"])
     @jwt_required
     def create_laporan_kerusakan():
-        id_aset = request.form.get("id_aset", type=int)
-        aset    = AsetPJU.query.get(id_aset)
+        id_aset  = request.form.get("id_aset", type=int)
+        aset     = AsetPJU.query.get(id_aset)
         if not aset:
             return jsonify({"success": False, "error": "Aset tidak ditemukan"}), 404
         foto     = request.files.get("foto")
@@ -610,12 +623,12 @@ def create_app():
     @app.route("/api/pemeliharaan", methods=["POST"])
     @role_required("regu", "koordinator", "admin")
     def create_pemeliharaan():
-        id_aset = request.form.get("id_aset", type=int)
-        aset    = AsetPJU.query.get(id_aset)
+        id_aset  = request.form.get("id_aset", type=int)
+        aset     = AsetPJU.query.get(id_aset)
         if not aset:
             return jsonify({"success": False, "error": "Aset tidak ditemukan"}), 404
-        foto_sebelum    = request.files.get("foto_sebelum")
-        foto_sesudah    = request.files.get("foto_sesudah")
+        foto_sebelum     = request.files.get("foto_sebelum")
+        foto_sesudah     = request.files.get("foto_sesudah")
         foto_sebelum_url = save_upload(foto_sebelum, app.config["UPLOAD_FOLDER"]) if foto_sebelum and allowed_file(foto_sebelum.filename) else None
         foto_sesudah_url = save_upload(foto_sesudah, app.config["UPLOAD_FOLDER"]) if foto_sesudah and allowed_file(foto_sesudah.filename) else None
         try:
@@ -651,13 +664,17 @@ def create_app():
     @app.route("/api/pemeliharaan/<int:id_pemeliharaan>/status", methods=["PATCH"])
     @role_required("regu", "koordinator", "admin")
     def update_status_pemeliharaan(id_pemeliharaan):
-        """[BARU Fase 2] Update status pekerjaan pemeliharaan."""
+        """
+        [BARU Fase 2] Update status pekerjaan pemeliharaan.
+        Fix #1: Gunakan multipart/form-data (request.form + request.files)
+        agar status dan foto_sesudah bisa dikirim dalam satu request.
+        """
         p = RiwayatPemeliharaan.query.get(id_pemeliharaan)
         if not p:
             return jsonify({"success": False, "error": "Data tidak ditemukan"}), 404
-        body           = request.get_json(force=True)
-        status_baru    = body.get("status_pekerjaan")
-        foto_sesudah   = request.files.get("foto_sesudah") if request.files else None
+        # Fix #1: baca dari form, bukan get_json — konsisten dengan endpoint pemeliharaan lainnya
+        status_baru  = request.form.get("status_pekerjaan")
+        foto_sesudah = request.files.get("foto_sesudah")
         try:
             if foto_sesudah and allowed_file(foto_sesudah.filename):
                 p.foto_sesudah = save_upload(foto_sesudah, app.config["UPLOAD_FOLDER"])
@@ -685,13 +702,12 @@ def create_app():
     @jwt_required
     def dashboard_summary():
         """Ringkasan untuk kartu statistik di index.html."""
-        total_aset      = AsetPJU.query.count()
-        total_rusak     = AsetPJU.query.filter_by(status="Rusak").count()
+        total_aset       = AsetPJU.query.count()
+        total_rusak      = AsetPJU.query.filter_by(status="Rusak").count()
         total_pengerjaan = AsetPJU.query.filter_by(status="Dalam Pengerjaan").count()
-        tiket_baru      = LaporanKerusakan.query.filter_by(status_laporan="Baru").count()
-        tiket_diproses  = LaporanKerusakan.query.filter_by(status_laporan="Diproses").count()
-        # Stok kritis: komponen dengan stok_qty <= stok_minimum
-        stok_kritis     = StokPins.query.filter(
+        tiket_baru       = LaporanKerusakan.query.filter_by(status_laporan="Baru").count()
+        tiket_diproses   = LaporanKerusakan.query.filter_by(status_laporan="Diproses").count()
+        stok_kritis      = StokPins.query.filter(
             StokPins.stok_qty <= StokPins.stok_minimum
         ).count()
         return jsonify({

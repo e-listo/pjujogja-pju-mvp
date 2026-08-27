@@ -20,13 +20,21 @@ from models import db, Pengguna
 auth_bp = Blueprint("auth", __name__)
 
 # ------------------------------------------------------------------ #
-# In-memory token blacklist
+# In-memory token blacklist dengan TTL cleanup
 # Cocok untuk shared hosting single-process (Passenger WSGI).
-# Catatan: blacklist reset saat proses restart. Token kadaluarsa
-# otomatis tidak valid via exp-claim, jadi ini hanya untuk logout
-# eksplisit sebelum token expired.
+# Fix #3: _cleanup_blacklist() dipanggil saat login untuk membuang
+# JTI yang tokennya sudah expired agar set tidak tumbuh terus.
 # ------------------------------------------------------------------ #
-_BLACKLIST: set = set()
+# Format: { jti: exp_timestamp }
+_BLACKLIST: dict = {}
+
+
+def _cleanup_blacklist():
+    """Buang JTI yang sudah expired dari blacklist. Dipanggil saat login."""
+    now = datetime.now(timezone.utc).timestamp()
+    expired_keys = [jti for jti, exp in _BLACKLIST.items() if exp < now]
+    for k in expired_keys:
+        del _BLACKLIST[k]
 
 
 # ------------------------------------------------------------------ #
@@ -43,7 +51,7 @@ def _buat_token(pengguna):
         "nama":     pengguna.nama_lengkap,
         "exp":      exp,
     }
-    return jwt.encode(payload, secret, algorithm="HS256")
+    return jwt.encode(payload, secret, algorithm="HS256"), exp
 
 
 # ------------------------------------------------------------------ #
@@ -108,7 +116,10 @@ def login():
     if not pengguna or not check_password_hash(pengguna.password_hash, password):
         return jsonify({"success": False, "error": "Username atau password salah"}), 401
 
-    token = _buat_token(pengguna)
+    # Fix #3: cleanup blacklist dari JTI expired setiap kali login
+    _cleanup_blacklist()
+
+    token, exp = _buat_token(pengguna)
     return jsonify({
         "success": True,
         "token":   token,
@@ -126,11 +137,13 @@ def login():
 def logout():
     """
     Blacklist token aktif sehingga tidak bisa dipakai lagi.
+    Fix #3: simpan (jti, exp) — bukan hanya jti — agar cleanup TTL bisa bekerja.
     Frontend wajib hapus token dari localStorage/sessionStorage setelah ini.
     """
     jti = g.user_payload.get("jti")
-    if jti:
-        _BLACKLIST.add(jti)
+    exp = g.user_payload.get("exp")  # Unix timestamp dari JWT
+    if jti and exp:
+        _BLACKLIST[jti] = exp
     return jsonify({
         "success": True,
         "pesan":   "Logout berhasil. Silakan hapus token di sisi klien."
