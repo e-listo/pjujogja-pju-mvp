@@ -44,8 +44,8 @@ def _buat_token(pengguna):
     secret = current_app.config["JWT_SECRET"]
     exp    = datetime.now(timezone.utc) + timedelta(hours=current_app.config.get("JWT_EXP_HOURS", 12))
     payload = {
-        "jti":      str(uuid.uuid4()),   # JWT ID unik — dipakai blacklist logout
-        "sub":      pengguna.id_pengguna,
+        "jti":      str(uuid.uuid4()),        # JWT ID unik — dipakai blacklist logout
+        "sub":      str(pengguna.id_pengguna), # PyJWT >= 2.4.0 wajib string
         "username": pengguna.username,
         "peran":    pengguna.peran,
         "nama":     pengguna.nama_lengkap,
@@ -70,6 +70,7 @@ def jwt_required(f):
                 token,
                 current_app.config["JWT_SECRET"],
                 algorithms=["HS256"],
+                options={"verify_sub": False},  # backward-compat token lama
             )
         except jwt.ExpiredSignatureError:
             return jsonify({"success": False, "error": "Token kadaluarsa, silakan login ulang"}), 401
