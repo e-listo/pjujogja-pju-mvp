@@ -1,6 +1,7 @@
 -- =============================================================================
 -- Migration: wilayah_sektor + mutasi_aset
 -- Tanggal : 2026-08-28
+-- Fix     : FK columns pakai INT UNSIGNED (cocok dengan PK tabel referensi)
 -- Deskripsi:
 --   1. Tambah kolom `sektor` ke tabel `wilayah`
 --   2. Buat tabel `mutasi_aset` untuk log mutasi & stok opname
@@ -37,12 +38,13 @@ UPDATE wilayah SET sektor = 'Sektor Tengah'  WHERE nama_kemantren IN ('Gondomana
 
 -- -----------------------------------------------------------------------------
 -- 3. Buat tabel mutasi_aset
+--    PENTING: FK columns harus INT UNSIGNED agar cocok dengan PK tabel referensi
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS mutasi_aset (
   id_mutasi        INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  id_aset          INT          NOT NULL,
-  id_petugas       INT          NULL,
-  id_pemeliharaan  INT          NULL,
+  id_aset          INT UNSIGNED NOT NULL,
+  id_petugas       INT UNSIGNED NULL,
+  id_pemeliharaan  INT UNSIGNED NULL,
 
   jenis_mutasi     ENUM(
     'Pasang Baru',
@@ -70,9 +72,9 @@ CREATE TABLE IF NOT EXISTS mutasi_aset (
   tanggal_mutasi   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   created_at       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-  CONSTRAINT fk_mutasi_aset       FOREIGN KEY (id_aset)         REFERENCES aset_pju(id_aset)                       ON DELETE RESTRICT ON UPDATE CASCADE,
-  CONSTRAINT fk_mutasi_petugas    FOREIGN KEY (id_petugas)      REFERENCES pengguna(id_pengguna)                   ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT fk_mutasi_pemeliharaan FOREIGN KEY (id_pemeliharaan) REFERENCES riwayat_pemeliharaan(id_pemeliharaan) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT fk_mutasi_aset         FOREIGN KEY (id_aset)          REFERENCES aset_pju(id_aset)                         ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT fk_mutasi_petugas      FOREIGN KEY (id_petugas)       REFERENCES pengguna(id_pengguna)                     ON DELETE SET NULL  ON UPDATE CASCADE,
+  CONSTRAINT fk_mutasi_pemeliharaan FOREIGN KEY (id_pemeliharaan)  REFERENCES riwayat_pemeliharaan(id_pemeliharaan)     ON DELETE SET NULL  ON UPDATE CASCADE,
 
   INDEX idx_mutasi_aset    (id_aset),
   INDEX idx_mutasi_petugas (id_petugas),
