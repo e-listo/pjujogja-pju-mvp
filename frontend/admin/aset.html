@@ -13,6 +13,7 @@
     .topbar h2{font-size:.95rem;font-weight:700;color:#0f172a;}
     .topbar-actions{display:flex;gap:8px;align-items:center;}
     .content{padding:20px 24px;}
+    /* ===== Toolbar Desktop ===== */
     .toolbar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center;}
     .toolbar select,.toolbar input{padding:7px 11px;border:1px solid #e2e8f0;border-radius:7px;font-size:.82rem;background:#fff;color:#0f172a;}
     .toolbar input{min-width:160px;}
@@ -81,14 +82,54 @@
     #modal-konfirmasi .konfirm-msg{font-size:.92rem;color:#374151;margin-bottom:20px;line-height:1.5;}
     #modal-konfirmasi .modal-actions{justify-content:center;}
 
-    /* ===== MOBILE PORTRAIT FIX ===== */
+    /* ===== MOBILE CARD LIST (portrait ≤768px) ===== */
+    .toolbar-mobile{display:none;}
+    .card-list{display:none;}
+    .infinite-spinner{text-align:center;padding:14px;color:#94a3b8;font-size:.82rem;display:none;}
+
+    /* Filter Drawer */
+    .drawer-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;}
+    .drawer-overlay.show{display:block;}
+    .filter-drawer{position:fixed;bottom:0;left:0;right:0;background:#fff;border-radius:18px 18px 0 0;padding:20px 16px 24px;z-index:201;transform:translateY(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);max-height:80vh;overflow-y:auto;}
+    .filter-drawer.show{transform:translateY(0);}
+    .drawer-handle{width:40px;height:4px;background:#e2e8f0;border-radius:99px;margin:0 auto 16px;}
+    .drawer-title{font-size:.88rem;font-weight:700;color:#0f172a;margin-bottom:14px;}
+    .drawer-field{margin-bottom:12px;}
+    .drawer-field label{display:block;font-size:.72rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;}
+    .drawer-field select,.drawer-field input{width:100%;padding:9px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:.85rem;background:#fff;color:#0f172a;}
+    .drawer-actions{display:flex;gap:10px;margin-top:16px;}
+    .drawer-actions .btn{flex:1;justify-content:center;}
+
+    /* Aset card item */
+    .aset-card{background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.07);padding:13px 14px;margin-bottom:10px;cursor:pointer;transition:box-shadow .15s;border:1px solid #f1f5f9;}
+    .aset-card:active{box-shadow:0 2px 8px rgba(26,86,219,.12);border-color:#bfdbfe;}
+    .aset-card-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+    .aset-card-kode{font-family:monospace;font-size:.82rem;font-weight:700;color:#1a56db;}
+    .aset-card-alamat{font-size:.85rem;color:#1e293b;margin-bottom:4px;line-height:1.4;}
+    .aset-card-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+    .aset-card-wilayah{font-size:.75rem;color:#64748b;}
+    .aset-card-lampu{font-size:.75rem;color:#94a3b8;}
+    .aset-card-actions{display:flex;justify-content:flex-end;gap:7px;border-top:1px solid #f8fafc;padding-top:9px;margin-top:2px;}
+
     @media(max-width:768px){
       .form-row{grid-template-columns:1fr;}
-      .toolbar{gap:6px;overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px;}
-      .toolbar select,.toolbar input{flex-shrink:0;}
-      .content{padding:12px;padding-bottom:80px;}
+      /* Sembunyikan toolbar & tabel desktop */
+      .toolbar{display:none;}
+      .card{display:none;}
+      /* Tampilkan versi mobile */
+      .toolbar-mobile{display:flex;gap:8px;align-items:center;margin-bottom:12px;}
+      .toolbar-mobile input{flex:1;padding:9px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:.85rem;background:#fff;color:#0f172a;}
+      .toolbar-mobile select{padding:9px 10px;border:1px solid #e2e8f0;border-radius:8px;font-size:.82rem;background:#fff;color:#0f172a;}
+      .card-list{display:block;}
+      .content{padding:12px;padding-bottom:82px;}
       .topbar{padding:10px 14px;}
       .topbar-actions .btn span{display:none;}
+      #jumlah-aset-mobile{font-size:.76rem;color:#94a3b8;margin-bottom:8px;}
+    }
+    @media(min-width:769px){
+      .toolbar-mobile{display:none!important;}
+      .card-list{display:none!important;}
+      .drawer-overlay,.filter-drawer{display:none!important;}
     }
   </style>
 </head>
@@ -103,6 +144,8 @@
     </div>
   </div>
   <div class="content">
+
+    <!-- ===== TOOLBAR DESKTOP ===== -->
     <div class="toolbar">
       <select id="f-status" onchange="loadAset(1)"><option value="">Semua Status</option><option value="Menyala">Menyala</option><option value="Rusak">Rusak</option><option value="Dalam Pengerjaan">Dalam Pengerjaan</option></select>
       <select id="f-kategori" onchange="loadAset(1)"><option value="">Semua Kategori Jalan</option><option value="Jalan Kota">Jalan Kota</option><option value="Jalan Lingkungan">Jalan Lingkungan</option><option value="Jalan Lingkungan Kampung">Jalan Lingkungan Kampung</option><option value="Lainnya">Lainnya</option></select>
@@ -112,14 +155,29 @@
       <button class="btn btn-secondary" onclick="resetFilter()">↺ Reset</button>
       <span id="jumlah-aset" style="font-size:.8rem;color:#94a3b8;margin-left:auto;flex-shrink:0"></span>
     </div>
+
+    <!-- ===== TOOLBAR MOBILE ===== -->
+    <div class="toolbar-mobile">
+      <input type="text" id="m-cari" placeholder="🔍 Cari kode / alamat..." oninput="debounceLoadMobile()">
+      <select id="m-status" onchange="resetInfiniteLoad()">
+        <option value="">Semua</option>
+        <option value="Menyala">Menyala</option>
+        <option value="Rusak">Rusak</option>
+        <option value="Dalam Pengerjaan">Pengerjaan</option>
+      </select>
+      <button class="btn btn-secondary btn-sm" onclick="bukaFilterDrawer()" style="white-space:nowrap;flex-shrink:0">⚙ Filter</button>
+    </div>
+    <div id="jumlah-aset-mobile"></div>
+
+    <!-- ===== TABEL DESKTOP ===== -->
     <div class="card">
       <div class="table-wrap">
         <table>
           <thead><tr>
-            <th>#</th><th>Kode Aset</th><th>Alamat</th><th>Wilayah</th>
+            <th>Kode Aset</th><th>Alamat</th><th>Wilayah</th>
             <th>Kategori PJU</th><th>Lampu / Watt</th><th>Status</th><th>Aksi</th>
           </tr></thead>
-          <tbody id="tbody-aset"><tr><td colspan="8" class="loading">🔄 Memuat data...</td></tr></tbody>
+          <tbody id="tbody-aset"><tr><td colspan="7" class="loading">🔄 Memuat data...</td></tr></tbody>
         </table>
       </div>
       <div class="pagination" id="pagination" style="display:none">
@@ -128,13 +186,52 @@
         <button id="btn-next" onclick="loadAset(curPage+1)">Next ›</button>
       </div>
     </div>
+
+    <!-- ===== CARD LIST MOBILE ===== -->
+    <div class="card-list" id="card-list"></div>
+    <div class="infinite-spinner" id="infinite-spinner">🔄 Memuat lebih banyak...</div>
+    <div id="infinite-end" style="text-align:center;font-size:.78rem;color:#cbd5e1;padding:12px;display:none">— Semua data telah dimuat —</div>
+
   </div>
 </div>
 
-<!-- Toast container -->
+<!-- Toast -->
 <div id="pijar-toast-wrap"></div>
 
-<!-- Modal Konfirmasi Custom -->
+<!-- Filter Drawer Overlay -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="tutupFilterDrawer()"></div>
+<div class="filter-drawer" id="filter-drawer">
+  <div class="drawer-handle"></div>
+  <div class="drawer-title">⚙ Filter Lanjutan</div>
+  <div class="drawer-field">
+    <label>Kategori Jalan</label>
+    <select id="d-kategori">
+      <option value="">Semua</option>
+      <option value="Jalan Kota">Jalan Kota</option>
+      <option value="Jalan Lingkungan">Jalan Lingkungan</option>
+      <option value="Jalan Lingkungan Kampung">Jalan Lingkungan Kampung</option>
+      <option value="Lainnya">Lainnya</option>
+    </select>
+  </div>
+  <div class="drawer-field">
+    <label>Kategori PJU</label>
+    <select id="d-id-kategori"><option value="">Semua</option></select>
+  </div>
+  <div class="drawer-field">
+    <label>Kemantren</label>
+    <input type="text" id="d-kemantren" placeholder="Contoh: Umbulharjo">
+  </div>
+  <div class="drawer-field">
+    <label>Kelurahan</label>
+    <input type="text" id="d-kelurahan" placeholder="Contoh: Giwangan">
+  </div>
+  <div class="drawer-actions">
+    <button class="btn btn-secondary" onclick="resetFilterMobile()">↺ Reset</button>
+    <button class="btn btn-primary" onclick="terapkanFilterDrawer()">Terapkan Filter</button>
+  </div>
+</div>
+
+<!-- Modal Konfirmasi -->
 <div class="modal-overlay" id="modal-konfirmasi">
   <div class="modal">
     <div class="konfirm-icon" id="konfirm-icon">⚠️</div>
@@ -281,12 +378,19 @@ const H=()=>({'Content-Type':'application/json','Authorization':'Bearer '+TOKEN(
 const HN=()=>({'Authorization':'Bearer '+TOKEN()});
 const bS={'Menyala':'badge-hijau','Rusak':'badge-merah','Dalam Pengerjaan':'badge-kuning'};
 
+// Desktop state
 let curPage=1,totalPages=1,debTimer=null;
+// Mobile infinite scroll state
+let mPage=1,mTotalPages=1,mLoading=false,mDebTimer=null;
+
 let detailAsetId=null,suggestKode='';
 let daftarWilayah=[],daftarKategori=[];
 
+// ===== Deteksi mode =====
+const isMobile=()=>window.innerWidth<=768;
+
 // ===== Toast =====
-function pijarToast(msg, type='success', durasi=4000){
+function pijarToast(msg,type='success',durasi=4000){
   const icons={success:'✅',error:'❌',info:'ℹ️',warn:'⚠️'};
   const wrap=document.getElementById('pijar-toast-wrap');
   const el=document.createElement('div');
@@ -294,11 +398,11 @@ function pijarToast(msg, type='success', durasi=4000){
   el.innerHTML=`<span>${icons[type]||''}</span><span>${msg}</span>`;
   wrap.appendChild(el);
   requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('show')));
-  setTimeout(()=>{ el.classList.remove('show'); setTimeout(()=>el.remove(),300); },durasi);
+  setTimeout(()=>{el.classList.remove('show');setTimeout(()=>el.remove(),300);},durasi);
 }
 
 // ===== Modal Konfirmasi =====
-function pijarConfirm(msg, icon='⚠️', labelOk='Ya, Lanjutkan', tipeBtnOk='btn-danger'){
+function pijarConfirm(msg,icon='⚠️',labelOk='Ya, Lanjutkan',tipeBtnOk='btn-danger'){
   return new Promise(resolve=>{
     document.getElementById('konfirm-icon').textContent=icon;
     document.getElementById('konfirm-msg').textContent=msg;
@@ -309,15 +413,37 @@ function pijarConfirm(msg, icon='⚠️', labelOk='Ya, Lanjutkan', tipeBtnOk='bt
     document.getElementById('modal-konfirmasi').classList.add('show');
     const tutup=(val)=>{
       document.getElementById('modal-konfirmasi').classList.remove('show');
-      btnOk.onclick=null; btnBatal.onclick=null;
-      resolve(val);
+      btnOk.onclick=null;btnBatal.onclick=null;resolve(val);
     };
     btnOk.onclick=()=>tutup(true);
     btnBatal.onclick=()=>tutup(false);
   });
 }
 
+// ===== Filter Drawer =====
+function bukaFilterDrawer(){
+  document.getElementById('drawer-overlay').classList.add('show');
+  document.getElementById('filter-drawer').classList.add('show');
+}
+function tutupFilterDrawer(){
+  document.getElementById('drawer-overlay').classList.remove('show');
+  document.getElementById('filter-drawer').classList.remove('show');
+}
+function terapkanFilterDrawer(){
+  tutupFilterDrawer();
+  resetInfiniteLoad();
+}
+function resetFilterMobile(){
+  ['d-kategori','d-id-kategori'].forEach(id=>document.getElementById(id).value='');
+  ['d-kemantren','d-kelurahan','m-cari'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('m-status').value='';
+  tutupFilterDrawer();
+  resetInfiniteLoad();
+}
+
+// ===== Debounce =====
 function debounceLoad(){clearTimeout(debTimer);debTimer=setTimeout(()=>loadAset(1),500);}
+function debounceLoadMobile(){clearTimeout(mDebTimer);mDebTimer=setTimeout(()=>resetInfiniteLoad(),500);}
 
 function resetFilter(){
   ['f-status','f-kategori','f-id-kategori'].forEach(id=>document.getElementById(id).value='');
@@ -325,17 +451,35 @@ function resetFilter(){
   loadAset(1);
 }
 
+// ===== Build URL params =====
+function buildParams(page,perPage){
+  const mobile=isMobile();
+  const status=mobile?document.getElementById('m-status').value:document.getElementById('f-status').value;
+  const kat=mobile?document.getElementById('d-kategori').value:document.getElementById('f-kategori').value;
+  const idKat=mobile?document.getElementById('d-id-kategori').value:document.getElementById('f-id-kategori').value;
+  const kemantren=mobile?document.getElementById('d-kemantren').value.trim():document.getElementById('f-kemantren').value.trim();
+  const kelurahan=mobile?document.getElementById('d-kelurahan').value.trim():document.getElementById('f-kelurahan').value.trim();
+  const cari=mobile?document.getElementById('m-cari').value.trim():'';
+  let url=`${API}/api/aset?page=${page}&per_page=${perPage}`;
+  if(status)url+=`&status=${encodeURIComponent(status)}`;
+  if(kat)url+=`&kategori_jalan=${encodeURIComponent(kat)}`;
+  if(idKat)url+=`&id_kategori=${idKat}`;
+  if(kemantren)url+=`&kemantren=${encodeURIComponent(kemantren)}`;
+  if(kelurahan)url+=`&kelurahan=${encodeURIComponent(kelurahan)}`;
+  if(cari)url+=`&q=${encodeURIComponent(cari)}`;
+  return url;
+}
+
+// ===== Load Kategori & Wilayah =====
 async function loadKategoriPJU(){
   try{
     const r=await fetch(`${API}/api/kategori-pju`,{headers:HN()});
     const j=await r.json();
     daftarKategori=j.data||[];
-    const selF=document.getElementById('f-id-kategori');
-    const selT=document.getElementById('t-id-kategori');
-    const selE=document.getElementById('e-id-kategori');
+    const targets=['f-id-kategori','t-id-kategori','e-id-kategori','d-id-kategori'];
     daftarKategori.forEach(k=>{
       const opt=`<option value="${k.id}" data-kode="${k.kode}">${k.kode} — ${k.nama}</option>`;
-      selF.innerHTML+=opt; selT.innerHTML+=opt; selE.innerHTML+=opt;
+      targets.forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML+=opt;});
     });
   }catch(e){console.warn('Gagal load kategori',e);}
 }
@@ -345,30 +489,19 @@ async function loadWilayah(){
     const r=await fetch(`${API}/api/wilayah`,{headers:HN()});
     const j=await r.json();
     daftarWilayah=j.data||[];
-    const selT=document.getElementById('t-id-wilayah');
-    const selE=document.getElementById('e-id-wilayah');
-    daftarWilayah.forEach(w=>{
-      const opt=`<option value="${w.id_wilayah}" data-kode="${w.kode_wilayah}">${w.kode_wilayah} — ${w.nama_kelurahan} (${w.nama_kemantren})</option>`;
-      selT.innerHTML+=opt; selE.innerHTML+=opt;
+    ['t-id-wilayah','e-id-wilayah'].forEach(id=>{
+      const sel=document.getElementById(id);
+      daftarWilayah.forEach(w=>{sel.innerHTML+=`<option value="${w.id_wilayah}" data-kode="${w.kode_wilayah}">${w.kode_wilayah} — ${w.nama_kelurahan} (${w.nama_kemantren})</option>`;});
     });
   }catch(e){console.warn('Gagal load wilayah',e);}
 }
 
+// ===== Desktop: load dengan pagination =====
 async function loadAset(page=1){
   curPage=page;
-  const status=document.getElementById('f-status').value;
-  const kat=document.getElementById('f-kategori').value;
-  const idKat=document.getElementById('f-id-kategori').value;
-  const kemantren=document.getElementById('f-kemantren').value.trim();
-  const kelurahan=document.getElementById('f-kelurahan').value.trim();
-  let url=`${API}/api/aset?page=${page}&per_page=25`;
-  if(status)url+=`&status=${encodeURIComponent(status)}`;
-  if(kat)url+=`&kategori_jalan=${encodeURIComponent(kat)}`;
-  if(idKat)url+=`&id_kategori=${idKat}`;
-  if(kemantren)url+=`&kemantren=${encodeURIComponent(kemantren)}`;
-  if(kelurahan)url+=`&kelurahan=${encodeURIComponent(kelurahan)}`;
+  const url=buildParams(page,25);
   const tbody=document.getElementById('tbody-aset');
-  tbody.innerHTML='<tr><td colspan="8" class="loading">🔄 Memuat...</td></tr>';
+  tbody.innerHTML='<tr><td colspan="7" class="loading">🔄 Memuat...</td></tr>';
   try{
     const res=await fetch(url,{headers:HN(),cache:'no-store'});
     if(res.status===401){window.location='/login.html';return;}
@@ -384,27 +517,91 @@ async function loadAset(page=1){
       document.getElementById('btn-prev').disabled=curPage<=1;
       document.getElementById('btn-next').disabled=curPage>=totalPages;
     }else{pgEl.style.display='none';}
-    if(!data.length){tbody.innerHTML='<tr><td colspan="8" class="loading">Tidak ada data.</td></tr>';return;}
-    tbody.innerHTML=data.map((a,i)=>{
-      const no=(curPage-1)*25+i+1;
-      return `<tr>
-        <td style="color:#94a3b8;font-size:.75rem">${no}</td>
-        <td><code style="font-size:.78rem;color:#1a56db;cursor:pointer" onclick="bukaDetail(${a.id_aset})">${a.kode_aset||'—'}</code></td>
-        <td style="max-width:180px;font-size:.8rem">${a.alamat}</td>
-        <td style="font-size:.78rem;color:#64748b">${a.nama_kelurahan||'—'}<br><span style="color:#94a3b8">${a.sektor||''}</span></td>
-        <td><span class="badge badge-biru" style="font-size:.7rem">${a.nama_kategori||a.kategori_jalan}</span></td>
-        <td style="font-size:.8rem">${a.jenis_lampu||'—'} ${a.watt?'<b>'+a.watt+'W</b>':''}</td>
-        <td><span class="badge ${bS[a.status]||'badge-biru'}">${a.status}</span></td>
-        <td style="white-space:nowrap">
-          <button class="btn btn-secondary btn-sm" onclick="bukaDetail(${a.id_aset})" title="Detail">👁</button>
-          <button class="btn btn-warning btn-sm" onclick="bukaDetailLaluEdit(${a.id_aset})" title="Edit">✏️</button>
-          <a href="laporan.html?aset=${a.id_aset}"><button class="btn btn-primary btn-sm" title="Laporan">📋</button></a>
-        </td>
-      </tr>`;
-    }).join('');
-  }catch(e){tbody.innerHTML='<tr><td colspan="8" class="loading">❌ Gagal memuat data.</td></tr>';console.error(e);}
+    if(!data.length){tbody.innerHTML='<tr><td colspan="7" class="loading">Tidak ada data.</td></tr>';return;}
+    tbody.innerHTML=data.map(a=>`<tr>
+      <td><code style="font-size:.78rem;color:#1a56db;cursor:pointer" onclick="bukaDetail(${a.id_aset})">${a.kode_aset||'—'}</code></td>
+      <td style="max-width:180px;font-size:.8rem">${a.alamat}</td>
+      <td style="font-size:.78rem;color:#64748b">${a.nama_kelurahan||'—'}<br><span style="color:#94a3b8">${a.sektor||''}</span></td>
+      <td><span class="badge badge-biru" style="font-size:.7rem">${a.nama_kategori||a.kategori_jalan}</span></td>
+      <td style="font-size:.8rem">${a.jenis_lampu||'—'} ${a.watt?'<b>'+a.watt+'W</b>':''}</td>
+      <td><span class="badge ${bS[a.status]||'badge-biru'}">${a.status}</span></td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-secondary btn-sm" onclick="bukaDetail(${a.id_aset})" title="Detail">👁</button>
+        <button class="btn btn-warning btn-sm" onclick="bukaDetailLaluEdit(${a.id_aset})" title="Edit">✏️</button>
+        <a href="laporan.html?aset=${a.id_aset}"><button class="btn btn-primary btn-sm" title="Laporan">📋</button></a>
+      </td>
+    </tr>`).join('');
+  }catch(e){tbody.innerHTML='<tr><td colspan="7" class="loading">❌ Gagal memuat data.</td></tr>';console.error(e);}
 }
 
+// ===== Mobile: infinite scroll =====
+function resetInfiniteLoad(){
+  mPage=1;mTotalPages=1;mLoading=false;
+  document.getElementById('card-list').innerHTML='';
+  document.getElementById('infinite-end').style.display='none';
+  loadMobilePage();
+}
+
+async function loadMobilePage(){
+  if(mLoading||mPage>mTotalPages)return;
+  mLoading=true;
+  const spinner=document.getElementById('infinite-spinner');
+  spinner.style.display='block';
+  const url=buildParams(mPage,25);
+  try{
+    const res=await fetch(url,{headers:HN(),cache:'no-store'});
+    if(res.status===401){window.location='/login.html';return;}
+    const json=await res.json();
+    const data=json.data||[];
+    const meta=json.meta||{};
+    mTotalPages=meta.total_pages||1;
+    if(mPage===1){
+      const total=meta.total||data.length;
+      document.getElementById('jumlah-aset-mobile').textContent=total+' aset ditemukan';
+    }
+    const container=document.getElementById('card-list');
+    if(mPage===1&&!data.length){
+      container.innerHTML='<div class="loading" style="background:#fff;border-radius:12px;padding:32px">Tidak ada data.</div>';
+      spinner.style.display='none';mLoading=false;return;
+    }
+    data.forEach(a=>{
+      const card=document.createElement('div');
+      card.className='aset-card';
+      card.innerHTML=`
+        <div class="aset-card-top">
+          <span class="aset-card-kode">${a.kode_aset||'—'}</span>
+          <span class="badge ${bS[a.status]||'badge-biru'}">${a.status}</span>
+        </div>
+        <div class="aset-card-alamat">${a.alamat}</div>
+        <div class="aset-card-meta">
+          <span class="aset-card-wilayah">${a.nama_kelurahan||'—'}${a.nama_kemantren?' · '+a.nama_kemantren:''}</span>
+          <span class="aset-card-lampu">${a.jenis_lampu||''}${a.watt?' '+a.watt+'W':''}</span>
+        </div>
+        <div class="aset-card-actions">
+          <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();bukaDetail(${a.id_aset})">👁 Detail</button>
+          <button class="btn btn-warning btn-sm" onclick="event.stopPropagation();bukaDetailLaluEdit(${a.id_aset})">✏️ Edit</button>
+          <a href="laporan.html?aset=${a.id_aset}" onclick="event.stopPropagation()"><button class="btn btn-primary btn-sm">📋</button></a>
+        </div>`;
+      card.addEventListener('click',()=>bukaDetail(a.id_aset));
+      container.appendChild(card);
+    });
+    mPage++;
+    if(mPage>mTotalPages){
+      document.getElementById('infinite-end').style.display='block';
+    }
+  }catch(e){console.error(e);}finally{
+    spinner.style.display='none';
+    mLoading=false;
+  }
+}
+
+// ===== Infinite scroll observer =====
+const scrollObserver=new IntersectionObserver(entries=>{
+  if(entries[0].isIntersecting&&isMobile())loadMobilePage();
+},{rootMargin:'200px'});
+scrollObserver.observe(document.getElementById('infinite-spinner'));
+
+// ===== Export =====
 async function exportAset(){
   let url=`${API}/api/aset/export?`;
   const status=document.getElementById('f-status').value;
@@ -428,6 +625,7 @@ async function exportAset(){
   }catch(e){pijarToast('Gagal export: '+e.message,'error');}
 }
 
+// ===== Detail =====
 async function bukaDetail(id){
   detailAsetId=id;
   switchTab('tab-info',document.querySelector('.tab-btn'));
@@ -501,55 +699,39 @@ function _isiFormEdit(a){
 async function submitEditAset(){
   if(!detailAsetId){pijarToast('ID aset tidak ditemukan!','error');return;}
   const btn=document.getElementById('btn-simpan-edit');
-  btn.disabled=true; btn.textContent='Menyimpan...';
-
+  btn.disabled=true;btn.textContent='Menyimpan...';
   const latStr=document.getElementById('e-lat').value.trim();
   const lngStr=document.getElementById('e-lng').value.trim();
   const lat=parseFloat(latStr.replace(',','.'));
   const lng=parseFloat(lngStr.replace(',','.'));
   const alamat=document.getElementById('e-alamat').value.trim();
-
   if(!alamat){pijarToast('Alamat wajib diisi!','error');btn.disabled=false;btn.textContent='💾 Simpan Perubahan';return;}
-  if(isNaN(lat)||isNaN(lng)){pijarToast('Koordinat tidak valid! Contoh: -7.8 dan 110.366','error');btn.disabled=false;btn.textContent='💾 Simpan Perubahan';return;}
-
-  const wattVal=document.getElementById('e-watt').value.trim();
-  const tinggiVal=document.getElementById('e-tinggi').value.trim();
-  const tahunVal=document.getElementById('e-tahun').value.trim();
-
+  if(isNaN(lat)||isNaN(lng)){pijarToast('Koordinat tidak valid!','error');btn.disabled=false;btn.textContent='💾 Simpan Perubahan';return;}
   const body={
     alamat,lat,lng,
-    tahun_pemasangan:tahunVal?parseInt(tahunVal):null,
+    tahun_pemasangan:document.getElementById('e-tahun').value?parseInt(document.getElementById('e-tahun').value):null,
     id_kategori:parseInt(document.getElementById('e-id-kategori').value)||null,
     id_wilayah:parseInt(document.getElementById('e-id-wilayah').value)||null,
     kategori_jalan:document.getElementById('e-kat-jalan').value,
     sub_kategori_lainnya:document.getElementById('e-kat-jalan').value==='Lainnya'?document.getElementById('e-sub-kat').value:null,
     jenis_tiang:document.getElementById('e-jenis-tiang').value.trim()||null,
-    tinggi_meter:tinggiVal?parseFloat(tinggiVal.replace(',','.')):null,
+    tinggi_meter:document.getElementById('e-tinggi').value?parseFloat(document.getElementById('e-tinggi').value.replace(',','.')):null,
     jenis_lampu:document.getElementById('e-jenis-lampu').value.trim()||null,
-    watt:wattVal?parseInt(wattVal):null,
+    watt:document.getElementById('e-watt').value?parseInt(document.getElementById('e-watt').value):null,
     merk_lampu:document.getElementById('e-merk-lampu').value.trim()||null,
     tipe_lampu:document.getElementById('e-tipe-lampu').value.trim()||null,
     status:document.getElementById('e-status').value,
   };
-
   try{
-    const res=await fetch(`${API}/api/aset/${detailAsetId}`,{
-      method:'PUT',headers:H(),body:JSON.stringify(body)
-    });
+    const res=await fetch(`${API}/api/aset/${detailAsetId}`,{method:'PUT',headers:H(),body:JSON.stringify(body)});
     const json=await res.json();
     if(json.success){
       document.getElementById('modal-edit').classList.remove('show');
       pijarToast(`Aset ${json.data.kode_aset} berhasil diperbarui`,'success');
-      loadAset(curPage);
-    }else{
-      pijarToast('Gagal menyimpan: '+(json.error||'Unknown error'),'error',6000);
-    }
-  }catch(e){
-    pijarToast('Error koneksi: '+e.message,'error',6000);
-  }finally{
-    btn.disabled=false;
-    btn.innerHTML='💾 Simpan Perubahan';
-  }
+      isMobile()?resetInfiniteLoad():loadAset(curPage);
+    }else{pijarToast('Gagal: '+(json.error||'Unknown error'),'error',6000);}
+  }catch(e){pijarToast('Error: '+e.message,'error',6000);}
+  finally{btn.disabled=false;btn.innerHTML='💾 Simpan Perubahan';}
 }
 
 async function loadMutasi(){
@@ -588,7 +770,8 @@ async function submitMutasi(){
     if(json.success){
       pijarToast('Mutasi berhasil dicatat!','success');
       switchTab('tab-mutasi',document.querySelectorAll('.tab-btn')[1]);
-      loadMutasi(); loadAset(curPage);
+      loadMutasi();
+      isMobile()?resetInfiniteLoad():loadAset(curPage);
     }else{pijarToast('Gagal: '+json.error,'error');}
   }catch(e){pijarToast('Error: '+e.message,'error');}
 }
@@ -603,7 +786,7 @@ async function hapusAset(){
     if(json.success){
       document.getElementById('modal-detail').classList.remove('show');
       pijarToast('Aset berhasil dihapus.','success');
-      loadAset(curPage);
+      isMobile()?resetInfiniteLoad():loadAset(curPage);
     }else{pijarToast('Gagal: '+json.error,'error');}
   }catch(e){pijarToast('Error: '+e.message,'error');}
 }
@@ -658,8 +841,7 @@ async function cekKodeAset(){
     try{
       const res=await fetch(`${API}/api/aset/cek-kode?kode=${encodeURIComponent(kode)}`,{headers:HN()});
       const json=await res.json();
-      const hint=document.getElementById('kode-hint');
-      hint.textContent=json.tersedia?'✅ Kode tersedia':'⛔ '+json.pesan+(json.dipakai_oleh?' ('+json.dipakai_oleh+')':'');
+      document.getElementById('kode-hint').textContent=json.tersedia?'✅ Kode tersedia':'⛔ '+json.pesan+(json.dipakai_oleh?' ('+json.dipakai_oleh+')':'');
     }catch(e){}
   },400);
 }
@@ -673,7 +855,7 @@ async function submitTambahAset(){
     id_wilayah:parseInt(document.getElementById('t-id-wilayah').value)||null,
     tahun_pemasangan:parseInt(document.getElementById('t-tahun').value)||null,
     alamat:document.getElementById('t-alamat').value.trim(),
-    lat:parseFloat(latStr.replace(',','.')) ,
+    lat:parseFloat(latStr.replace(',','.')),
     lng:parseFloat(lngStr.replace(',','.')),
     kategori_jalan:document.getElementById('t-kat-jalan').value,
     sub_kategori_lainnya:document.getElementById('t-kat-jalan').value==='Lainnya'?document.getElementById('t-sub-kat').value:null,
@@ -692,14 +874,27 @@ async function submitTambahAset(){
     if(json.success){
       document.getElementById('modal-tambah').classList.remove('show');
       pijarToast('Aset berhasil ditambahkan: '+json.data.kode_aset,'success');
-      loadAset(1);
+      isMobile()?resetInfiniteLoad():loadAset(1);
     }else{pijarToast('Gagal: '+json.error,'error');}
   }catch(e){pijarToast('Error: '+e.message,'error');}
 }
 
+// ===== Init =====
 loadKategoriPJU();
 loadWilayah();
-loadAset(1);
+if(isMobile()){
+  resetInfiniteLoad();
+}else{
+  loadAset(1);
+}
+// Re-init on orientation change
+window.addEventListener('resize',()=>{
+  clearTimeout(window._resizeTimer);
+  window._resizeTimer=setTimeout(()=>{
+    if(isMobile()&&document.getElementById('card-list').children.length===0)resetInfiniteLoad();
+    if(!isMobile()&&document.getElementById('tbody-aset').querySelector('.loading'))loadAset(1);
+  },300);
+});
 </script>
 </body>
 </html>
