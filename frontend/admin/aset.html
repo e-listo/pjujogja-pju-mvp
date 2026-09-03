@@ -64,6 +64,7 @@
     .tab-bar{display:flex;gap:0;border-bottom:2px solid #e2e8f0;margin-bottom:16px;}
     .tab-btn{padding:8px 16px;border:none;background:none;font-size:.82rem;font-weight:600;color:#94a3b8;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;}
     .tab-btn.active{color:#1a56db;border-bottom-color:#1a56db;}
+    .section-label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8;margin:14px 0 6px;padding-bottom:4px;border-bottom:1px solid #f1f5f9;}
     @media(max-width:768px){.pijar-main{margin-left:0;}.form-row{grid-template-columns:1fr;}.toolbar{gap:6px;}}
   </style>
 </head>
@@ -155,14 +156,24 @@
         <select id="t-sub-kat"><option>Taman</option><option>Makam</option><option>Sorot Sungai</option><option>Hias/Budaya</option></select>
       </div>
     </div>
+    <!-- Tiang -->
+    <div class="section-label">🔩 Data Tiang</div>
     <div class="form-row">
       <div class="form-group"><label>Jenis Tiang</label><input type="text" id="t-jenis-tiang" placeholder="Besi, Beton, dll"></div>
       <div class="form-group"><label>Tinggi (m)</label><input type="number" id="t-tinggi" step="0.1" placeholder="7"></div>
     </div>
+    <!-- Lampu -->
+    <div class="section-label">💡 Data Lampu</div>
     <div class="form-row">
       <div class="form-group"><label>Jenis Lampu</label><input type="text" id="t-jenis-lampu" placeholder="LED, HPS, dll"></div>
       <div class="form-group"><label>Daya (Watt)</label><input type="number" id="t-watt" placeholder="50"></div>
     </div>
+    <div class="form-row">
+      <div class="form-group"><label>Merk Lampu</label><input type="text" id="t-merk-lampu" placeholder="Philips, Osram, dll"></div>
+      <div class="form-group"><label>Tipe / Model</label><input type="text" id="t-tipe-lampu" placeholder="BRP131, SON-T, dll"></div>
+    </div>
+    <!-- Status -->
+    <div class="section-label">📋 Status</div>
     <div class="form-group">
       <label>Status</label>
       <select id="t-status"><option>Menyala</option><option>Rusak</option><option>Dalam Pengerjaan</option></select>
@@ -379,7 +390,9 @@ async function bukaDetail(id){
         <tr><td style="padding:5px 8px;color:#94a3b8">Kategori PJU</td><td>${a.nama_kategori||'—'}</td></tr>
         <tr><td style="padding:5px 8px;color:#94a3b8">Kategori Jalan</td><td>${a.kategori_jalan}${a.sub_kategori_lainnya?' / '+a.sub_kategori_lainnya:''}</td></tr>
         <tr><td style="padding:5px 8px;color:#94a3b8">Jenis Tiang</td><td>${a.jenis_tiang||'—'}</td></tr>
-        <tr><td style="padding:5px 8px;color:#94a3b8">Lampu</td><td>${a.jenis_lampu||'—'} ${a.watt?a.watt+'W':''}</td></tr>
+        <tr><td style="padding:5px 8px;color:#94a3b8">Jenis Lampu</td><td>${a.jenis_lampu||'—'} ${a.watt?a.watt+'W':''}</td></tr>
+        <tr><td style="padding:5px 8px;color:#94a3b8">Merk Lampu</td><td>${a.merk_lampu||'—'}</td></tr>
+        <tr><td style="padding:5px 8px;color:#94a3b8">Tipe / Model</td><td>${a.tipe_lampu||'—'}</td></tr>
         <tr><td style="padding:5px 8px;color:#94a3b8">Koordinat</td><td>${a.lat}, ${a.lng}</td></tr>
         <tr><td style="padding:5px 8px;color:#94a3b8">Status</td><td><span class="badge ${bS[a.status]||'badge-biru'}">${a.status}</span></td></tr>
         <tr><td style="padding:5px 8px;color:#94a3b8">Tahun Pasang</td><td>${a.tahun_pemasangan||'—'}</td></tr>
@@ -536,6 +549,8 @@ async function submitTambahAset(){
     tinggi_meter:parseFloat(document.getElementById('t-tinggi').value)||null,
     jenis_lampu:document.getElementById('t-jenis-lampu').value||null,
     watt:parseInt(document.getElementById('t-watt').value)||null,
+    merk_lampu:document.getElementById('t-merk-lampu').value||null,
+    tipe_lampu:document.getElementById('t-tipe-lampu').value||null,
     status:document.getElementById('t-status').value,
   };
   if(!body.kode_aset||!body.alamat||isNaN(body.lat)||isNaN(body.lng)){
