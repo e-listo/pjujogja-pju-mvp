@@ -58,6 +58,17 @@ def _paginate(query, default_per_page=20):
 
 
 def _apply_aset_filters(query):
+    # --- Search kode_aset + alamat (parameter ?q=) ---
+    q_search = request.args.get("q", "").strip()
+    if q_search:
+        like = f"%{q_search}%"
+        query = query.filter(
+            db.or_(
+                AsetPJU.kode_aset.ilike(like),
+                AsetPJU.alamat.ilike(like),
+            )
+        )
+
     status_filter = request.args.get("status")
     kategori_filter = request.args.get("kategori_jalan")
     id_wilayah_filter = request.args.get("id_wilayah", type=int)
