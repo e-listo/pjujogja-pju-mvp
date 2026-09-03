@@ -13,8 +13,8 @@
     .topbar h2{font-size:.95rem;font-weight:700;color:#0f172a;}
     .topbar-actions{display:flex;gap:8px;align-items:center;}
     .content{padding:20px 24px;}
-    /* ===== Toolbar Desktop ===== */
-    .toolbar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center;}
+    /* ===== Toolbar Desktop (LEGACY, disembunyikan - diganti .toolbar-v2) ===== */
+    .toolbar{display:none!important;}
     .toolbar select,.toolbar input{padding:7px 11px;border:1px solid #e2e8f0;border-radius:7px;font-size:.82rem;background:#fff;color:#0f172a;}
     .toolbar input{min-width:160px;}
     .btn{padding:7px 14px;border-radius:7px;border:none;cursor:pointer;font-size:.82rem;font-weight:600;transition:opacity .15s;display:inline-flex;align-items:center;gap:5px;}
@@ -40,6 +40,34 @@
     .pagination{display:flex;align-items:center;gap:8px;padding:12px 16px;font-size:.82rem;color:#64748b;border-top:1px solid #f1f5f9;}
     .pagination button{padding:4px 10px;border-radius:6px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;font-size:.8rem;}
     .pagination button:disabled{opacity:.4;cursor:default;}
+
+    /* ===== Toolbar Desktop v2 (search bar + Filter + Sort + badge) ===== */
+    .toolbar-v2{display:block;margin-bottom:14px;}
+    .search-row{margin-bottom:10px;}
+    .search-input{width:100%;padding:11px 14px;border:1px solid #e2e8f0;border-radius:9px;font-size:.9rem;background:#fff;color:#0f172a;}
+    .search-input:focus{outline:none;border-color:#1a56db;box-shadow:0 0 0 3px rgba(26,86,219,.1);}
+    .toolbar-actions{display:flex;align-items:center;gap:8px;}
+    .filter-wrap,.sort-wrap{position:relative;}
+    .btn-filter{position:relative;}
+    .filter-count{background:#1a56db;color:#fff;font-size:.65rem;font-weight:700;padding:1px 6px;border-radius:99px;margin-left:2px;}
+    .jumlah-aset-v2{font-size:.8rem;color:#94a3b8;margin-left:auto;}
+    .filter-panel,.sort-panel{display:none;position:absolute;top:calc(100% + 6px);left:0;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 12px 28px rgba(0,0,0,.12);padding:14px;z-index:80;}
+    .filter-panel.show,.sort-panel.show{display:block;}
+    .filter-panel{width:300px;max-height:70vh;overflow-y:auto;}
+    .sort-panel{width:220px;}
+    .filter-section{margin-bottom:12px;}
+    .filter-section:last-of-type{margin-bottom:0;}
+    .filter-section-title{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;margin-bottom:6px;}
+    .chk-item{display:flex;align-items:center;gap:7px;font-size:.83rem;color:#374151;padding:4px 2px;cursor:pointer;}
+    .chk-item input{accent-color:#1a56db;cursor:pointer;}
+    .chk-scroll{max-height:140px;overflow-y:auto;border:1px solid #f1f5f9;border-radius:7px;padding:4px 8px;}
+    .chk-empty{font-size:.78rem;color:#cbd5e1;padding:8px 2px;text-align:center;}
+    .filter-panel-actions{display:flex;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid #f1f5f9;}
+    .filter-panel-actions .btn{flex:1;justify-content:center;}
+    .badge-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+    .filter-badge{display:inline-flex;align-items:center;gap:5px;background:#eef2ff;color:#1a56db;font-size:.75rem;font-weight:600;padding:4px 9px;border-radius:99px;}
+    .filter-badge .fb-close{cursor:pointer;font-weight:700;opacity:.7;}
+    .filter-badge .fb-close:hover{opacity:1;}
 
     /* ===== Modal ===== */
     .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;align-items:center;justify-content:center;backdrop-filter:blur(2px);}
@@ -114,7 +142,7 @@
     @media(max-width:768px){
       .form-row{grid-template-columns:1fr;}
       /* Sembunyikan toolbar & tabel desktop */
-      .toolbar{display:none;}
+      .toolbar-v2{display:none;}
       .card{display:none;}
       /* Tampilkan versi mobile */
       .toolbar-mobile{display:flex;gap:8px;align-items:center;margin-bottom:12px;}
@@ -145,7 +173,65 @@
   </div>
   <div class="content">
 
-    <!-- ===== TOOLBAR DESKTOP ===== -->
+    <!-- ===== TOOLBAR DESKTOP v2 (mockup: search + Filter + Sort + badge) ===== -->
+    <div class="toolbar-v2">
+      <div class="search-row">
+        <input type="text" id="d-search" class="search-input" placeholder="🔍 Cari kode aset, alamat, kemantren, atau kelurahan...">
+      </div>
+      <div class="toolbar-actions">
+        <div class="filter-wrap">
+          <button class="btn btn-secondary btn-filter" id="btn-filter-toggle" onclick="toggleFilterPanel()">
+            ☰ Filter <span class="filter-count" id="filter-count" style="display:none">0</span>
+          </button>
+          <div class="filter-panel" id="filter-panel">
+            <div class="filter-section">
+              <div class="filter-section-title">Status</div>
+              <label class="chk-item"><input type="checkbox" name="f-status-cb" value="Menyala"> Menyala</label>
+              <label class="chk-item"><input type="checkbox" name="f-status-cb" value="Rusak"> Rusak</label>
+              <label class="chk-item"><input type="checkbox" name="f-status-cb" value="Dalam Pengerjaan"> Dalam Pengerjaan</label>
+            </div>
+            <div class="filter-section">
+              <div class="filter-section-title">Kategori Jalan</div>
+              <label class="chk-item"><input type="checkbox" name="f-katjalan-cb" value="Jalan Kota"> Jalan Kota</label>
+              <label class="chk-item"><input type="checkbox" name="f-katjalan-cb" value="Jalan Lingkungan"> Jalan Lingkungan</label>
+              <label class="chk-item"><input type="checkbox" name="f-katjalan-cb" value="Jalan Lingkungan Kampung"> Jalan Lingkungan Kampung</label>
+              <label class="chk-item"><input type="checkbox" name="f-katjalan-cb" value="Lainnya"> Lainnya</label>
+            </div>
+            <div class="filter-section">
+              <div class="filter-section-title">Kategori PJU</div>
+              <div id="filter-kategori-list" class="chk-scroll"><div class="chk-empty">Memuat...</div></div>
+            </div>
+            <div class="filter-section">
+              <div class="filter-section-title">Kemantren (14 se-Kota Yogyakarta)</div>
+              <div id="filter-kemantren-list" class="chk-scroll"><div class="chk-empty">Memuat...</div></div>
+            </div>
+            <div class="filter-section">
+              <div class="filter-section-title">Kelurahan</div>
+              <div id="filter-kelurahan-list" class="chk-scroll"><div class="chk-empty">Pilih kemantren dulu</div></div>
+            </div>
+            <div class="filter-panel-actions">
+              <button class="btn btn-secondary btn-sm" onclick="resetFilterPanel()">↺ Reset</button>
+              <button class="btn btn-primary btn-sm" onclick="terapkanFilterPanel()">Terapkan</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="sort-wrap">
+          <button class="btn btn-secondary btn-filter" id="btn-sort-toggle" onclick="toggleSortPanel()">⇅ Sort</button>
+          <div class="sort-panel" id="sort-panel">
+            <label class="chk-item"><input type="radio" name="f-sort" value="terbaru" checked> Terbaru ditambahkan</label>
+            <label class="chk-item"><input type="radio" name="f-sort" value="kode_asc"> Kode Aset A-Z</label>
+            <label class="chk-item"><input type="radio" name="f-sort" value="tahun_desc"> Tahun Pemasangan (baru→lama)</label>
+          </div>
+        </div>
+
+        <span id="jumlah-aset" class="jumlah-aset-v2"></span>
+      </div>
+
+      <div class="badge-row" id="badge-row" style="display:none"></div>
+    </div>
+
+    <!-- ===== TOOLBAR DESKTOP LEGACY (disembunyikan, dipakai internal oleh JS lama sebelum wiring selesai) ===== -->
     <div class="toolbar">
       <select id="f-status" onchange="loadAset(1)"><option value="">Semua Status</option><option value="Menyala">Menyala</option><option value="Rusak">Rusak</option><option value="Dalam Pengerjaan">Dalam Pengerjaan</option></select>
       <select id="f-kategori" onchange="loadAset(1)"><option value="">Semua Kategori Jalan</option><option value="Jalan Kota">Jalan Kota</option><option value="Jalan Lingkungan">Jalan Lingkungan</option><option value="Jalan Lingkungan Kampung">Jalan Lingkungan Kampung</option><option value="Lainnya">Lainnya</option></select>
@@ -153,7 +239,6 @@
       <input type="text" id="f-kemantren" placeholder="Filter kemantren..." oninput="debounceLoad()">
       <input type="text" id="f-kelurahan" placeholder="Filter kelurahan..." oninput="debounceLoad()">
       <button class="btn btn-secondary" onclick="resetFilter()">↺ Reset</button>
-      <span id="jumlah-aset" style="font-size:.8rem;color:#94a3b8;margin-left:auto;flex-shrink:0"></span>
     </div>
 
     <!-- ===== TOOLBAR MOBILE ===== -->
@@ -441,6 +526,28 @@ function resetFilterMobile(){
   resetInfiniteLoad();
 }
 
+// ===== Toolbar Desktop v2: toggle panel (MOCKUP - belum wiring ke fetch) =====
+function toggleFilterPanel(){
+  document.getElementById('sort-panel').classList.remove('show');
+  document.getElementById('filter-panel').classList.toggle('show');
+}
+function toggleSortPanel(){
+  document.getElementById('filter-panel').classList.remove('show');
+  document.getElementById('sort-panel').classList.toggle('show');
+}
+document.addEventListener('click',(e)=>{
+  if(!e.target.closest('.filter-wrap'))document.getElementById('filter-panel')?.classList.remove('show');
+  if(!e.target.closest('.sort-wrap'))document.getElementById('sort-panel')?.classList.remove('show');
+});
+function resetFilterPanel(){
+  document.querySelectorAll('#filter-panel input[type=checkbox]').forEach(c=>c.checked=false);
+  pijarToast('Filter direset (mockup, belum tersambung ke data)','info');
+}
+function terapkanFilterPanel(){
+  document.getElementById('filter-panel').classList.remove('show');
+  pijarToast('Tombol Terapkan (mockup) - logic filtering menyusul','info');
+}
+
 // ===== Debounce =====
 function debounceLoad(){clearTimeout(debTimer);debTimer=setTimeout(()=>loadAset(1),500);}
 function debounceLoadMobile(){clearTimeout(mDebTimer);mDebTimer=setTimeout(()=>resetInfiniteLoad(),500);}
@@ -481,6 +588,10 @@ async function loadKategoriPJU(){
       const opt=`<option value="${k.id}" data-kode="${k.kode}">${k.kode} — ${k.nama}</option>`;
       targets.forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML+=opt;});
     });
+    const boxKat=document.getElementById('filter-kategori-list');
+    if(boxKat){
+      boxKat.innerHTML=daftarKategori.length?daftarKategori.map(k=>`<label class="chk-item"><input type="checkbox" name="f-idkategori-cb" value="${k.id}"> ${k.kode} — ${k.nama}</label>`).join(''):'<div class="chk-empty">Tidak ada data</div>';
+    }
   }catch(e){console.warn('Gagal load kategori',e);}
 }
 
@@ -493,7 +604,21 @@ async function loadWilayah(){
       const sel=document.getElementById(id);
       daftarWilayah.forEach(w=>{sel.innerHTML+=`<option value="${w.id_wilayah}" data-kode="${w.kode_wilayah}">${w.kode_wilayah} — ${w.nama_kelurahan} (${w.nama_kemantren})</option>`;});
     });
+    const boxKemantren=document.getElementById('filter-kemantren-list');
+    if(boxKemantren){
+      const kemantrenUnik=[...new Set(daftarWilayah.map(w=>w.nama_kemantren))].sort();
+      boxKemantren.innerHTML=kemantrenUnik.length?kemantrenUnik.map(k=>`<label class="chk-item"><input type="checkbox" name="f-kemantren-cb" value="${k}" onchange="onKemantrenCheckboxChange()"> ${k}</label>`).join(''):'<div class="chk-empty">Tidak ada data</div>';
+    }
   }catch(e){console.warn('Gagal load wilayah',e);}
+}
+
+function onKemantrenCheckboxChange(){
+  const terpilih=[...document.querySelectorAll('input[name="f-kemantren-cb"]:checked')].map(c=>c.value);
+  const boxKelurahan=document.getElementById('filter-kelurahan-list');
+  if(!boxKelurahan)return;
+  if(!terpilih.length){boxKelurahan.innerHTML='<div class="chk-empty">Pilih kemantren dulu</div>';return;}
+  const kelurahanUnik=[...new Set(daftarWilayah.filter(w=>terpilih.includes(w.nama_kemantren)).map(w=>w.nama_kelurahan))].sort();
+  boxKelurahan.innerHTML=kelurahanUnik.length?kelurahanUnik.map(k=>`<label class="chk-item"><input type="checkbox" name="f-kelurahan-cb" value="${k}"> ${k}</label>`).join(''):'<div class="chk-empty">Tidak ada kelurahan</div>';
 }
 
 // ===== Desktop: load dengan pagination =====
