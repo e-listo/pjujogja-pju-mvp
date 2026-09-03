@@ -3,6 +3,7 @@ app.py — Entry point Flask untuk api.pjujogja.id
 Fase 1: Model aset, laporan kerja, stok PINS.
 Fase 2: Proteksi JWT, endpoint baru, pagination, atomisitas stok PINS.
 Fase 3: Endpoint KategoriPJU, suggest-kode, cek-kode.
+Fase 4: Endpoint mutasi aset, export aset, hapus aset.
 """
 import os
 import re
@@ -18,11 +19,10 @@ from models import (
     db,
     AsetPJU, LaporanKerja, StokPins, Pengguna, SUB_KATEGORI_LAINNYA,
     Wilayah, PanelPJU, Regu, Lampu, LaporanKerusakan, RiwayatPemeliharaan,
-    KategoriPJU,
+    KategoriPJU, MutasiAset,
 )
 from auth_routes import auth_bp, jwt_required, role_required
 
-# Regex validasi format kode aset baru: PJUP-UH2-26-001
 REGEX_KODE_ASET = re.compile(r'^[A-Z]{3,6}-[A-Z]{2}\d-\d{2}-\d{3}$')
 
 
@@ -38,21 +38,13 @@ def save_upload(file_obj, upload_folder):
 
 
 def _paginate(query, default_per_page=20):
-    """
-    Helper pagination: kembalikan (items, meta) dari query SQLAlchemy.
-    Fix #2: gunakan len(items) untuk total jika page pertama dan hasilnya < per_page,
-    sehingga menghindari double round-trip ke DB pada halaman pertama yang kecil.
-    Untuk halaman lain tetap pakai .count() karena diperlukan untuk total_pages.
-    """
     page     = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", default_per_page, type=int)
     per_page = min(per_page, 100)
     items    = query.offset((page - 1) * per_page).limit(per_page + 1).all()
-    # Ambil satu item ekstra untuk deteksi apakah ada halaman berikutnya
     has_next = len(items) > per_page
     items    = items[:per_page]
     if page == 1 and not has_next:
-        # Halaman pertama dan tidak ada next page: total = len(items), tanpa count()
         total = len(items)
     else:
         total = query.count()
@@ -65,6 +57,40 @@ def _paginate(query, default_per_page=20):
     }
 
 
+def _apply_aset_filters(query):
+    status_filter = request.args.get("status")
+    kategori_filter = request.args.get("kategori_jalan")
+    id_wilayah_filter = request.args.get("id_wilayah", type=int)
+    id_kategori_filter = request.args.get("id_kategori", type=int)
+    kemantren_filter = request.args.get("kemantren")
+    kelurahan_filter = request.args.get("kelurahan")
+    kode_wilayah_filter = request.args.get("kode_wilayah")
+
+    if status_filter:
+        query = query.filter(AsetPJU.status == status_filter)
+    else:
+        query = query.filter(AsetPJU.status.in_(["Rusak", "Dalam Pengerjaan", "Menyala"]))
+    if kategori_filter:
+        query = query.filter(AsetPJU.kategori_jalan == kategori_filter)
+    if id_wilayah_filter:
+        query = query.filter(AsetPJU.id_wilayah == id_wilayah_filter)
+    if id_kategori_filter:
+        query = query.filter(AsetPJU.id_kategori == id_kategori_filter)
+    if kemantren_filter:
+        query = query.join(Wilayah, AsetPJU.id_wilayah == Wilayah.id_wilayah).filter(
+            Wilayah.nama_kemantren.ilike(f"%{kemantren_filter}%")
+        )
+    if kelurahan_filter:
+        query = query.join(Wilayah, AsetPJU.id_wilayah == Wilayah.id_wilayah).filter(
+            Wilayah.nama_kelurahan.ilike(f"%{kelurahan_filter}%")
+        )
+    if kode_wilayah_filter:
+        query = query.join(Wilayah, AsetPJU.id_wilayah == Wilayah.id_wilayah).filter(
+            Wilayah.kode_wilayah.ilike(f"%{kode_wilayah_filter}%")
+        )
+    return query
+
+
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
@@ -74,35 +100,28 @@ def create_app():
     CORS(app, origins=Config.CORS_ORIGINS, supports_credentials=True)
     app.register_blueprint(auth_bp)
 
-    # =================================================================
-    # ASET PJU
-    # =================================================================
-
     @app.route("/api/aset", methods=["GET"])
     @jwt_required
     def list_aset():
-        q = AsetPJU.query
-        status_filter      = request.args.get("status")
-        kategori_filter    = request.args.get("kategori_jalan")
-        id_wilayah_filter  = request.args.get("id_wilayah", type=int)
-        id_kategori_filter = request.args.get("id_kategori", type=int)
-        if status_filter:
-            q = q.filter(AsetPJU.status == status_filter)
-        else:
-            q = q.filter(AsetPJU.status.in_(["Rusak", "Dalam Pengerjaan", "Menyala"]))
-        if kategori_filter:
-            q = q.filter(AsetPJU.kategori_jalan == kategori_filter)
-        if id_wilayah_filter:
-            q = q.filter(AsetPJU.id_wilayah == id_wilayah_filter)
-        if id_kategori_filter:
-            q = q.filter(AsetPJU.id_kategori == id_kategori_filter)
-        items, meta = _paginate(q)
+        q = _apply_aset_filters(AsetPJU.query)
+        items, meta = _paginate(q.order_by(AsetPJU.id_aset.desc()))
         return jsonify({"success": True, "meta": meta, "data": [a.to_dict() for a in items]})
+
+    @app.route("/api/aset/export", methods=["GET"])
+    @jwt_required
+    def export_aset():
+        q = _apply_aset_filters(AsetPJU.query)
+        items = q.order_by(AsetPJU.id_aset.desc()).all()
+        return jsonify({
+            "success": True,
+            "total": len(items),
+            "exported_at": datetime.utcnow().isoformat(),
+            "data": [a.to_dict() for a in items]
+        })
 
     @app.route("/api/aset/<int:id_aset>", methods=["GET"])
     @jwt_required
     def get_aset(id_aset):
-        """[BARU Fase 2] Detail satu aset by ID."""
         aset = AsetPJU.query.get(id_aset)
         if not aset:
             return jsonify({"success": False, "error": "Aset tidak ditemukan"}), 404
@@ -117,17 +136,14 @@ def create_app():
         if not kode_aset:
             return jsonify({"success": False, "error": "kode_aset wajib diisi"}), 400
         if not REGEX_KODE_ASET.match(kode_aset):
-            return jsonify({"success": False,
-                "error": "Format kode_aset tidak valid. Gunakan: PJUP-UH2-26-001"}), 400
+            return jsonify({"success": False, "error": "Format kode_aset tidak valid. Gunakan: PJUP-UH2-26-001"}), 400
         if AsetPJU.query.filter_by(kode_aset=kode_aset).first():
-            return jsonify({"success": False,
-                "error": f"Kode aset '{kode_aset}' sudah dipakai"}), 409
+            return jsonify({"success": False, "error": f"Kode aset '{kode_aset}' sudah dipakai"}), 409
 
         kategori_jalan = body.get("kategori_jalan", "Jalan Lingkungan")
-        sub_kategori   = body.get("sub_kategori_lainnya")
+        sub_kategori = body.get("sub_kategori_lainnya")
         if kategori_jalan == "Lainnya" and sub_kategori not in SUB_KATEGORI_LAINNYA:
-            return jsonify({"success": False,
-                "error": f"sub_kategori_lainnya wajib: {SUB_KATEGORI_LAINNYA}"}), 400
+            return jsonify({"success": False, "error": f"sub_kategori_lainnya wajib: {SUB_KATEGORI_LAINNYA}"}), 400
         if kategori_jalan != "Lainnya":
             sub_kategori = None
 
@@ -159,7 +175,6 @@ def create_app():
     @app.route("/api/aset/<int:id_aset>", methods=["PUT"])
     @role_required("koordinator", "admin")
     def update_aset(id_aset):
-        """[BARU Fase 2] Update data aset by ID."""
         aset = AsetPJU.query.get(id_aset)
         if not aset:
             return jsonify({"success": False, "error": "Aset tidak ditemukan"}), 404
@@ -178,12 +193,100 @@ def create_app():
             if "lng" in body:
                 aset.lokasi_lng = body["lng"]
             if aset.kategori_jalan == "Lainnya" and aset.sub_kategori_lainnya not in SUB_KATEGORI_LAINNYA:
-                return jsonify({"success": False,
-                    "error": f"sub_kategori_lainnya wajib: {SUB_KATEGORI_LAINNYA}"}), 400
+                return jsonify({"success": False, "error": f"sub_kategori_lainnya wajib: {SUB_KATEGORI_LAINNYA}"}), 400
             if aset.kategori_jalan != "Lainnya":
                 aset.sub_kategori_lainnya = None
             db.session.commit()
             return jsonify({"success": True, "data": aset.to_dict()})
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({"success": False, "error": str(e)}), 400
+
+    @app.route("/api/aset/<int:id_aset>", methods=["DELETE"])
+    @role_required("koordinator", "admin")
+    def delete_aset(id_aset):
+        aset = AsetPJU.query.get(id_aset)
+        if not aset:
+            return jsonify({"success": False, "error": "Aset tidak ditemukan"}), 404
+        if aset.lampu.count() > 0 or aset.laporan_kerusakan.count() > 0 or aset.riwayat_pemeliharaan.count() > 0 or aset.mutasi.count() > 0:
+            return jsonify({
+                "success": False,
+                "error": "Aset tidak bisa dihapus karena sudah punya relasi lampu/laporan/pemeliharaan/mutasi"
+            }), 409
+        try:
+            db.session.delete(aset)
+            db.session.commit()
+            return jsonify({"success": True, "pesan": "Aset berhasil dihapus"})
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({"success": False, "error": str(e)}), 400
+
+    @app.route("/api/aset/<int:id_aset>/mutasi", methods=["GET"])
+    @jwt_required
+    def list_mutasi_aset(id_aset):
+        aset = AsetPJU.query.get(id_aset)
+        if not aset:
+            return jsonify({"success": False, "error": "Aset tidak ditemukan"}), 404
+        data = [m.to_dict() for m in aset.mutasi.order_by(MutasiAset.tanggal_mutasi.desc()).all()]
+        return jsonify({
+            "success": True,
+            "aset": {"id_aset": aset.id_aset, "kode_aset": aset.kode_aset, "alamat": aset.alamat},
+            "total": len(data),
+            "data": data
+        })
+
+    @app.route("/api/aset/<int:id_aset>/mutasi", methods=["POST"])
+    @role_required("regu", "koordinator", "admin")
+    def create_mutasi_aset(id_aset):
+        aset = AsetPJU.query.get(id_aset)
+        if not aset:
+            return jsonify({"success": False, "error": "Aset tidak ditemukan"}), 404
+
+        is_json = request.is_json
+        body = request.get_json(force=True) if is_json else request.form
+        foto = None if is_json else request.files.get("foto")
+        foto_url = save_upload(foto, app.config["UPLOAD_FOLDER"]) if foto and allowed_file(foto.filename) else None
+
+        jenis_mutasi = (body.get("jenis_mutasi") or "").strip()
+        if not jenis_mutasi:
+            return jsonify({"success": False, "error": "jenis_mutasi wajib diisi"}), 400
+
+        try:
+            mutasi = MutasiAset(
+                id_aset=id_aset,
+                id_petugas=body.get("id_petugas", type=int) if not is_json else body.get("id_petugas"),
+                id_pemeliharaan=body.get("id_pemeliharaan", type=int) if not is_json else body.get("id_pemeliharaan"),
+                jenis_mutasi=jenis_mutasi,
+                status_sebelum=body.get("status_sebelum") or aset.status,
+                status_sesudah=body.get("status_sesudah"),
+                komponen=body.get("komponen"),
+                qty=(body.get("qty", type=int) if not is_json else body.get("qty", 1)) or 1,
+                lat_baru=body.get("lat_baru", type=float) if not is_json else body.get("lat_baru"),
+                lng_baru=body.get("lng_baru", type=float) if not is_json else body.get("lng_baru"),
+                alamat_baru=body.get("alamat_baru"),
+                keterangan=body.get("keterangan"),
+                foto_url=foto_url or body.get("foto_url"),
+            )
+            if body.get("tanggal_mutasi"):
+                raw_tanggal = body.get("tanggal_mutasi")
+                mutasi.tanggal_mutasi = datetime.fromisoformat(str(raw_tanggal).replace("Z", "+00:00"))
+
+            db.session.add(mutasi)
+
+            if mutasi.status_sesudah:
+                aset.status = mutasi.status_sesudah
+            if mutasi.jenis_mutasi == "Pindah Lokasi":
+                if mutasi.alamat_baru:
+                    aset.alamat = mutasi.alamat_baru
+                if mutasi.lat_baru is not None:
+                    aset.lokasi_lat = mutasi.lat_baru
+                if mutasi.lng_baru is not None:
+                    aset.lokasi_lng = mutasi.lng_baru
+            if mutasi.jenis_mutasi == "Pensiun / Bongkar" and not mutasi.status_sesudah:
+                aset.status = "Rusak"
+
+            db.session.commit()
+            return jsonify({"success": True, "data": mutasi.to_dict(), "aset": aset.to_dict()}), 201
         except Exception as e:
             db.session.rollback()
             return jsonify({"success": False, "error": str(e)}), 400
@@ -196,34 +299,25 @@ def create_app():
             return jsonify({"success": False, "error": "Aset tidak ditemukan"}), 404
         return jsonify({"success": True, "data": [l.to_dict() for l in aset.lampu.all()]})
 
-    # =================================================================
-    # KODE ASET — suggest + validasi (Fase 3)
-    # =================================================================
-
     @app.route("/api/aset/suggest-kode", methods=["GET"])
     @jwt_required
     def suggest_kode_aset():
         kode_kategori = request.args.get("kategori", "").strip().upper()
-        kode_wilayah  = request.args.get("wilayah", "").strip().upper()
-        tahun         = request.args.get("tahun", type=int)
+        kode_wilayah = request.args.get("wilayah", "").strip().upper()
+        tahun = request.args.get("tahun", type=int)
 
         if not kode_kategori or not kode_wilayah or not tahun:
-            return jsonify({"success": False,
-                "error": "Parameter wajib: kategori, wilayah, tahun"}), 400
+            return jsonify({"success": False, "error": "Parameter wajib: kategori, wilayah, tahun"}), 400
 
         kat = KategoriPJU.query.filter_by(kode=kode_kategori, aktif=True).first()
         if not kat:
-            return jsonify({"success": False,
-                "error": f"Kategori '{kode_kategori}' tidak ditemukan atau tidak aktif"}), 404
+            return jsonify({"success": False, "error": f"Kategori '{kode_kategori}' tidak ditemukan atau tidak aktif"}), 404
 
         wil = Wilayah.query.filter_by(kode_wilayah=kode_wilayah).first()
         if not wil:
-            return jsonify({"success": False,
-                "error": f"Wilayah '{kode_wilayah}' tidak ditemukan"}), 404
+            return jsonify({"success": False, "error": f"Wilayah '{kode_wilayah}' tidak ditemukan"}), 404
 
-        suggest, existing_count = AsetPJU.generate_suggest_kode(
-            kode_kategori, kode_wilayah, tahun
-        )
+        suggest, existing_count = AsetPJU.generate_suggest_kode(kode_kategori, kode_wilayah, tahun)
         return jsonify({
             "success": True,
             "suggest": suggest,
@@ -256,13 +350,8 @@ def create_app():
             })
         return jsonify({"success": True, "tersedia": True})
 
-    # =================================================================
-    # KATEGORI PJU
-    # =================================================================
-
     @app.route("/api/kategori-pju", methods=["GET"])
     def list_kategori_pju():
-        """GET bersifat publik — dipakai form lapor dari masyarakat/regu."""
         semua = request.args.get("semua", "false").lower() == "true"
         q = KategoriPJU.query
         if not semua:
@@ -279,8 +368,7 @@ def create_app():
         if not kode or not nama:
             return jsonify({"success": False, "error": "kode dan nama wajib diisi"}), 400
         if KategoriPJU.query.filter_by(kode=kode).first():
-            return jsonify({"success": False,
-                "error": f"Kode '{kode}' sudah digunakan"}), 409
+            return jsonify({"success": False, "error": f"Kode '{kode}' sudah digunakan"}), 409
         try:
             kat = KategoriPJU(
                 kode=kode, nama=nama,
@@ -326,8 +414,7 @@ def create_app():
         if kat.aset.count() > 0:
             kat.aktif = False
             db.session.commit()
-            return jsonify({"success": True,
-                "pesan": f"Kategori dinonaktifkan (ada {kat.aset.count()} aset terkait)"})
+            return jsonify({"success": True, "pesan": f"Kategori dinonaktifkan (ada {kat.aset.count()} aset terkait)"})
         try:
             db.session.delete(kat)
             db.session.commit()
@@ -335,10 +422,6 @@ def create_app():
         except Exception as e:
             db.session.rollback()
             return jsonify({"success": False, "error": str(e)}), 400
-
-    # =================================================================
-    # LAPORAN KERJA (model lama — tetap dipertahankan)
-    # =================================================================
 
     @app.route("/api/laporan", methods=["GET"])
     @jwt_required
@@ -379,34 +462,33 @@ def create_app():
         laporan = LaporanKerja.query.get(id_laporan)
         if not laporan:
             return jsonify({"success": False, "error": "Laporan tidak ditemukan"}), 404
-        status_baru   = request.form.get("status")
-        tindakan      = request.form.get("tindakan_perbaikan")
-        id_komponen   = request.form.get("id_komponen_pins", type=int)
-        qty_komponen  = request.form.get("qty_komponen", default=1, type=int)
-        id_teknisi    = request.form.get("id_teknisi", type=int)
-        foto          = request.files.get("foto_bukti")
+        status_baru = request.form.get("status")
+        tindakan = request.form.get("tindakan_perbaikan")
+        id_komponen = request.form.get("id_komponen_pins", type=int)
+        qty_komponen = request.form.get("qty_komponen", default=1, type=int)
+        id_teknisi = request.form.get("id_teknisi", type=int)
+        foto = request.files.get("foto_bukti")
         try:
             if foto and allowed_file(foto.filename):
                 laporan.foto_bukti = save_upload(foto, app.config["UPLOAD_FOLDER"])
             laporan.tindakan_perbaikan = tindakan
-            laporan.id_teknisi         = id_teknisi
-            laporan.status             = status_baru or laporan.status
+            laporan.id_teknisi = id_teknisi
+            laporan.status = status_baru or laporan.status
             warna_status = {"Dalam Pengerjaan": "Dalam Pengerjaan", "Selesai": "Menyala"}
             if laporan.status in warna_status:
                 laporan.aset.status = warna_status[laporan.status]
-            # ---- Atomisitas potong stok PINS ----
             if status_baru == "Selesai" and id_komponen:
                 komponen = StokPins.query.with_for_update().get(id_komponen)
                 if not komponen:
                     raise ValueError("Komponen PINS tidak ditemukan")
                 if komponen.stok_qty < qty_komponen:
                     raise ValueError(f"Stok tidak cukup (sisa {komponen.stok_qty})")
-                komponen.stok_qty         -= qty_komponen
-                laporan.id_komponen_pins   = id_komponen
-                laporan.qty_komponen       = qty_komponen
+                komponen.stok_qty -= qty_komponen
+                laporan.id_komponen_pins = id_komponen
+                laporan.qty_komponen = qty_komponen
             if laporan.status == "Selesai":
                 laporan.tanggal_selesai = datetime.utcnow()
-            db.session.commit()  # satu commit — atomik
+            db.session.commit()
             return jsonify({"success": True, "data": laporan.to_dict(Config.BOBOT_KATEGORI_JALAN)})
         except ValueError as ve:
             db.session.rollback()
@@ -414,10 +496,6 @@ def create_app():
         except Exception as e:
             db.session.rollback()
             return jsonify({"success": False, "error": str(e)}), 400
-
-    # =================================================================
-    # STOK PINS
-    # =================================================================
 
     @app.route("/api/pins", methods=["GET"])
     @jwt_required
@@ -427,7 +505,6 @@ def create_app():
     @app.route("/api/pins/<int:id_pins>", methods=["GET"])
     @jwt_required
     def get_pins(id_pins):
-        """[BARU Fase 2] Detail satu komponen stok."""
         komponen = StokPins.query.get(id_pins)
         if not komponen:
             return jsonify({"success": False, "error": "Komponen tidak ditemukan"}), 404
@@ -436,7 +513,6 @@ def create_app():
     @app.route("/api/pins", methods=["POST"])
     @role_required("koordinator", "admin")
     def create_pins():
-        """[BARU Fase 2] Input stok masuk (penerimaan barang)."""
         body = request.get_json(force=True)
         nama = body.get("nama_komponen", "").strip()
         if not nama:
@@ -459,7 +535,6 @@ def create_app():
     @app.route("/api/pins/<int:id_pins>", methods=["PATCH"])
     @role_required("koordinator", "admin")
     def update_pins(id_pins):
-        """[BARU Fase 2] Update/koreksi stok manual."""
         komponen = StokPins.query.get(id_pins)
         if not komponen:
             return jsonify({"success": False, "error": "Komponen tidak ditemukan"}), 404
@@ -473,10 +548,6 @@ def create_app():
         except Exception as e:
             db.session.rollback()
             return jsonify({"success": False, "error": str(e)}), 400
-
-    # =================================================================
-    # WILAYAH (publik)
-    # =================================================================
 
     @app.route("/api/wilayah", methods=["GET"])
     def list_wilayah():
@@ -493,24 +564,18 @@ def create_app():
         if not wilayah:
             return jsonify({"success": False, "error": f"Wilayah '{kode}' tidak ditemukan"}), 404
         result = wilayah.to_dict()
-        result["jumlah_aset"]  = wilayah.aset.count()
+        result["jumlah_aset"] = wilayah.aset.count()
         result["jumlah_panel"] = wilayah.panel.count()
         return jsonify({"success": True, "data": result})
-
-    # =================================================================
-    # REGU
-    # =================================================================
 
     @app.route("/api/regu", methods=["GET"])
     @jwt_required
     def list_regu():
-        return jsonify({"success": True,
-            "data": [r.to_dict() for r in Regu.query.filter_by(status_aktif=True).all()]})
+        return jsonify({"success": True, "data": [r.to_dict() for r in Regu.query.filter_by(status_aktif=True).all()]})
 
     @app.route("/api/regu/<int:id_regu>", methods=["GET"])
     @jwt_required
     def get_regu(id_regu):
-        """[BARU Fase 2] Detail satu regu."""
         regu = Regu.query.get(id_regu)
         if not regu:
             return jsonify({"success": False, "error": "Regu tidak ditemukan"}), 404
@@ -522,12 +587,7 @@ def create_app():
         regu = Regu.query.get(id_regu)
         if not regu:
             return jsonify({"success": False, "error": "Regu tidak ditemukan"}), 404
-        return jsonify({"success": True, "regu": regu.nama_regu,
-            "data": [p.to_dict() for p in regu.anggota.filter_by(status_aktif=True).all()]})
-
-    # =================================================================
-    # LAPORAN KERUSAKAN
-    # =================================================================
+        return jsonify({"success": True, "regu": regu.nama_regu, "data": [p.to_dict() for p in regu.anggota.filter_by(status_aktif=True).all()]})
 
     @app.route("/api/laporan-kerusakan", methods=["GET"])
     @jwt_required
@@ -546,7 +606,6 @@ def create_app():
     @app.route("/api/laporan-kerusakan/<int:id_laporan>", methods=["GET"])
     @jwt_required
     def get_laporan_kerusakan(id_laporan):
-        """[BARU Fase 2] Detail satu laporan kerusakan."""
         laporan = LaporanKerusakan.query.get(id_laporan)
         if not laporan:
             return jsonify({"success": False, "error": "Laporan tidak ditemukan"}), 404
@@ -555,11 +614,11 @@ def create_app():
     @app.route("/api/laporan-kerusakan", methods=["POST"])
     @jwt_required
     def create_laporan_kerusakan():
-        id_aset  = request.form.get("id_aset", type=int)
-        aset     = AsetPJU.query.get(id_aset)
+        id_aset = request.form.get("id_aset", type=int)
+        aset = AsetPJU.query.get(id_aset)
         if not aset:
             return jsonify({"success": False, "error": "Aset tidak ditemukan"}), 404
-        foto     = request.files.get("foto")
+        foto = request.files.get("foto")
         foto_url = save_upload(foto, app.config["UPLOAD_FOLDER"]) if foto and allowed_file(foto.filename) else None
         try:
             laporan = LaporanKerusakan(
@@ -593,10 +652,6 @@ def create_app():
             db.session.rollback()
             return jsonify({"success": False, "error": str(e)}), 400
 
-    # =================================================================
-    # RIWAYAT PEMELIHARAAN
-    # =================================================================
-
     @app.route("/api/pemeliharaan", methods=["GET"])
     @jwt_required
     def list_pemeliharaan():
@@ -614,7 +669,6 @@ def create_app():
     @app.route("/api/pemeliharaan/<int:id_pemeliharaan>", methods=["GET"])
     @jwt_required
     def get_pemeliharaan(id_pemeliharaan):
-        """[BARU Fase 2] Detail satu riwayat pemeliharaan."""
         p = RiwayatPemeliharaan.query.get(id_pemeliharaan)
         if not p:
             return jsonify({"success": False, "error": "Data tidak ditemukan"}), 404
@@ -623,12 +677,12 @@ def create_app():
     @app.route("/api/pemeliharaan", methods=["POST"])
     @role_required("regu", "koordinator", "admin")
     def create_pemeliharaan():
-        id_aset  = request.form.get("id_aset", type=int)
-        aset     = AsetPJU.query.get(id_aset)
+        id_aset = request.form.get("id_aset", type=int)
+        aset = AsetPJU.query.get(id_aset)
         if not aset:
             return jsonify({"success": False, "error": "Aset tidak ditemukan"}), 404
-        foto_sebelum     = request.files.get("foto_sebelum")
-        foto_sesudah     = request.files.get("foto_sesudah")
+        foto_sebelum = request.files.get("foto_sebelum")
+        foto_sesudah = request.files.get("foto_sesudah")
         foto_sebelum_url = save_upload(foto_sebelum, app.config["UPLOAD_FOLDER"]) if foto_sebelum and allowed_file(foto_sebelum.filename) else None
         foto_sesudah_url = save_upload(foto_sesudah, app.config["UPLOAD_FOLDER"]) if foto_sesudah and allowed_file(foto_sesudah.filename) else None
         try:
@@ -664,16 +718,10 @@ def create_app():
     @app.route("/api/pemeliharaan/<int:id_pemeliharaan>/status", methods=["PATCH"])
     @role_required("regu", "koordinator", "admin")
     def update_status_pemeliharaan(id_pemeliharaan):
-        """
-        [BARU Fase 2] Update status pekerjaan pemeliharaan.
-        Fix #1: Gunakan multipart/form-data (request.form + request.files)
-        agar status dan foto_sesudah bisa dikirim dalam satu request.
-        """
         p = RiwayatPemeliharaan.query.get(id_pemeliharaan)
         if not p:
             return jsonify({"success": False, "error": "Data tidak ditemukan"}), 404
-        # Fix #1: baca dari form, bukan get_json — konsisten dengan endpoint pemeliharaan lainnya
-        status_baru  = request.form.get("status_pekerjaan")
+        status_baru = request.form.get("status_pekerjaan")
         foto_sesudah = request.files.get("foto_sesudah")
         try:
             if foto_sesudah and allowed_file(foto_sesudah.filename):
@@ -694,37 +742,26 @@ def create_app():
             db.session.rollback()
             return jsonify({"success": False, "error": str(e)}), 400
 
-    # =================================================================
-    # DASHBOARD SUMMARY [BARU Fase 2]
-    # =================================================================
-
     @app.route("/api/dashboard/summary", methods=["GET"])
     @jwt_required
     def dashboard_summary():
-        """Ringkasan untuk kartu statistik di index.html."""
-        total_aset       = AsetPJU.query.count()
-        total_rusak      = AsetPJU.query.filter_by(status="Rusak").count()
+        total_aset = AsetPJU.query.count()
+        total_rusak = AsetPJU.query.filter_by(status="Rusak").count()
         total_pengerjaan = AsetPJU.query.filter_by(status="Dalam Pengerjaan").count()
-        tiket_baru       = LaporanKerusakan.query.filter_by(status_laporan="Baru").count()
-        tiket_diproses   = LaporanKerusakan.query.filter_by(status_laporan="Diproses").count()
-        stok_kritis      = StokPins.query.filter(
-            StokPins.stok_qty <= StokPins.stok_minimum
-        ).count()
+        tiket_baru = LaporanKerusakan.query.filter_by(status_laporan="Baru").count()
+        tiket_diproses = LaporanKerusakan.query.filter_by(status_laporan="Diproses").count()
+        stok_kritis = StokPins.query.filter(StokPins.stok_qty <= StokPins.stok_minimum).count()
         return jsonify({
             "success": True,
             "data": {
-                "total_aset":       total_aset,
-                "total_rusak":      total_rusak,
+                "total_aset": total_aset,
+                "total_rusak": total_rusak,
                 "total_pengerjaan": total_pengerjaan,
-                "tiket_baru":       tiket_baru,
-                "tiket_diproses":   tiket_diproses,
-                "stok_kritis":      stok_kritis,
+                "tiket_baru": tiket_baru,
+                "tiket_diproses": tiket_diproses,
+                "stok_kritis": stok_kritis,
             }
         })
-
-    # =================================================================
-    # UTILITAS
-    # =================================================================
 
     @app.route("/uploads/<filename>")
     def serve_upload(filename):
