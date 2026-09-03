@@ -162,6 +162,8 @@ def create_app():
                 jenis_tiang=body.get("jenis_tiang"),
                 tinggi_meter=body.get("tinggi_meter"),
                 jenis_lampu=body.get("jenis_lampu"),
+                merk_lampu=body.get("merk_lampu"),
+                tipe_lampu=body.get("tipe_lampu"),
                 watt=body.get("watt"),
                 status=body.get("status", "Menyala"),
             )
@@ -183,7 +185,8 @@ def create_app():
             for field in [
                 "alamat", "kategori_jalan", "sub_kategori_lainnya",
                 "id_wilayah", "id_panel", "id_kategori",
-                "jenis_tiang", "tinggi_meter", "jenis_lampu", "watt",
+                "jenis_tiang", "tinggi_meter", "jenis_lampu",
+                "merk_lampu", "tipe_lampu", "watt",
                 "status", "tahun_pemasangan", "foto_url",
             ]:
                 if field in body:
