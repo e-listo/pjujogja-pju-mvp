@@ -58,17 +58,7 @@ def _paginate(query, default_per_page=20):
 
 
 def _apply_aset_filters(query):
-    # --- Search kode_aset + alamat (parameter ?q=) ---
     q_search = request.args.get("q", "").strip()
-    if q_search:
-        like = f"%{q_search}%"
-        query = query.filter(
-            db.or_(
-                AsetPJU.kode_aset.ilike(like),
-                AsetPJU.alamat.ilike(like),
-            )
-        )
-
     status_filter = request.args.get("status")
     kategori_filter = request.args.get("kategori_jalan")
     id_wilayah_filter = request.args.get("id_wilayah", type=int)
@@ -76,6 +66,24 @@ def _apply_aset_filters(query):
     kemantren_filter = request.args.get("kemantren")
     kelurahan_filter = request.args.get("kelurahan")
     kode_wilayah_filter = request.args.get("kode_wilayah")
+
+    # Join tunggal ke Wilayah bila dibutuhkan oleh salah satu filter berikut,
+    # supaya tidak terjadi join berganda saat beberapa filter dipakai bersamaan.
+    needs_wilayah_join = bool(q_search or kemantren_filter or kelurahan_filter or kode_wilayah_filter)
+    if needs_wilayah_join:
+        query = query.join(Wilayah, AsetPJU.id_wilayah == Wilayah.id_wilayah)
+
+    # --- Search kode_aset + alamat + nama_kemantren + nama_kelurahan (parameter ?q=) ---
+    if q_search:
+        like = f"%{q_search}%"
+        query = query.filter(
+            db.or_(
+                AsetPJU.kode_aset.ilike(like),
+                AsetPJU.alamat.ilike(like),
+                Wilayah.nama_kemantren.ilike(like),
+                Wilayah.nama_kelurahan.ilike(like),
+            )
+        )
 
     if status_filter:
         query = query.filter(AsetPJU.status == status_filter)
@@ -88,17 +96,11 @@ def _apply_aset_filters(query):
     if id_kategori_filter:
         query = query.filter(AsetPJU.id_kategori == id_kategori_filter)
     if kemantren_filter:
-        query = query.join(Wilayah, AsetPJU.id_wilayah == Wilayah.id_wilayah).filter(
-            Wilayah.nama_kemantren.ilike(f"%{kemantren_filter}%")
-        )
+        query = query.filter(Wilayah.nama_kemantren.ilike(f"%{kemantren_filter}%"))
     if kelurahan_filter:
-        query = query.join(Wilayah, AsetPJU.id_wilayah == Wilayah.id_wilayah).filter(
-            Wilayah.nama_kelurahan.ilike(f"%{kelurahan_filter}%")
-        )
+        query = query.filter(Wilayah.nama_kelurahan.ilike(f"%{kelurahan_filter}%"))
     if kode_wilayah_filter:
-        query = query.join(Wilayah, AsetPJU.id_wilayah == Wilayah.id_wilayah).filter(
-            Wilayah.kode_wilayah.ilike(f"%{kode_wilayah_filter}%")
-        )
+        query = query.filter(Wilayah.kode_wilayah.ilike(f"%{kode_wilayah_filter}%"))
     return query
 
 
