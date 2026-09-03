@@ -4,6 +4,7 @@ Fase 1: Model aset, laporan kerja, stok PINS.
 Fase 2: Proteksi JWT, endpoint baru, pagination, atomisitas stok PINS.
 Fase 3: Endpoint KategoriPJU, suggest-kode, cek-kode.
 Fase 4: Endpoint mutasi aset, export aset, hapus aset.
+Fase 5: Filter multi-select (checkbox) + sort untuk toolbar desktop baru.
 """
 import os
 import re
@@ -57,19 +58,42 @@ def _paginate(query, default_per_page=20):
     }
 
 
+def _parse_multi_param(name):
+    """Parse parameter comma-separated (dipakai untuk checkbox multi-select di toolbar).
+    Contoh: ?status=Rusak,Dalam Pengerjaan -> ['Rusak', 'Dalam Pengerjaan']
+    """
+    raw = request.args.get(name, "")
+    return [v.strip() for v in raw.split(",") if v.strip()]
+
+
+def _apply_sort(query):
+    """Terapkan urutan berdasarkan parameter ?sort=
+    Opsi: terbaru (default), kode_asc, tahun_desc
+    """
+    sort_param = request.args.get("sort", "terbaru")
+    if sort_param == "kode_asc":
+        return query.order_by(AsetPJU.kode_aset.asc())
+    if sort_param == "tahun_desc":
+        return query.order_by(AsetPJU.tahun_pemasangan.desc(), AsetPJU.id_aset.desc())
+    return query.order_by(AsetPJU.id_aset.desc())
+
+
 def _apply_aset_filters(query):
     q_search = request.args.get("q", "").strip()
-    status_filter = request.args.get("status")
-    kategori_filter = request.args.get("kategori_jalan")
+
+    # --- Filter multi-select (checkbox), format comma-separated ---
+    status_list = _parse_multi_param("status")
+    kategori_jalan_list = _parse_multi_param("kategori_jalan")
+    id_kategori_list = [int(v) for v in _parse_multi_param("id_kategori") if v.isdigit()]
+    kemantren_list = _parse_multi_param("kemantren")
+    kelurahan_list = _parse_multi_param("kelurahan")
+
     id_wilayah_filter = request.args.get("id_wilayah", type=int)
-    id_kategori_filter = request.args.get("id_kategori", type=int)
-    kemantren_filter = request.args.get("kemantren")
-    kelurahan_filter = request.args.get("kelurahan")
     kode_wilayah_filter = request.args.get("kode_wilayah")
 
     # Join tunggal ke Wilayah bila dibutuhkan oleh salah satu filter berikut,
     # supaya tidak terjadi join berganda saat beberapa filter dipakai bersamaan.
-    needs_wilayah_join = bool(q_search or kemantren_filter or kelurahan_filter or kode_wilayah_filter)
+    needs_wilayah_join = bool(q_search or kemantren_list or kelurahan_list or kode_wilayah_filter)
     if needs_wilayah_join:
         query = query.join(Wilayah, AsetPJU.id_wilayah == Wilayah.id_wilayah)
 
@@ -85,20 +109,20 @@ def _apply_aset_filters(query):
             )
         )
 
-    if status_filter:
-        query = query.filter(AsetPJU.status == status_filter)
+    if status_list:
+        query = query.filter(AsetPJU.status.in_(status_list))
     else:
         query = query.filter(AsetPJU.status.in_(["Rusak", "Dalam Pengerjaan", "Menyala"]))
-    if kategori_filter:
-        query = query.filter(AsetPJU.kategori_jalan == kategori_filter)
+    if kategori_jalan_list:
+        query = query.filter(AsetPJU.kategori_jalan.in_(kategori_jalan_list))
     if id_wilayah_filter:
         query = query.filter(AsetPJU.id_wilayah == id_wilayah_filter)
-    if id_kategori_filter:
-        query = query.filter(AsetPJU.id_kategori == id_kategori_filter)
-    if kemantren_filter:
-        query = query.filter(Wilayah.nama_kemantren.ilike(f"%{kemantren_filter}%"))
-    if kelurahan_filter:
-        query = query.filter(Wilayah.nama_kelurahan.ilike(f"%{kelurahan_filter}%"))
+    if id_kategori_list:
+        query = query.filter(AsetPJU.id_kategori.in_(id_kategori_list))
+    if kemantren_list:
+        query = query.filter(Wilayah.nama_kemantren.in_(kemantren_list))
+    if kelurahan_list:
+        query = query.filter(Wilayah.nama_kelurahan.in_(kelurahan_list))
     if kode_wilayah_filter:
         query = query.filter(Wilayah.kode_wilayah.ilike(f"%{kode_wilayah_filter}%"))
     return query
@@ -117,14 +141,16 @@ def create_app():
     @jwt_required
     def list_aset():
         q = _apply_aset_filters(AsetPJU.query)
-        items, meta = _paginate(q.order_by(AsetPJU.id_aset.desc()))
+        q = _apply_sort(q)
+        items, meta = _paginate(q)
         return jsonify({"success": True, "meta": meta, "data": [a.to_dict() for a in items]})
 
     @app.route("/api/aset/export", methods=["GET"])
     @jwt_required
     def export_aset():
         q = _apply_aset_filters(AsetPJU.query)
-        items = q.order_by(AsetPJU.id_aset.desc()).all()
+        q = _apply_sort(q)
+        items = q.all()
         return jsonify({
             "success": True,
             "total": len(items),
