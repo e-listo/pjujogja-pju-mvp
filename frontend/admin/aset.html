@@ -25,7 +25,8 @@
     .btn-secondary{background:#f1f5f9;color:#374151;border:1px solid #e2e8f0;}
     .btn-sm{padding:4px 9px;font-size:.75rem;}
     .card{background:#fff;border-radius:12px;padding:0;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden;}
-    table{width:100%;border-collapse:collapse;font-size:.875rem;}
+    .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+    table{width:100%;border-collapse:collapse;font-size:.875rem;min-width:640px;}
     thead th{background:#f8fafc;padding:9px 12px;text-align:left;font-weight:700;font-size:.67rem;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;border-bottom:1px solid #e2e8f0;white-space:nowrap;}
     tbody td{padding:9px 12px;border-bottom:1px solid #f1f5f9;vertical-align:middle;}
     tbody tr:hover{background:#f8fafc;}
@@ -80,11 +81,14 @@
     #modal-konfirmasi .konfirm-msg{font-size:.92rem;color:#374151;margin-bottom:20px;line-height:1.5;}
     #modal-konfirmasi .modal-actions{justify-content:center;}
 
+    /* ===== MOBILE PORTRAIT FIX ===== */
     @media(max-width:768px){
       .form-row{grid-template-columns:1fr;}
-      .toolbar{gap:6px;}
-      .content{padding:14px 12px;}
+      .toolbar{gap:6px;overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px;}
+      .toolbar select,.toolbar input{flex-shrink:0;}
+      .content{padding:12px;padding-bottom:80px;}
       .topbar{padding:10px 14px;}
+      .topbar-actions .btn span{display:none;}
     }
   </style>
 </head>
@@ -94,8 +98,8 @@
   <div class="topbar">
     <h2>📦 Data Aset PJU</h2>
     <div class="topbar-actions">
-      <button class="btn btn-success btn-sm" onclick="exportAset()">⬇ Export JSON</button>
-      <button class="btn btn-primary btn-sm" onclick="bukaModalTambah()">+ Tambah Aset</button>
+      <button class="btn btn-success btn-sm" onclick="exportAset()">⬇ <span>Export JSON</span></button>
+      <button class="btn btn-primary btn-sm" onclick="bukaModalTambah()">+ <span>Tambah Aset</span></button>
     </div>
   </div>
   <div class="content">
@@ -106,16 +110,18 @@
       <input type="text" id="f-kemantren" placeholder="Filter kemantren..." oninput="debounceLoad()">
       <input type="text" id="f-kelurahan" placeholder="Filter kelurahan..." oninput="debounceLoad()">
       <button class="btn btn-secondary" onclick="resetFilter()">↺ Reset</button>
-      <span id="jumlah-aset" style="font-size:.8rem;color:#94a3b8;margin-left:auto;"></span>
+      <span id="jumlah-aset" style="font-size:.8rem;color:#94a3b8;margin-left:auto;flex-shrink:0"></span>
     </div>
     <div class="card">
-      <table>
-        <thead><tr>
-          <th>#</th><th>Kode Aset</th><th>Alamat</th><th>Wilayah</th>
-          <th>Kategori PJU</th><th>Lampu / Watt</th><th>Status</th><th>Aksi</th>
-        </tr></thead>
-        <tbody id="tbody-aset"><tr><td colspan="8" class="loading">🔄 Memuat data...</td></tr></tbody>
-      </table>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>#</th><th>Kode Aset</th><th>Alamat</th><th>Wilayah</th>
+            <th>Kategori PJU</th><th>Lampu / Watt</th><th>Status</th><th>Aksi</th>
+          </tr></thead>
+          <tbody id="tbody-aset"><tr><td colspan="8" class="loading">🔄 Memuat data...</td></tr></tbody>
+        </table>
+      </div>
       <div class="pagination" id="pagination" style="display:none">
         <button id="btn-prev" onclick="loadAset(curPage-1)" disabled>‹ Prev</button>
         <span id="page-info"></span>
@@ -474,7 +480,6 @@ async function bukaModalEdit(){
 function _isiFormEdit(a){
   document.getElementById('e-kode-judul').textContent=a.kode_aset||'';
   document.getElementById('e-alamat').value=a.alamat||'';
-  // Gunakan string langsung agar tidak kehilangan desimal
   document.getElementById('e-lat').value=a.lat!=null?String(a.lat):'';
   document.getElementById('e-lng').value=a.lng!=null?String(a.lng):'';
   document.getElementById('e-tahun').value=a.tahun_pemasangan||'';
@@ -512,9 +517,7 @@ async function submitEditAset(){
   const tahunVal=document.getElementById('e-tahun').value.trim();
 
   const body={
-    alamat,
-    lat,
-    lng,
+    alamat,lat,lng,
     tahun_pemasangan:tahunVal?parseInt(tahunVal):null,
     id_kategori:parseInt(document.getElementById('e-id-kategori').value)||null,
     id_wilayah:parseInt(document.getElementById('e-id-wilayah').value)||null,
@@ -529,16 +532,11 @@ async function submitEditAset(){
     status:document.getElementById('e-status').value,
   };
 
-  console.log('[PIJAR] PUT /api/aset/'+detailAsetId, body);
-
   try{
     const res=await fetch(`${API}/api/aset/${detailAsetId}`,{
-      method:'PUT',
-      headers:H(),
-      body:JSON.stringify(body)
+      method:'PUT',headers:H(),body:JSON.stringify(body)
     });
     const json=await res.json();
-    console.log('[PIJAR] Response:', res.status, json);
     if(json.success){
       document.getElementById('modal-edit').classList.remove('show');
       pijarToast(`Aset ${json.data.kode_aset} berhasil diperbarui`,'success');
@@ -547,7 +545,6 @@ async function submitEditAset(){
       pijarToast('Gagal menyimpan: '+(json.error||'Unknown error'),'error',6000);
     }
   }catch(e){
-    console.error('[PIJAR] Fetch error:', e);
     pijarToast('Error koneksi: '+e.message,'error',6000);
   }finally{
     btn.disabled=false;
@@ -676,7 +673,7 @@ async function submitTambahAset(){
     id_wilayah:parseInt(document.getElementById('t-id-wilayah').value)||null,
     tahun_pemasangan:parseInt(document.getElementById('t-tahun').value)||null,
     alamat:document.getElementById('t-alamat').value.trim(),
-    lat:parseFloat(latStr.replace(',','.')),
+    lat:parseFloat(latStr.replace(',','.')) ,
     lng:parseFloat(lngStr.replace(',','.')),
     kategori_jalan:document.getElementById('t-kat-jalan').value,
     sub_kategori_lainnya:document.getElementById('t-kat-jalan').value==='Lainnya'?document.getElementById('t-sub-kat').value:null,
