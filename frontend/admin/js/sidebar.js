@@ -1,31 +1,43 @@
 /**
- * PIJAR — Shared Sidebar
+ * PIJAR — Shared Sidebar + Bottom Navigation Mobile
  * Inject sidebar ke semua halaman admin & lapangan
- * Usage: <script src="js/sidebar.js?v=20260826" data-page="dashboard"></script>
+ * Usage: <script src="js/sidebar.js?v=20260903" data-page="dashboard"></script>
  *
- * Deteksi otomatis apakah halaman berada di subfolder /lapangan/
- * sehingga path menu menyesuaikan dan tidak terjadi double-path.
+ * Desktop/Tablet (>768px) : sidebar kiri 224px
+ * Mobile (<=768px)        : sidebar disembunyikan → bottom navigation bar
  */
 (function(){
 
-  // Deteksi: apakah halaman ini berada di dalam subfolder /lapangan/ ?
   const isLapangan = window.location.pathname.indexOf('/lapangan/') !== -1;
-  // Prefix untuk link menu utama (admin)
   const adminBase  = isLapangan ? '../' : '';
-  // Prefix untuk link menu lapangan
   const lapBase    = isLapangan ? ''    : 'lapangan/';
 
   const PAGES = [
     { id:'dashboard',    label:'Dashboard',        href: adminBase + 'index.html',        icon:'M3 3h7v7H3zm11 0h7v7h-7zM3 14h7v7H3zm11 0h7v7h-7z' },
-    { id:'aset',         label:'Data Aset',         href: adminBase + 'aset.html',         icon:'M12 2a7 7 0 1 1 0 14A7 7 0 0 1 12 2zm0 2a5 5 0 1 0 0 10A5 5 0 0 0 12 4zm0 2v4l3 2' },
-    { id:'laporan',      label:'Laporan Kerusakan', href: adminBase + 'laporan.html',      icon:'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8' },
-    { id:'pemeliharaan', label:'Pemeliharaan',      href: adminBase + 'pemeliharaan.html', icon:'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z' },
-    { id:'wilayah',      label:'Wilayah',           href: adminBase + 'wilayah.html',      icon:'M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3zM9 3v15M15 6v15' },
-    { id:'regu',         label:'Regu Lapangan',     href: adminBase + 'regu.html',         icon:'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75' },
+    { id:'aset',         label:'Aset',             href: adminBase + 'aset.html',         icon:'M12 2a7 7 0 1 1 0 14A7 7 0 0 1 12 2zm0 2a5 5 0 1 0 0 10A5 5 0 0 0 12 4zm0 2v4l3 2' },
+    { id:'laporan',      label:'Laporan',          href: adminBase + 'laporan.html',      icon:'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8' },
+    { id:'pemeliharaan', label:'Pemeliharaan',     href: adminBase + 'pemeliharaan.html', icon:'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z' },
+    { id:'wilayah',      label:'Wilayah',          href: adminBase + 'wilayah.html',      icon:'M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3zM9 3v15M15 6v15' },
+    { id:'regu',         label:'Regu',             href: adminBase + 'regu.html',         icon:'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75' },
   ];
   const LAPANGAN = [
-    { id:'form-laporan',    label:'Form Laporan',    href: lapBase + 'lapor.html', icon:'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z' },
-    { id:'form-penanganan', label:'Form Penanganan', href: lapBase + 'form.html',  icon:'M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11' },
+    { id:'form-laporan',    label:'Form Lapor',    href: lapBase + 'lapor.html', icon:'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z' },
+    { id:'form-penanganan', label:'Penanganan',   href: lapBase + 'form.html',  icon:'M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11' },
+  ];
+
+  const ALL_BOTTOM = [
+    { id:'dashboard',       label:'Dashboard',  href: adminBase + 'index.html',        icon:'M3 3h7v7H3zm11 0h7v7h-7zM3 14h7v7H3zm11 0h7v7h-7z' },
+    { id:'aset',            label:'Aset',       href: adminBase + 'aset.html',         icon:'M12 2a7 7 0 1 1 0 14A7 7 0 0 1 12 2zm0 2a5 5 0 1 0 0 10A5 5 0 0 0 12 4zm0 2v4l3 2' },
+    { id:'laporan',         label:'Laporan',    href: adminBase + 'laporan.html',      icon:'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8' },
+    { id:'pemeliharaan',    label:'Pelihara',   href: adminBase + 'pemeliharaan.html', icon:'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z' },
+    { id:'more',            label:'Lainnya',    href: '#',                             icon:'M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm0 7a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm0 7a1 1 0 1 1 0-2 1 1 0 0 1 0 2z' },
+  ];
+
+  const EXTRA_MENU = [
+    { id:'wilayah',         label:'Wilayah',       href: adminBase + 'wilayah.html' },
+    { id:'regu',            label:'Regu Lapangan', href: adminBase + 'regu.html' },
+    { id:'form-laporan',    label:'Form Laporan',  href: lapBase + 'lapor.html' },
+    { id:'form-penanganan', label:'Penanganan',    href: lapBase + 'form.html' },
   ];
 
   const currentPage = (document.currentScript && document.currentScript.dataset.page) || '';
@@ -39,17 +51,14 @@
     return `<a href="${p.href}" class="nav-item${active}" aria-current="${active?'page':'false'}">${svgIcon(p.icon)}<span>${p.label}</span></a>`;
   }
 
-  // Brand link juga disesuaikan
   const brandHref = adminBase + 'index.html';
   const logoutHref = adminBase + 'login.html';
 
+  // ---- SIDEBAR (Desktop) ----
   const sidebarHTML = `
 <aside class="pijar-sidebar" id="pijar-sidebar-el">
   <a href="${brandHref}" class="sidebar-brand">
-    <img
-      src="/images/pijar_square.png"
-      alt="Logo PIJAR"
-      width="34" height="34"
+    <img src="/images/pijar_square.png" alt="Logo PIJAR" width="34" height="34"
       fetchpriority="high"
       style="width:34px;height:34px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 1px 6px rgba(249,115,22,.35))"
       onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
@@ -60,14 +69,12 @@
       <span class="brand-sub">Sistem Manajemen Aset PJU<br>UPT PJU Kota Yogyakarta</span>
     </div>
   </a>
-
   <nav class="sidebar-nav" aria-label="Menu Utama">
     <div class="nav-group-label">Menu Utama</div>
     ${PAGES.map(navItem).join('')}
     <div class="nav-group-label" style="margin-top:10px">Lapangan</div>
     ${LAPANGAN.map(navItem).join('')}
   </nav>
-
   <div class="sidebar-user" id="pijar-user-box">
     <div class="user-avatar" id="pijar-user-avatar">A</div>
     <div class="user-info">
@@ -79,8 +86,42 @@
   <div class="sidebar-footer">Perwal Kota Yogyakarta No.&nbsp;50/2022</div>
 </aside>`;
 
+  // ---- BOTTOM NAV (Mobile) ----
+  const bottomNavHTML = `
+<nav class="pijar-bottom-nav" id="pijar-bottom-nav" aria-label="Navigasi">
+  ${ALL_BOTTOM.map(p => {
+    const active = p.id === currentPage ? ' active' : '';
+    return `<a href="${p.href}" class="bn-item${active}" data-id="${p.id}">
+      ${svgIcon(p.icon)}
+      <span>${p.label}</span>
+    </a>`;
+  }).join('')}
+</nav>
+
+<!-- Drawer menu "Lainnya" -->
+<div class="pijar-drawer-overlay" id="pijar-drawer-overlay" onclick="document.getElementById('pijar-drawer').classList.remove('show');document.getElementById('pijar-drawer-overlay').classList.remove('show')"></div>
+<div class="pijar-drawer" id="pijar-drawer">
+  <div class="drawer-handle"></div>
+  <div class="drawer-user" id="drawer-user-box">
+    <div class="user-avatar" id="drawer-user-avatar">A</div>
+    <div class="user-info">
+      <span class="user-name" id="drawer-user-name">—</span>
+      <span class="user-role" id="drawer-user-role">—</span>
+    </div>
+    <button onclick="pijarLogout()" style="margin-left:auto;background:none;border:none;color:#f87171;font-size:.82rem;cursor:pointer;padding:6px 10px;border-radius:6px;font-weight:600;">Keluar</button>
+  </div>
+  <div class="drawer-menu">
+    ${EXTRA_MENU.map(p => {
+      const active = p.id === currentPage ? ' active' : '';
+      return `<a href="${p.href}" class="drawer-item${active}">${p.label}</a>`;
+    }).join('')}
+  </div>
+  <div style="padding:10px 18px;font-size:.68rem;color:#94a3b8;">Perwal Kota Yogyakarta No. 50/2022</div>
+</div>`;
+
   const styles = `
 <style id="pijar-sidebar-css">
+/* ========= SIDEBAR DESKTOP ========= */
 .pijar-sidebar{
   position:fixed;top:0;left:0;width:224px;height:100vh;
   background:#0f2236;color:#e2e8f0;
@@ -93,98 +134,104 @@
   text-decoration:none;flex-shrink:0;
 }
 .brand-text{display:flex;flex-direction:column;min-width:0;}
-.brand-name{
-  font-size:1.1rem;font-weight:900;color:#facc15;
-  letter-spacing:.07em;line-height:1;
-}
-.brand-sub{
-  font-size:.58rem;color:#475569;line-height:1.4;margin-top:2px;
-  white-space:normal;
-}
+.brand-name{font-size:1.1rem;font-weight:900;color:#facc15;letter-spacing:.07em;line-height:1;}
+.brand-sub{font-size:.58rem;color:#475569;line-height:1.4;margin-top:2px;white-space:normal;}
 .sidebar-nav{flex:1;padding:8px 0;overflow-y:auto;overflow-x:hidden;}
 .sidebar-nav::-webkit-scrollbar{width:3px;}
 .sidebar-nav::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:3px;}
-.nav-group-label{
-  padding:8px 16px 3px;
-  font-size:.6rem;font-weight:700;color:#334155;
-  text-transform:uppercase;letter-spacing:.1em;
-}
-.nav-item{
-  display:flex;align-items:center;gap:9px;
-  padding:8px 16px;
-  color:#64748b;text-decoration:none;font-size:.82rem;
-  border-left:3px solid transparent;
-  transition:background .15s,color .15s;
-  white-space:nowrap;
-}
-.nav-item svg{
-  width:16px;height:16px;flex-shrink:0;
-  stroke:#64748b;transition:stroke .15s;
-}
-.nav-item:hover{
-  background:rgba(255,255,255,0.05);
-  color:#e2e8f0;
-  border-left-color:rgba(249,115,22,.4);
-}
+.nav-group-label{padding:8px 16px 3px;font-size:.6rem;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:.1em;}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 16px;color:#64748b;text-decoration:none;font-size:.82rem;border-left:3px solid transparent;transition:background .15s,color .15s;white-space:nowrap;}
+.nav-item svg{width:16px;height:16px;flex-shrink:0;stroke:#64748b;transition:stroke .15s;}
+.nav-item:hover{background:rgba(255,255,255,0.05);color:#e2e8f0;border-left-color:rgba(249,115,22,.4);}
 .nav-item:hover svg{stroke:#e2e8f0;}
-.nav-item.active{
-  background:rgba(249,115,22,.1);
-  color:#fff;font-weight:600;
-  border-left-color:#f97316;
-}
+.nav-item.active{background:rgba(249,115,22,.1);color:#fff;font-weight:600;border-left-color:#f97316;}
 .nav-item.active svg{stroke:#f97316;}
-.sidebar-user{
-  display:flex;align-items:center;gap:9px;
-  padding:12px 14px;
-  border-top:1px solid rgba(255,255,255,0.07);
-  min-height:58px;
-}
-.user-avatar{
-  width:30px;height:30px;border-radius:50%;
-  background:linear-gradient(135deg,#1a56db,#1e3a5f);
-  color:#fff;font-size:.82rem;font-weight:700;
-  display:flex;align-items:center;justify-content:center;
-  flex-shrink:0;border:1.5px solid rgba(249,115,22,.4);
-}
+.sidebar-user{display:flex;align-items:center;gap:9px;padding:12px 14px;border-top:1px solid rgba(255,255,255,0.07);min-height:58px;}
+.user-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#1a56db,#1e3a5f);color:#fff;font-size:.82rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1.5px solid rgba(249,115,22,.4);}
 .user-info{flex:1;min-width:0;overflow:hidden;}
-.user-name{
-  display:block;font-size:.78rem;font-weight:600;
-  color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}
-.user-role{
-  display:block;font-size:.66rem;color:#475569;
-  margin-top:1px;text-transform:capitalize;
-}
-.btn-logout{
-  background:none;border:none;color:#334155;
-  font-size:.9rem;cursor:pointer;padding:4px;
-  border-radius:4px;transition:color .15s;
-  flex-shrink:0;
-}
+.user-name{display:block;font-size:.78rem;font-weight:600;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.user-role{display:block;font-size:.66rem;color:#475569;margin-top:1px;text-transform:capitalize;}
+.btn-logout{background:none;border:none;color:#334155;font-size:.9rem;cursor:pointer;padding:4px;border-radius:4px;transition:color .15s;flex-shrink:0;}
 .btn-logout:hover{color:#f87171;}
-.sidebar-footer{
-  padding:7px 14px;
-  font-size:.58rem;color:#1e3a5f;
-  border-top:1px solid rgba(255,255,255,0.04);
+.sidebar-footer{padding:7px 14px;font-size:.58rem;color:#1e3a5f;border-top:1px solid rgba(255,255,255,0.04);}
+
+/* ========= BOTTOM NAV MOBILE ========= */
+.pijar-bottom-nav{
+  display:none;
+  position:fixed;bottom:0;left:0;right:0;
+  height:60px;background:#0f2236;
+  border-top:1px solid rgba(255,255,255,0.1);
+  z-index:200;padding:0 4px;
+  padding-bottom:env(safe-area-inset-bottom,0);
 }
+.bn-item{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  flex:1;gap:2px;color:#475569;text-decoration:none;
+  font-size:.6rem;font-weight:500;
+  padding:6px 0;
+  border-top:2px solid transparent;
+  transition:color .15s,border-color .15s;
+  min-width:0;
+}
+.bn-item svg{width:20px;height:20px;stroke:#475569;transition:stroke .15s;flex-shrink:0;}
+.bn-item:hover{color:#e2e8f0;}
+.bn-item:hover svg{stroke:#e2e8f0;}
+.bn-item.active{color:#f97316;border-top-color:#f97316;}
+.bn-item.active svg{stroke:#f97316;}
+
+/* ========= DRAWER "LAINNYA" ========= */
+.pijar-drawer-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);
+  z-index:299;backdrop-filter:blur(2px);
+}
+.pijar-drawer-overlay.show{display:block;}
+.pijar-drawer{
+  position:fixed;bottom:0;left:0;right:0;
+  background:#0f2236;border-radius:18px 18px 0 0;
+  z-index:300;transform:translateY(100%);
+  transition:transform .28s cubic-bezier(.4,0,.2,1);
+  padding-bottom:env(safe-area-inset-bottom,16px);
+  max-height:72vh;overflow-y:auto;
+}
+.pijar-drawer.show{transform:translateY(0);}
+.drawer-handle{width:40px;height:4px;background:rgba(255,255,255,.15);border-radius:2px;margin:10px auto 4px;}
+.drawer-user{display:flex;align-items:center;gap:10px;padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.07);}
+.drawer-menu{padding:10px 0;}
+.drawer-item{display:block;padding:13px 22px;color:#94a3b8;text-decoration:none;font-size:.9rem;font-weight:500;border-left:3px solid transparent;transition:background .15s,color .15s;}
+.drawer-item:hover{background:rgba(255,255,255,.05);color:#e2e8f0;}
+.drawer-item.active{color:#f97316;border-left-color:#f97316;font-weight:700;}
+
+/* ========= RESPONSIVE ========= */
 @media(max-width:768px){
-  .pijar-sidebar{display:none;}
-  .pijar-main{margin-left:0!important;}
+  .pijar-sidebar{display:none!important;}
+  .pijar-main,.main{margin-left:0!important;padding-bottom:70px;}
+  .pijar-bottom-nav{display:flex;}
+}
+@media(min-width:769px){
+  .pijar-bottom-nav,.pijar-drawer,.pijar-drawer-overlay{display:none!important;}
+  .pijar-main,.main{margin-left:224px;}
 }
 </style>`;
 
   document.head.insertAdjacentHTML('beforeend', styles);
   document.body.insertAdjacentHTML('afterbegin', sidebarHTML);
+  document.body.insertAdjacentHTML('beforeend', bottomNavHTML);
 
-  const style = document.createElement('style');
-  style.textContent = '.pijar-main,.main{margin-left:224px;}';
-  document.head.appendChild(style);
-
-  // Logout button — href disesuaikan dengan posisi folder
-  document.getElementById('pijar-btn-logout').addEventListener('click', function(){
+  // ---- Tombol logout sidebar ----
+  const btnLogoutSide = document.getElementById('pijar-btn-logout');
+  if(btnLogoutSide) btnLogoutSide.addEventListener('click', function(){
     localStorage.removeItem('pijar_token');
     localStorage.removeItem('pijar_user');
     window.location.href = logoutHref;
+  });
+
+  // ---- Tombol "Lainnya" di bottom nav ----
+  document.querySelectorAll('.bn-item[data-id="more"]').forEach(el => {
+    el.addEventListener('click', function(e){
+      e.preventDefault();
+      document.getElementById('pijar-drawer').classList.add('show');
+      document.getElementById('pijar-drawer-overlay').classList.add('show');
+    });
   });
 
   function fillUser(){
@@ -194,12 +241,9 @@
       const u = JSON.parse(raw);
       const name = u.nama_lengkap || u.nama || u.username || '?';
       const role = u.peran || u.role || '';
-      const el = document.getElementById('pijar-user-name');
-      const er = document.getElementById('pijar-user-role');
-      const ea = document.getElementById('pijar-user-avatar');
-      if(el) el.textContent = name;
-      if(er) er.textContent = role;
-      if(ea) ea.textContent = name.charAt(0).toUpperCase();
+      ['pijar-user-name','drawer-user-name'].forEach(id => { const el=document.getElementById(id); if(el)el.textContent=name; });
+      ['pijar-user-role','drawer-user-role'].forEach(id => { const el=document.getElementById(id); if(el)el.textContent=role; });
+      ['pijar-user-avatar','drawer-user-avatar'].forEach(id => { const el=document.getElementById(id); if(el)el.textContent=name.charAt(0).toUpperCase(); });
     }catch(e){}
   }
 
@@ -209,7 +253,6 @@
     fillUser();
   }
 
-  // Legacy support
   window.pijarLogout = function(){
     localStorage.removeItem('pijar_token');
     localStorage.removeItem('pijar_user');
