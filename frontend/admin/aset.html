@@ -13,10 +13,6 @@
     .topbar h2{font-size:.95rem;font-weight:700;color:#0f172a;}
     .topbar-actions{display:flex;gap:8px;align-items:center;}
     .content{padding:20px 24px;}
-    /* ===== Toolbar Desktop (LEGACY, disembunyikan - diganti .toolbar-v2) ===== */
-    .toolbar{display:none!important;}
-    .toolbar select,.toolbar input{padding:7px 11px;border:1px solid #e2e8f0;border-radius:7px;font-size:.82rem;background:#fff;color:#0f172a;}
-    .toolbar input{min-width:160px;}
     .btn{padding:7px 14px;border-radius:7px;border:none;cursor:pointer;font-size:.82rem;font-weight:600;transition:opacity .15s;display:inline-flex;align-items:center;gap:5px;}
     .btn:hover{opacity:.85;}
     .btn-primary{background:#1a56db;color:#fff;}
@@ -141,10 +137,8 @@
 
     @media(max-width:768px){
       .form-row{grid-template-columns:1fr;}
-      /* Sembunyikan toolbar & tabel desktop */
       .toolbar-v2{display:none;}
       .card{display:none;}
-      /* Tampilkan versi mobile */
       .toolbar-mobile{display:flex;gap:8px;align-items:center;margin-bottom:12px;}
       .toolbar-mobile input{flex:1;padding:9px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:.85rem;background:#fff;color:#0f172a;}
       .toolbar-mobile select{padding:9px 10px;border:1px solid #e2e8f0;border-radius:8px;font-size:.82rem;background:#fff;color:#0f172a;}
@@ -173,10 +167,10 @@
   </div>
   <div class="content">
 
-    <!-- ===== TOOLBAR DESKTOP v2 (mockup: search + Filter + Sort + badge) ===== -->
+    <!-- ===== TOOLBAR DESKTOP v2 (search + Filter + Sort + badge) ===== -->
     <div class="toolbar-v2">
       <div class="search-row">
-        <input type="text" id="d-search" class="search-input" placeholder="🔍 Cari kode aset, alamat, kemantren, atau kelurahan...">
+        <input type="text" id="d-search" class="search-input" placeholder="🔍 Cari kode aset, alamat, kemantren, atau kelurahan..." oninput="debounceLoad()">
       </div>
       <div class="toolbar-actions">
         <div class="filter-wrap">
@@ -202,7 +196,7 @@
               <div id="filter-kategori-list" class="chk-scroll"><div class="chk-empty">Memuat...</div></div>
             </div>
             <div class="filter-section">
-              <div class="filter-section-title">Kemantren (14 se-Kota Yogyakarta)</div>
+              <div class="filter-section-title">Kemantren</div>
               <div id="filter-kemantren-list" class="chk-scroll"><div class="chk-empty">Memuat...</div></div>
             </div>
             <div class="filter-section">
@@ -219,9 +213,9 @@
         <div class="sort-wrap">
           <button class="btn btn-secondary btn-filter" id="btn-sort-toggle" onclick="toggleSortPanel()">⇅ Sort</button>
           <div class="sort-panel" id="sort-panel">
-            <label class="chk-item"><input type="radio" name="f-sort" value="terbaru" checked> Terbaru ditambahkan</label>
-            <label class="chk-item"><input type="radio" name="f-sort" value="kode_asc"> Kode Aset A-Z</label>
-            <label class="chk-item"><input type="radio" name="f-sort" value="tahun_desc"> Tahun Pemasangan (baru→lama)</label>
+            <label class="chk-item"><input type="radio" name="f-sort" value="terbaru" checked onchange="onSortChange()"> Terbaru ditambahkan</label>
+            <label class="chk-item"><input type="radio" name="f-sort" value="kode_asc" onchange="onSortChange()"> Kode Aset A-Z</label>
+            <label class="chk-item"><input type="radio" name="f-sort" value="tahun_desc" onchange="onSortChange()"> Tahun Pemasangan (baru→lama)</label>
           </div>
         </div>
 
@@ -229,16 +223,6 @@
       </div>
 
       <div class="badge-row" id="badge-row" style="display:none"></div>
-    </div>
-
-    <!-- ===== TOOLBAR DESKTOP LEGACY (disembunyikan, dipakai internal oleh JS lama sebelum wiring selesai) ===== -->
-    <div class="toolbar">
-      <select id="f-status" onchange="loadAset(1)"><option value="">Semua Status</option><option value="Menyala">Menyala</option><option value="Rusak">Rusak</option><option value="Dalam Pengerjaan">Dalam Pengerjaan</option></select>
-      <select id="f-kategori" onchange="loadAset(1)"><option value="">Semua Kategori Jalan</option><option value="Jalan Kota">Jalan Kota</option><option value="Jalan Lingkungan">Jalan Lingkungan</option><option value="Jalan Lingkungan Kampung">Jalan Lingkungan Kampung</option><option value="Lainnya">Lainnya</option></select>
-      <select id="f-id-kategori" onchange="loadAset(1)"><option value="">Semua Kategori PJU</option></select>
-      <input type="text" id="f-kemantren" placeholder="Filter kemantren..." oninput="debounceLoad()">
-      <input type="text" id="f-kelurahan" placeholder="Filter kelurahan..." oninput="debounceLoad()">
-      <button class="btn btn-secondary" onclick="resetFilter()">↺ Reset</button>
     </div>
 
     <!-- ===== TOOLBAR MOBILE ===== -->
@@ -462,6 +446,7 @@ const TOKEN=()=>localStorage.getItem('pijar_token');
 const H=()=>({'Content-Type':'application/json','Authorization':'Bearer '+TOKEN()});
 const HN=()=>({'Authorization':'Bearer '+TOKEN()});
 const bS={'Menyala':'badge-hijau','Rusak':'badge-merah','Dalam Pengerjaan':'badge-kuning'};
+const SORT_LABEL={'terbaru':'Terbaru ditambahkan','kode_asc':'Kode Aset A-Z','tahun_desc':'Tahun (baru→lama)'};
 
 // Desktop state
 let curPage=1,totalPages=1,debTimer=null;
@@ -505,7 +490,7 @@ function pijarConfirm(msg,icon='⚠️',labelOk='Ya, Lanjutkan',tipeBtnOk='btn-d
   });
 }
 
-// ===== Filter Drawer =====
+// ===== Filter Drawer (mobile) =====
 function bukaFilterDrawer(){
   document.getElementById('drawer-overlay').classList.add('show');
   document.getElementById('filter-drawer').classList.add('show');
@@ -526,7 +511,19 @@ function resetFilterMobile(){
   resetInfiniteLoad();
 }
 
-// ===== Toolbar Desktop v2: toggle panel (MOCKUP - belum wiring ke fetch) =====
+// ===== Toolbar Desktop v2: helper baca state filter =====
+function getCheckedValues(name){
+  return [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(c=>c.value);
+}
+function getSearchValue(){
+  const el=document.getElementById('d-search');
+  return el?el.value.trim():'';
+}
+function getSortValue(){
+  const r=document.querySelector('input[name="f-sort"]:checked');
+  return r?r.value:'terbaru';
+}
+
 function toggleFilterPanel(){
   document.getElementById('sort-panel').classList.remove('show');
   document.getElementById('filter-panel').classList.toggle('show');
@@ -539,41 +536,102 @@ document.addEventListener('click',(e)=>{
   if(!e.target.closest('.filter-wrap'))document.getElementById('filter-panel')?.classList.remove('show');
   if(!e.target.closest('.sort-wrap'))document.getElementById('sort-panel')?.classList.remove('show');
 });
+
 function resetFilterPanel(){
   document.querySelectorAll('#filter-panel input[type=checkbox]').forEach(c=>c.checked=false);
-  pijarToast('Filter direset (mockup, belum tersambung ke data)','info');
+  onKemantrenCheckboxChange();
+  loadAset(1);
+  updateFilterCount();
+  renderBadges();
+  pijarToast('Filter direset','info');
 }
 function terapkanFilterPanel(){
   document.getElementById('filter-panel').classList.remove('show');
-  pijarToast('Tombol Terapkan (mockup) - logic filtering menyusul','info');
+  loadAset(1);
+  updateFilterCount();
+  renderBadges();
+}
+function onSortChange(){
+  loadAset(1);
+  renderBadges();
+}
+
+function updateFilterCount(){
+  const total=getCheckedValues('f-status-cb').length+getCheckedValues('f-katjalan-cb').length+getCheckedValues('f-idkategori-cb').length+getCheckedValues('f-kemantren-cb').length+getCheckedValues('f-kelurahan-cb').length;
+  const el=document.getElementById('filter-count');
+  if(total>0){el.textContent=total;el.style.display='inline-block';}else{el.style.display='none';}
+}
+
+function removeBadge(type,value){
+  if(type==='search'){document.getElementById('d-search').value='';}
+  else if(type==='sort'){const r=document.querySelector('input[name="f-sort"][value="terbaru"]');if(r)r.checked=true;}
+  else{
+    const el=document.querySelector(`input[name="${type}"][value="${CSS.escape(value)}"]`);
+    if(el){el.checked=false;if(type==='f-kemantren-cb')onKemantrenCheckboxChange();}
+  }
+  loadAset(1);
+  updateFilterCount();
+  renderBadges();
+}
+
+function renderBadges(){
+  const row=document.getElementById('badge-row');
+  const badges=[];
+  const cari=getSearchValue();
+  if(cari)badges.push({label:`🔍 "${cari}"`,type:'search',value:''});
+  getCheckedValues('f-status-cb').forEach(v=>badges.push({label:`Status: ${v}`,type:'f-status-cb',value:v}));
+  getCheckedValues('f-katjalan-cb').forEach(v=>badges.push({label:`Jalan: ${v}`,type:'f-katjalan-cb',value:v}));
+  getCheckedValues('f-idkategori-cb').forEach(v=>{
+    const kat=daftarKategori.find(k=>String(k.id)===v);
+    badges.push({label:`PJU: ${kat?kat.kode:v}`,type:'f-idkategori-cb',value:v});
+  });
+  getCheckedValues('f-kemantren-cb').forEach(v=>badges.push({label:`Kemantren: ${v}`,type:'f-kemantren-cb',value:v}));
+  getCheckedValues('f-kelurahan-cb').forEach(v=>badges.push({label:`Kelurahan: ${v}`,type:'f-kelurahan-cb',value:v}));
+  const sortVal=getSortValue();
+  if(sortVal!=='terbaru')badges.push({label:`Sort: ${SORT_LABEL[sortVal]||sortVal}`,type:'sort',value:sortVal});
+
+  if(!badges.length){row.style.display='none';row.innerHTML='';return;}
+  row.style.display='flex';
+  row.innerHTML=badges.map(b=>`<span class="filter-badge">${b.label} <span class="fb-close" onclick="removeBadge('${b.type}','${String(b.value).replace(/'/g,"\\'")}')">✕</span></span>`).join('');
 }
 
 // ===== Debounce =====
-function debounceLoad(){clearTimeout(debTimer);debTimer=setTimeout(()=>loadAset(1),500);}
+function debounceLoad(){clearTimeout(debTimer);debTimer=setTimeout(()=>{loadAset(1);renderBadges();},500);}
 function debounceLoadMobile(){clearTimeout(mDebTimer);mDebTimer=setTimeout(()=>resetInfiniteLoad(),500);}
-
-function resetFilter(){
-  ['f-status','f-kategori','f-id-kategori'].forEach(id=>document.getElementById(id).value='');
-  ['f-kemantren','f-kelurahan'].forEach(id=>document.getElementById(id).value='');
-  loadAset(1);
-}
 
 // ===== Build URL params =====
 function buildParams(page,perPage){
   const mobile=isMobile();
-  const status=mobile?document.getElementById('m-status').value:document.getElementById('f-status').value;
-  const kat=mobile?document.getElementById('d-kategori').value:document.getElementById('f-kategori').value;
-  const idKat=mobile?document.getElementById('d-id-kategori').value:document.getElementById('f-id-kategori').value;
-  const kemantren=mobile?document.getElementById('d-kemantren').value.trim():document.getElementById('f-kemantren').value.trim();
-  const kelurahan=mobile?document.getElementById('d-kelurahan').value.trim():document.getElementById('f-kelurahan').value.trim();
-  const cari=mobile?document.getElementById('m-cari').value.trim():'';
   let url=`${API}/api/aset?page=${page}&per_page=${perPage}`;
-  if(status)url+=`&status=${encodeURIComponent(status)}`;
-  if(kat)url+=`&kategori_jalan=${encodeURIComponent(kat)}`;
-  if(idKat)url+=`&id_kategori=${idKat}`;
-  if(kemantren)url+=`&kemantren=${encodeURIComponent(kemantren)}`;
-  if(kelurahan)url+=`&kelurahan=${encodeURIComponent(kelurahan)}`;
-  if(cari)url+=`&q=${encodeURIComponent(cari)}`;
+  if(mobile){
+    const status=document.getElementById('m-status').value;
+    const kat=document.getElementById('d-kategori').value;
+    const idKat=document.getElementById('d-id-kategori').value;
+    const kemantren=document.getElementById('d-kemantren').value.trim();
+    const kelurahan=document.getElementById('d-kelurahan').value.trim();
+    const cari=document.getElementById('m-cari').value.trim();
+    if(status)url+=`&status=${encodeURIComponent(status)}`;
+    if(kat)url+=`&kategori_jalan=${encodeURIComponent(kat)}`;
+    if(idKat)url+=`&id_kategori=${idKat}`;
+    if(kemantren)url+=`&kemantren=${encodeURIComponent(kemantren)}`;
+    if(kelurahan)url+=`&kelurahan=${encodeURIComponent(kelurahan)}`;
+    if(cari)url+=`&q=${encodeURIComponent(cari)}`;
+  }else{
+    const statusList=getCheckedValues('f-status-cb');
+    const katJalanList=getCheckedValues('f-katjalan-cb');
+    const idKatList=getCheckedValues('f-idkategori-cb');
+    const kemantrenList=getCheckedValues('f-kemantren-cb');
+    const kelurahanList=getCheckedValues('f-kelurahan-cb');
+    const cari=getSearchValue();
+    const sort=getSortValue();
+    url+=`&sort=${sort}`;
+    if(statusList.length)url+=`&status=${encodeURIComponent(statusList.join(','))}`;
+    if(katJalanList.length)url+=`&kategori_jalan=${encodeURIComponent(katJalanList.join(','))}`;
+    if(idKatList.length)url+=`&id_kategori=${idKatList.join(',')}`;
+    if(kemantrenList.length)url+=`&kemantren=${encodeURIComponent(kemantrenList.join(','))}`;
+    if(kelurahanList.length)url+=`&kelurahan=${encodeURIComponent(kelurahanList.join(','))}`;
+    if(cari)url+=`&q=${encodeURIComponent(cari)}`;
+  }
   return url;
 }
 
@@ -583,14 +641,14 @@ async function loadKategoriPJU(){
     const r=await fetch(`${API}/api/kategori-pju`,{headers:HN()});
     const j=await r.json();
     daftarKategori=j.data||[];
-    const targets=['f-id-kategori','t-id-kategori','e-id-kategori','d-id-kategori'];
+    const targets=['t-id-kategori','e-id-kategori','d-id-kategori'];
     daftarKategori.forEach(k=>{
       const opt=`<option value="${k.id}" data-kode="${k.kode}">${k.kode} — ${k.nama}</option>`;
       targets.forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML+=opt;});
     });
     const boxKat=document.getElementById('filter-kategori-list');
     if(boxKat){
-      boxKat.innerHTML=daftarKategori.length?daftarKategori.map(k=>`<label class="chk-item"><input type="checkbox" name="f-idkategori-cb" value="${k.id}"> ${k.kode} — ${k.nama}</label>`).join(''):'<div class="chk-empty">Tidak ada data</div>';
+      boxKat.innerHTML=daftarKategori.length?daftarKategori.map(k=>`<label class="chk-item"><input type="checkbox" name="f-idkategori-cb" value="${k.id}" onchange="updateFilterCount()"> ${k.kode} — ${k.nama}</label>`).join(''):'<div class="chk-empty">Tidak ada data</div>';
     }
   }catch(e){console.warn('Gagal load kategori',e);}
 }
@@ -607,18 +665,18 @@ async function loadWilayah(){
     const boxKemantren=document.getElementById('filter-kemantren-list');
     if(boxKemantren){
       const kemantrenUnik=[...new Set(daftarWilayah.map(w=>w.nama_kemantren))].sort();
-      boxKemantren.innerHTML=kemantrenUnik.length?kemantrenUnik.map(k=>`<label class="chk-item"><input type="checkbox" name="f-kemantren-cb" value="${k}" onchange="onKemantrenCheckboxChange()"> ${k}</label>`).join(''):'<div class="chk-empty">Tidak ada data</div>';
+      boxKemantren.innerHTML=kemantrenUnik.length?kemantrenUnik.map(k=>`<label class="chk-item"><input type="checkbox" name="f-kemantren-cb" value="${k}" onchange="onKemantrenCheckboxChange();updateFilterCount()"> ${k}</label>`).join(''):'<div class="chk-empty">Tidak ada data</div>';
     }
   }catch(e){console.warn('Gagal load wilayah',e);}
 }
 
 function onKemantrenCheckboxChange(){
-  const terpilih=[...document.querySelectorAll('input[name="f-kemantren-cb"]:checked')].map(c=>c.value);
+  const terpilih=getCheckedValues('f-kemantren-cb');
   const boxKelurahan=document.getElementById('filter-kelurahan-list');
   if(!boxKelurahan)return;
   if(!terpilih.length){boxKelurahan.innerHTML='<div class="chk-empty">Pilih kemantren dulu</div>';return;}
   const kelurahanUnik=[...new Set(daftarWilayah.filter(w=>terpilih.includes(w.nama_kemantren)).map(w=>w.nama_kelurahan))].sort();
-  boxKelurahan.innerHTML=kelurahanUnik.length?kelurahanUnik.map(k=>`<label class="chk-item"><input type="checkbox" name="f-kelurahan-cb" value="${k}"> ${k}</label>`).join(''):'<div class="chk-empty">Tidak ada kelurahan</div>';
+  boxKelurahan.innerHTML=kelurahanUnik.length?kelurahanUnik.map(k=>`<label class="chk-item"><input type="checkbox" name="f-kelurahan-cb" value="${k}" onchange="updateFilterCount()"> ${k}</label>`).join(''):'<div class="chk-empty">Tidak ada kelurahan</div>';
 }
 
 // ===== Desktop: load dengan pagination =====
@@ -728,17 +786,19 @@ scrollObserver.observe(document.getElementById('infinite-spinner'));
 
 // ===== Export =====
 async function exportAset(){
+  const statusList=getCheckedValues('f-status-cb');
+  const katJalanList=getCheckedValues('f-katjalan-cb');
+  const idKatList=getCheckedValues('f-idkategori-cb');
+  const kemantrenList=getCheckedValues('f-kemantren-cb');
+  const kelurahanList=getCheckedValues('f-kelurahan-cb');
+  const cari=getSearchValue();
   let url=`${API}/api/aset/export?`;
-  const status=document.getElementById('f-status').value;
-  const kat=document.getElementById('f-kategori').value;
-  const idKat=document.getElementById('f-id-kategori').value;
-  const kemantren=document.getElementById('f-kemantren').value.trim();
-  const kelurahan=document.getElementById('f-kelurahan').value.trim();
-  if(status)url+=`status=${encodeURIComponent(status)}&`;
-  if(kat)url+=`kategori_jalan=${encodeURIComponent(kat)}&`;
-  if(idKat)url+=`id_kategori=${idKat}&`;
-  if(kemantren)url+=`kemantren=${encodeURIComponent(kemantren)}&`;
-  if(kelurahan)url+=`kelurahan=${encodeURIComponent(kelurahan)}&`;
+  if(statusList.length)url+=`status=${encodeURIComponent(statusList.join(','))}&`;
+  if(katJalanList.length)url+=`kategori_jalan=${encodeURIComponent(katJalanList.join(','))}&`;
+  if(idKatList.length)url+=`id_kategori=${idKatList.join(',')}&`;
+  if(kemantrenList.length)url+=`kemantren=${encodeURIComponent(kemantrenList.join(','))}&`;
+  if(kelurahanList.length)url+=`kelurahan=${encodeURIComponent(kelurahanList.join(','))}&`;
+  if(cari)url+=`q=${encodeURIComponent(cari)}&`;
   try{
     const res=await fetch(url,{headers:HN(),cache:'no-store'});
     const json=await res.json();
