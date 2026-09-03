@@ -124,10 +124,16 @@
         </div>
       </div>
 
-      <!-- Lampu -->
+      <!-- Lampu: Jenis + Watt -->
       <div class="form-row">
         <div class="form-group"><label>Jenis Lampu</label><input type="text" id="jenis_lampu" placeholder="LED, HPS, dll"></div>
         <div class="form-group"><label>Daya (Watt)</label><input type="number" id="watt" placeholder="50"></div>
+      </div>
+
+      <!-- Lampu: Merk + Tipe -->
+      <div class="form-row">
+        <div class="form-group"><label>Merk Lampu</label><input type="text" id="merk_lampu" placeholder="Philips, Osram, dll"></div>
+        <div class="form-group"><label>Tipe Lampu</label><input type="text" id="tipe_lampu" placeholder="CorePro LED, Master, dll"></div>
       </div>
 
       <div style="display:flex;gap:10px;margin-top:4px">
@@ -143,7 +149,7 @@ const API = 'https://api.pjujogja.id';
 let _kodeStatus = null; // 'ok' | 'error' | null
 let _cekTimeout = null;
 
-// ─── Init ───────────────────────────────────────────────
+// ─── Init ──────────────────────────────────────────────
 async function init() {
   const token = localStorage.getItem('pijar_token');
   const h = { 'Authorization': 'Bearer ' + token };
@@ -189,7 +195,6 @@ async function updateKodeSuggest() {
     const r = await fetch(url, { headers: { 'Authorization': 'Bearer ' + token } });
     const j = await r.json();
     if (j.success && j.suggest) {
-      // Isi input hanya kalau masih kosong (tidak override yang sudah diketik manual)
       const inp = document.getElementById('kode_aset');
       if (!inp.value.trim()) {
         inp.value = j.suggest;
@@ -244,13 +249,13 @@ function setBadge(state, text, hint) {
   if (hint !== undefined) hintEl.textContent = hint;
 }
 
-// ─── Toggle sub-kategori ────────────────────────────────
+// ─── Toggle sub-kategori ────────────────────────────────────
 function toggleSub() {
   document.getElementById('wrap-sub').style.display =
     document.getElementById('kategori_jalan').value === 'Lainnya' ? 'block' : 'none';
 }
 
-// ─── Submit ─────────────────────────────────────────────
+// ─── Submit ───────────────────────────────────────────────
 async function submitAset() {
   const kode = document.getElementById('kode_aset').value.trim();
   if (!kode) { alert('Kode aset wajib diisi!'); return; }
@@ -268,6 +273,8 @@ async function submitAset() {
     sub_kategori_lainnya: document.getElementById('kategori_jalan').value === 'Lainnya'
                           ? document.getElementById('sub_kat').value : null,
     jenis_lampu      : document.getElementById('jenis_lampu').value || null,
+    merk_lampu       : document.getElementById('merk_lampu').value.trim() || null,
+    tipe_lampu       : document.getElementById('tipe_lampu').value.trim() || null,
     watt             : document.getElementById('watt').value ? parseInt(document.getElementById('watt').value) : null,
     status           : document.getElementById('status_aset').value
   };
