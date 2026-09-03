@@ -156,13 +156,11 @@
         <select id="t-sub-kat"><option>Taman</option><option>Makam</option><option>Sorot Sungai</option><option>Hias/Budaya</option></select>
       </div>
     </div>
-    <!-- Tiang -->
     <div class="section-label">🔩 Data Tiang</div>
     <div class="form-row">
       <div class="form-group"><label>Jenis Tiang</label><input type="text" id="t-jenis-tiang" placeholder="Besi, Beton, dll"></div>
       <div class="form-group"><label>Tinggi (m)</label><input type="number" id="t-tinggi" step="0.1" placeholder="7"></div>
     </div>
-    <!-- Lampu -->
     <div class="section-label">💡 Data Lampu</div>
     <div class="form-row">
       <div class="form-group"><label>Jenis Lampu</label><input type="text" id="t-jenis-lampu" placeholder="LED, HPS, dll"></div>
@@ -172,7 +170,6 @@
       <div class="form-group"><label>Merk Lampu</label><input type="text" id="t-merk-lampu" placeholder="Philips, Osram, dll"></div>
       <div class="form-group"><label>Tipe / Model</label><input type="text" id="t-tipe-lampu" placeholder="BRP131, SON-T, dll"></div>
     </div>
-    <!-- Status -->
     <div class="section-label">📋 Status</div>
     <div class="form-group">
       <label>Status</label>
@@ -198,6 +195,7 @@
       <div id="detail-body" style="font-size:.85rem;"></div>
       <div class="modal-actions">
         <button class="btn btn-danger btn-sm" id="btn-hapus-aset" onclick="hapusAset()">🗑 Hapus</button>
+        <button class="btn btn-warning btn-sm" id="btn-edit-aset" onclick="bukaModalEdit()">✏️ Edit</button>
         <button class="btn btn-secondary" onclick="document.getElementById('modal-detail').classList.remove('show')">Tutup</button>
       </div>
     </div>
@@ -245,6 +243,71 @@
   </div>
 </div>
 
+<!-- ===== MODAL EDIT ASET ===== -->
+<div class="modal-overlay" id="modal-edit" onclick="tutupModal('modal-edit',event)">
+  <div class="modal" style="width:600px">
+    <h3>✏️ Edit Aset &mdash; <span id="e-kode-judul" style="color:#1a56db;font-family:monospace"></span></h3>
+
+    <div class="section-label">📍 Lokasi & Identitas</div>
+    <div class="form-group"><label>Alamat <span class="wajib">*</span></label><input type="text" id="e-alamat"></div>
+    <div class="form-row">
+      <div class="form-group"><label>Latitude <span class="wajib">*</span></label><input type="number" id="e-lat" step="0.000001"></div>
+      <div class="form-group"><label>Longitude <span class="wajib">*</span></label><input type="number" id="e-lng" step="0.000001"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Kategori PJU</label>
+        <select id="e-id-kategori"><option value="">— pilih —</option></select>
+      </div>
+      <div class="form-group">
+        <label>Wilayah</label>
+        <select id="e-id-wilayah"><option value="">— pilih —</option></select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Kategori Jalan</label>
+        <select id="e-kat-jalan" onchange="toggleSubKat('e-wrap-sub','e-kat-jalan')">
+          <option>Jalan Kota</option><option>Jalan Lingkungan</option>
+          <option>Jalan Lingkungan Kampung</option><option>Lainnya</option>
+        </select>
+      </div>
+      <div class="form-group" id="e-wrap-sub" style="display:none">
+        <label>Sub Kategori</label>
+        <select id="e-sub-kat"><option>Taman</option><option>Makam</option><option>Sorot Sungai</option><option>Hias/Budaya</option></select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Tahun Pemasangan</label><input type="number" id="e-tahun" min="2000" max="2099"></div>
+      <div class="form-group">
+        <label>Status</label>
+        <select id="e-status"><option>Menyala</option><option>Rusak</option><option>Dalam Pengerjaan</option></select>
+      </div>
+    </div>
+
+    <div class="section-label">🔩 Data Tiang</div>
+    <div class="form-row">
+      <div class="form-group"><label>Jenis Tiang</label><input type="text" id="e-jenis-tiang" placeholder="Besi, Beton, dll"></div>
+      <div class="form-group"><label>Tinggi (m)</label><input type="number" id="e-tinggi" step="0.1" placeholder="7"></div>
+    </div>
+
+    <div class="section-label">💡 Data Lampu</div>
+    <div class="form-row">
+      <div class="form-group"><label>Jenis Lampu</label><input type="text" id="e-jenis-lampu" placeholder="LED, HPS, dll"></div>
+      <div class="form-group"><label>Daya (Watt)</label><input type="number" id="e-watt" placeholder="50"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Merk Lampu</label><input type="text" id="e-merk-lampu" placeholder="Philips, Osram, dll"></div>
+      <div class="form-group"><label>Tipe / Model</label><input type="text" id="e-tipe-lampu" placeholder="BRP131, SON-T, dll"></div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="document.getElementById('modal-edit').classList.remove('show')">Batal</button>
+      <button class="btn btn-primary" onclick="submitEditAset()">💾 Simpan Perubahan</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const API='https://api.pjujogja.id';
 const TOKEN=()=>localStorage.getItem('pijar_token');
@@ -274,22 +337,28 @@ async function loadKategoriPJU(){
     daftarKategori=json.data||[];
     const selF=document.getElementById('f-id-kategori');
     const selT=document.getElementById('t-id-kategori');
+    const selE=document.getElementById('e-id-kategori');
     daftarKategori.forEach(k=>{
-      selF.innerHTML+=`<option value="${k.id}">${k.kode} — ${k.nama}</option>`;
-      selT.innerHTML+=`<option value="${k.id}" data-kode="${k.kode}">${k.kode} — ${k.nama}</option>`;
+      const opt=`<option value="${k.id}" data-kode="${k.kode}">${k.kode} — ${k.nama}</option>`;
+      selF.innerHTML+=opt;
+      selT.innerHTML+=opt;
+      selE.innerHTML+=opt;
     });
   }catch(e){console.warn('Gagal load kategori PJU',e);}
 }
 
-// ---- Load master wilayah untuk form tambah ----
+// ---- Load master wilayah untuk form ----
 async function loadWilayah(){
   try{
     const res=await fetch(`${API}/api/wilayah`,{headers:H()});
     const json=await res.json();
     daftarWilayah=json.data||[];
-    const sel=document.getElementById('t-id-wilayah');
+    const selT=document.getElementById('t-id-wilayah');
+    const selE=document.getElementById('e-id-wilayah');
     daftarWilayah.forEach(w=>{
-      sel.innerHTML+=`<option value="${w.id_wilayah}" data-kode="${w.kode_wilayah}">${w.kode_wilayah} — ${w.nama_kelurahan} (${w.nama_kemantren})</option>`;
+      const opt=`<option value="${w.id_wilayah}" data-kode="${w.kode_wilayah}">${w.kode_wilayah} — ${w.nama_kelurahan} (${w.nama_kemantren})</option>`;
+      selT.innerHTML+=opt;
+      selE.innerHTML+=opt;
     });
   }catch(e){console.warn('Gagal load wilayah',e);}
 }
@@ -318,7 +387,6 @@ async function loadAset(page=1){
     const meta=json.meta||{};
     totalPages=meta.total_pages||1;
     document.getElementById('jumlah-aset').textContent=`${meta.total||data.length} aset`;
-    // Pagination
     const pgEl=document.getElementById('pagination');
     if(totalPages>1){
       pgEl.style.display='flex';
@@ -339,6 +407,7 @@ async function loadAset(page=1){
         <td><span class="badge ${bS[a.status]||'badge-biru'}">${a.status}</span></td>
         <td style="white-space:nowrap">
           <button class="btn btn-secondary btn-sm" onclick="bukaDetail(${a.id_aset})" title="Detail">👁</button>
+          <button class="btn btn-warning btn-sm" onclick="bukaDetailLaluEdit(${a.id_aset})" title="Edit">✏️</button>
           <a href="laporan.html?aset=${a.id_aset}"><button class="btn btn-primary btn-sm" title="Laporan">📋</button></a>
         </td>
       </tr>`;
@@ -400,6 +469,98 @@ async function bukaDetail(id){
   }catch(e){document.getElementById('detail-body').innerHTML='<div class="loading">❌ Gagal memuat.</div>';}
 }
 
+// ---- Shortcut: buka detail lalu langsung buka edit ----
+async function bukaDetailLaluEdit(id){
+  detailAsetId=id;
+  await bukaDetail(id); // pastikan data ter-load
+  // Ambil data fresh lalu isi form edit
+  try{
+    const res=await fetch(`${API}/api/aset/${id}`,{headers:H()});
+    const json=await res.json();
+    _isiFormEdit(json.data);
+    document.getElementById('modal-detail').classList.remove('show');
+    document.getElementById('modal-edit').classList.add('show');
+  }catch(e){alert('Gagal memuat data aset.');}
+}
+
+// ---- Buka modal edit dari tab Info ----
+async function bukaModalEdit(){
+  if(!detailAsetId)return;
+  try{
+    const res=await fetch(`${API}/api/aset/${detailAsetId}`,{headers:H()});
+    const json=await res.json();
+    _isiFormEdit(json.data);
+    document.getElementById('modal-detail').classList.remove('show');
+    document.getElementById('modal-edit').classList.add('show');
+  }catch(e){alert('Gagal memuat data aset.');}
+}
+
+// ---- Helper: isi semua field form edit ----
+function _isiFormEdit(a){
+  document.getElementById('e-kode-judul').textContent=a.kode_aset||'';
+  document.getElementById('e-alamat').value=a.alamat||'';
+  document.getElementById('e-lat').value=a.lat||'';
+  document.getElementById('e-lng').value=a.lng||'';
+  document.getElementById('e-tahun').value=a.tahun_pemasangan||'';
+  document.getElementById('e-jenis-tiang').value=a.jenis_tiang||'';
+  document.getElementById('e-tinggi').value=a.tinggi_meter||'';
+  document.getElementById('e-jenis-lampu').value=a.jenis_lampu||'';
+  document.getElementById('e-watt').value=a.watt||'';
+  document.getElementById('e-merk-lampu').value=a.merk_lampu||'';
+  document.getElementById('e-tipe-lampu').value=a.tipe_lampu||'';
+  // Status
+  const selStatus=document.getElementById('e-status');
+  [...selStatus.options].forEach(o=>o.selected=o.value===a.status);
+  // Kategori Jalan
+  const selKatJalan=document.getElementById('e-kat-jalan');
+  [...selKatJalan.options].forEach(o=>o.selected=o.value===a.kategori_jalan);
+  toggleSubKat('e-wrap-sub','e-kat-jalan');
+  if(a.sub_kategori_lainnya){
+    const selSub=document.getElementById('e-sub-kat');
+    [...selSub.options].forEach(o=>o.selected=o.value===a.sub_kategori_lainnya);
+  }
+  // Kategori PJU
+  const selKatPJU=document.getElementById('e-id-kategori');
+  [...selKatPJU.options].forEach(o=>o.selected=parseInt(o.value)===a.id_kategori);
+  // Wilayah
+  const selWil=document.getElementById('e-id-wilayah');
+  [...selWil.options].forEach(o=>o.selected=parseInt(o.value)===a.id_wilayah);
+}
+
+// ---- Submit edit aset ----
+async function submitEditAset(){
+  if(!detailAsetId)return;
+  const body={
+    alamat:document.getElementById('e-alamat').value.trim(),
+    lat:parseFloat(document.getElementById('e-lat').value),
+    lng:parseFloat(document.getElementById('e-lng').value),
+    tahun_pemasangan:parseInt(document.getElementById('e-tahun').value)||null,
+    id_kategori:parseInt(document.getElementById('e-id-kategori').value)||null,
+    id_wilayah:parseInt(document.getElementById('e-id-wilayah').value)||null,
+    kategori_jalan:document.getElementById('e-kat-jalan').value,
+    sub_kategori_lainnya:document.getElementById('e-kat-jalan').value==='Lainnya'?document.getElementById('e-sub-kat').value:null,
+    jenis_tiang:document.getElementById('e-jenis-tiang').value||null,
+    tinggi_meter:parseFloat(document.getElementById('e-tinggi').value)||null,
+    jenis_lampu:document.getElementById('e-jenis-lampu').value||null,
+    watt:parseInt(document.getElementById('e-watt').value)||null,
+    merk_lampu:document.getElementById('e-merk-lampu').value.trim()||null,
+    tipe_lampu:document.getElementById('e-tipe-lampu').value.trim()||null,
+    status:document.getElementById('e-status').value,
+  };
+  if(!body.alamat||isNaN(body.lat)||isNaN(body.lng)){
+    alert('Alamat dan koordinat wajib diisi!');return;
+  }
+  try{
+    const res=await fetch(`${API}/api/aset/${detailAsetId}`,{method:'PUT',headers:H(),body:JSON.stringify(body)});
+    const json=await res.json();
+    if(json.success){
+      document.getElementById('modal-edit').classList.remove('show');
+      loadAset(curPage);
+      alert('✅ Aset berhasil diperbarui: '+json.data.kode_aset);
+    }else{alert('Gagal: '+json.error);}
+  }catch(e){alert('Error: '+e.message);}
+}
+
 // ---- Load riwayat mutasi ----
 async function loadMutasi(){
   if(!detailAsetId)return;
@@ -418,7 +579,7 @@ async function loadMutasi(){
         <div class="mutasi-ket">${m.komponen?'<b>'+m.komponen+'</b> x'+m.qty+' — ':''} ${m.keterangan||''}</div>
         ${m.status_sesudah?`<div style="margin-top:3px"><span class="badge ${bS[m.status_sesudah]||'badge-biru'}" style="font-size:.7rem">${m.status_sesudah}</span></div>`:''}
         ${m.nama_petugas?`<div style="font-size:.75rem;color:#94a3b8;margin-top:2px">oleh ${m.nama_petugas}</div>`:''}
-      </div>`);
+      </div>`).join('');
   }catch(e){document.getElementById('mutasi-list').innerHTML='<div class="loading">❌ Gagal memuat.</div>';}
 }
 
@@ -472,7 +633,6 @@ function switchTab(id,btn){
   if(btn)btn.classList.add('active');
   if(id==='tab-mutasi')loadMutasi();
   if(id==='tab-catat'){
-    // Set default tanggal ke sekarang
     const now=new Date();now.setMinutes(now.getMinutes()-now.getTimezoneOffset());
     document.getElementById('m-tgl').value=now.toISOString().slice(0,16);
     document.getElementById('m-wrap-pindah').style.display=
@@ -492,7 +652,7 @@ function bukaModalTambah(){
 function tutupModal(id,e){if(e.target.classList.contains('modal-overlay'))document.getElementById(id).classList.remove('show');}
 function toggleSubKat(wrapId,selId){document.getElementById(wrapId).style.display=document.getElementById(selId).value==='Lainnya'?'block':'none';}
 
-// ---- Suggest kode aset ----
+// ---- Suggest kode aset (modal tambah) ----
 let suggestTimer=null;
 function onKategoriChange(){clearTimeout(suggestTimer);suggestTimer=setTimeout(fetchSuggest,300);}
 function onWilayahChange(){clearTimeout(suggestTimer);suggestTimer=setTimeout(fetchSuggest,300);}
@@ -515,7 +675,7 @@ async function fetchSuggest(){
 }
 function pakaiSuggest(){if(suggestKode)document.getElementById('t-kode-aset').value=suggestKode;}
 
-// ---- Cek kode real-time ----
+// ---- Cek kode real-time (modal tambah) ----
 let cekTimer=null;
 async function cekKodeAset(){
   clearTimeout(cekTimer);
