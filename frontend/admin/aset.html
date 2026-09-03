@@ -38,7 +38,8 @@
     .pagination{display:flex;align-items:center;gap:8px;padding:12px 16px;font-size:.82rem;color:#64748b;border-top:1px solid #f1f5f9;}
     .pagination button{padding:4px 10px;border-radius:6px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;font-size:.8rem;}
     .pagination button:disabled{opacity:.4;cursor:default;}
-    /* Modal */
+
+    /* ===== Modal ===== */
     .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;align-items:center;justify-content:center;backdrop-filter:blur(2px);}
     .modal-overlay.show{display:flex;}
     .modal{background:#fff;border-radius:14px;padding:24px;width:560px;max-width:96vw;max-height:92vh;overflow-y:auto;box-shadow:0 24px 48px rgba(0,0,0,.18);}
@@ -51,20 +52,34 @@
     .form-group input[readonly]{background:#f8fafc;color:#64748b;}
     .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:16px;padding-top:12px;border-top:1px solid #f1f5f9;}
     .wajib{color:#dc2626;}
-    /* Kode suggest */
     .kode-hint{font-size:.72rem;color:#059669;margin-top:3px;cursor:pointer;}
-    /* Mutasi list */
     .mutasi-item{padding:10px 12px;border-bottom:1px solid #f1f5f9;font-size:.82rem;}
     .mutasi-item:last-child{border-bottom:none;}
     .mutasi-item .mutasi-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;}
     .mutasi-item .mutasi-jenis{font-weight:700;color:#1a56db;}
     .mutasi-item .mutasi-tgl{color:#94a3b8;font-size:.75rem;}
     .mutasi-item .mutasi-ket{color:#64748b;}
-    /* Tab */
     .tab-bar{display:flex;gap:0;border-bottom:2px solid #e2e8f0;margin-bottom:16px;}
     .tab-btn{padding:8px 16px;border:none;background:none;font-size:.82rem;font-weight:600;color:#94a3b8;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;}
     .tab-btn.active{color:#1a56db;border-bottom-color:#1a56db;}
     .section-label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8;margin:14px 0 6px;padding-bottom:4px;border-bottom:1px solid #f1f5f9;}
+
+    /* ===== Toast ===== */
+    #pijar-toast-wrap{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;}
+    .pijar-toast{min-width:220px;max-width:88vw;padding:12px 20px;border-radius:10px;font-size:.88rem;font-weight:600;color:#fff;box-shadow:0 8px 24px rgba(0,0,0,.18);opacity:0;transform:translateY(16px);transition:opacity .25s,transform .25s;pointer-events:auto;display:flex;align-items:center;gap:10px;}
+    .pijar-toast.show{opacity:1;transform:translateY(0);}
+    .pijar-toast.toast-success{background:#059669;}
+    .pijar-toast.toast-error{background:#dc2626;}
+    .pijar-toast.toast-info{background:#1a56db;}
+    .pijar-toast.toast-warn{background:#d97706;}
+
+    /* ===== Modal Konfirmasi ===== */
+    #modal-konfirmasi{z-index:9000;}
+    #modal-konfirmasi .modal{width:380px;text-align:center;}
+    #modal-konfirmasi .konfirm-icon{font-size:2.4rem;margin-bottom:8px;}
+    #modal-konfirmasi .konfirm-msg{font-size:.92rem;color:#374151;margin-bottom:20px;line-height:1.5;}
+    #modal-konfirmasi .modal-actions{justify-content:center;}
+
     @media(max-width:768px){.pijar-main{margin-left:0;}.form-row{grid-template-columns:1fr;}.toolbar{gap:6px;}}
   </style>
 </head>
@@ -79,7 +94,6 @@
     </div>
   </div>
   <div class="content">
-    <!-- Toolbar Filter -->
     <div class="toolbar">
       <select id="f-status" onchange="loadAset(1)"><option value="">Semua Status</option><option value="Menyala">Menyala</option><option value="Rusak">Rusak</option><option value="Dalam Pengerjaan">Dalam Pengerjaan</option></select>
       <select id="f-kategori" onchange="loadAset(1)"><option value="">Semua Kategori Jalan</option><option value="Jalan Kota">Jalan Kota</option><option value="Jalan Lingkungan">Jalan Lingkungan</option><option value="Jalan Lingkungan Kampung">Jalan Lingkungan Kampung</option><option value="Lainnya">Lainnya</option></select>
@@ -89,18 +103,11 @@
       <button class="btn btn-secondary" onclick="resetFilter()">↺ Reset</button>
       <span id="jumlah-aset" style="font-size:.8rem;color:#94a3b8;margin-left:auto;"></span>
     </div>
-    <!-- Tabel -->
     <div class="card">
       <table>
         <thead><tr>
-          <th>#</th>
-          <th>Kode Aset</th>
-          <th>Alamat</th>
-          <th>Wilayah</th>
-          <th>Kategori PJU</th>
-          <th>Lampu / Watt</th>
-          <th>Status</th>
-          <th>Aksi</th>
+          <th>#</th><th>Kode Aset</th><th>Alamat</th><th>Wilayah</th>
+          <th>Kategori PJU</th><th>Lampu / Watt</th><th>Status</th><th>Aksi</th>
         </tr></thead>
         <tbody id="tbody-aset"><tr><td colspan="8" class="loading">🔄 Memuat data...</td></tr></tbody>
       </table>
@@ -113,30 +120,32 @@
   </div>
 </div>
 
-<!-- ===== MODAL TAMBAH ASET ===== -->
+<!-- Toast container -->
+<div id="pijar-toast-wrap"></div>
+
+<!-- Modal Konfirmasi Custom -->
+<div class="modal-overlay" id="modal-konfirmasi">
+  <div class="modal">
+    <div class="konfirm-icon" id="konfirm-icon">⚠️</div>
+    <div class="konfirm-msg" id="konfirm-msg"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="konfirm-batal">Batal</button>
+      <button class="btn btn-danger" id="konfirm-ok">Ya, Lanjutkan</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL TAMBAH ASET -->
 <div class="modal-overlay" id="modal-tambah" onclick="tutupModal('modal-tambah',event)">
   <div class="modal">
     <h3>➕ Tambah Aset PJU Baru</h3>
     <div class="form-row">
-      <div class="form-group">
-        <label>Kategori PJU <span class="wajib">*</span></label>
-        <select id="t-id-kategori" onchange="onKategoriChange()"><option value="">— pilih —</option></select>
-      </div>
-      <div class="form-group">
-        <label>Wilayah (kode) <span class="wajib">*</span></label>
-        <select id="t-id-wilayah" onchange="onWilayahChange()"><option value="">— pilih —</option></select>
-      </div>
+      <div class="form-group"><label>Kategori PJU <span class="wajib">*</span></label><select id="t-id-kategori" onchange="onKategoriChange()"><option value="">— pilih —</option></select></div>
+      <div class="form-group"><label>Wilayah <span class="wajib">*</span></label><select id="t-id-wilayah" onchange="onWilayahChange()"><option value="">— pilih —</option></select></div>
     </div>
     <div class="form-row">
-      <div class="form-group">
-        <label>Tahun Pemasangan <span class="wajib">*</span></label>
-        <input type="number" id="t-tahun" placeholder="2026" min="2000" max="2099" oninput="onTahunChange()">
-      </div>
-      <div class="form-group">
-        <label>Kode Aset <span class="wajib">*</span></label>
-        <input type="text" id="t-kode-aset" placeholder="PJUP-UH2-26-001" oninput="cekKodeAset()">
-        <div class="kode-hint" id="kode-hint" onclick="pakaiSuggest()"></div>
-      </div>
+      <div class="form-group"><label>Tahun Pemasangan <span class="wajib">*</span></label><input type="number" id="t-tahun" placeholder="2026" min="2000" max="2099" oninput="onTahunChange()"></div>
+      <div class="form-group"><label>Kode Aset <span class="wajib">*</span></label><input type="text" id="t-kode-aset" placeholder="PJUP-UH2-26-001" oninput="cekKodeAset()"><div class="kode-hint" id="kode-hint" onclick="pakaiSuggest()"></div></div>
     </div>
     <div class="form-group"><label>Alamat <span class="wajib">*</span></label><input type="text" id="t-alamat" placeholder="Nama jalan / lokasi"></div>
     <div class="form-row">
@@ -144,17 +153,8 @@
       <div class="form-group"><label>Longitude <span class="wajib">*</span></label><input type="number" id="t-lng" step="0.000001" placeholder="110.366000"></div>
     </div>
     <div class="form-row">
-      <div class="form-group">
-        <label>Kategori Jalan</label>
-        <select id="t-kat-jalan" onchange="toggleSubKat('t-wrap-sub','t-kat-jalan')">
-          <option>Jalan Kota</option><option selected>Jalan Lingkungan</option>
-          <option>Jalan Lingkungan Kampung</option><option>Lainnya</option>
-        </select>
-      </div>
-      <div class="form-group" id="t-wrap-sub" style="display:none">
-        <label>Sub Kategori</label>
-        <select id="t-sub-kat"><option>Taman</option><option>Makam</option><option>Sorot Sungai</option><option>Hias/Budaya</option></select>
-      </div>
+      <div class="form-group"><label>Kategori Jalan</label><select id="t-kat-jalan" onchange="toggleSubKat('t-wrap-sub','t-kat-jalan')"><option>Jalan Kota</option><option selected>Jalan Lingkungan</option><option>Jalan Lingkungan Kampung</option><option>Lainnya</option></select></div>
+      <div class="form-group" id="t-wrap-sub" style="display:none"><label>Sub Kategori</label><select id="t-sub-kat"><option>Taman</option><option>Makam</option><option>Sorot Sungai</option><option>Hias/Budaya</option></select></div>
     </div>
     <div class="section-label">🔩 Data Tiang</div>
     <div class="form-row">
@@ -171,10 +171,7 @@
       <div class="form-group"><label>Tipe / Model</label><input type="text" id="t-tipe-lampu" placeholder="BRP131, SON-T, dll"></div>
     </div>
     <div class="section-label">📋 Status</div>
-    <div class="form-group">
-      <label>Status</label>
-      <select id="t-status"><option>Menyala</option><option>Rusak</option><option>Dalam Pengerjaan</option></select>
-    </div>
+    <div class="form-group"><label>Status</label><select id="t-status"><option>Menyala</option><option>Rusak</option><option>Dalam Pengerjaan</option></select></div>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="document.getElementById('modal-tambah').classList.remove('show')">Batal</button>
       <button class="btn btn-primary" onclick="submitTambahAset()">💾 Simpan Aset</button>
@@ -182,7 +179,7 @@
   </div>
 </div>
 
-<!-- ===== MODAL DETAIL / MUTASI ===== -->
+<!-- MODAL DETAIL / MUTASI -->
 <div class="modal-overlay" id="modal-detail" onclick="tutupModal('modal-detail',event)">
   <div class="modal" style="width:620px">
     <div class="tab-bar">
@@ -190,49 +187,29 @@
       <button class="tab-btn" onclick="switchTab('tab-mutasi',this)">📋 Riwayat Mutasi</button>
       <button class="tab-btn" onclick="switchTab('tab-catat',this)">✏ Catat Mutasi</button>
     </div>
-    <!-- Tab Info -->
     <div id="tab-info">
       <div id="detail-body" style="font-size:.85rem;"></div>
       <div class="modal-actions">
-        <button class="btn btn-danger btn-sm" id="btn-hapus-aset" onclick="hapusAset()">🗑 Hapus</button>
-        <button class="btn btn-warning btn-sm" id="btn-edit-aset" onclick="bukaModalEdit()">✏️ Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="hapusAset()">🗑 Hapus</button>
+        <button class="btn btn-warning btn-sm" onclick="bukaModalEdit()">✏️ Edit</button>
         <button class="btn btn-secondary" onclick="document.getElementById('modal-detail').classList.remove('show')">Tutup</button>
       </div>
     </div>
-    <!-- Tab Riwayat Mutasi -->
     <div id="tab-mutasi" style="display:none">
       <div id="mutasi-list"><div class="loading">🔄 Memuat...</div></div>
-      <div class="modal-actions">
-        <button class="btn btn-secondary" onclick="document.getElementById('modal-detail').classList.remove('show')">Tutup</button>
-      </div>
+      <div class="modal-actions"><button class="btn btn-secondary" onclick="document.getElementById('modal-detail').classList.remove('show')">Tutup</button></div>
     </div>
-    <!-- Tab Catat Mutasi -->
     <div id="tab-catat" style="display:none">
-      <div class="form-group">
-        <label>Jenis Mutasi <span class="wajib">*</span></label>
-        <select id="m-jenis">
-          <option>Pasang Baru</option><option>Ganti Lampu</option><option>Ganti Tiang</option>
-          <option>Pindah Lokasi</option><option>Pensiun / Bongkar</option>
-          <option>Temuan Lapangan</option><option>Stok Opname</option>
-        </select>
-      </div>
+      <div class="form-group"><label>Jenis Mutasi <span class="wajib">*</span></label><select id="m-jenis"><option>Pasang Baru</option><option>Ganti Lampu</option><option>Ganti Tiang</option><option>Pindah Lokasi</option><option>Pensiun / Bongkar</option><option>Temuan Lapangan</option><option>Stok Opname</option></select></div>
       <div class="form-row">
-        <div class="form-group">
-          <label>Status Sebelum</label>
-          <select id="m-status-sbl"><option value="">— sama seperti sekarang —</option><option>Menyala</option><option>Rusak</option><option>Dalam Pengerjaan</option></select>
-        </div>
-        <div class="form-group">
-          <label>Status Sesudah</label>
-          <select id="m-status-ssd"><option value="">— tidak diubah —</option><option>Menyala</option><option>Rusak</option><option>Dalam Pengerjaan</option></select>
-        </div>
+        <div class="form-group"><label>Status Sebelum</label><select id="m-status-sbl"><option value="">— sama seperti sekarang —</option><option>Menyala</option><option>Rusak</option><option>Dalam Pengerjaan</option></select></div>
+        <div class="form-group"><label>Status Sesudah</label><select id="m-status-ssd"><option value="">— tidak diubah —</option><option>Menyala</option><option>Rusak</option><option>Dalam Pengerjaan</option></select></div>
       </div>
       <div class="form-row">
         <div class="form-group"><label>Komponen</label><input type="text" id="m-komponen" placeholder="Lampu LED 50W, dll"></div>
         <div class="form-group"><label>Qty</label><input type="number" id="m-qty" value="1" min="1"></div>
       </div>
-      <div class="form-group" id="m-wrap-pindah" style="display:none">
-        <label>Alamat Baru</label><input type="text" id="m-alamat-baru" placeholder="Alamat setelah pindah">
-      </div>
+      <div class="form-group" id="m-wrap-pindah" style="display:none"><label>Alamat Baru</label><input type="text" id="m-alamat-baru" placeholder="Alamat setelah pindah"></div>
       <div class="form-group"><label>Keterangan</label><textarea id="m-ket" rows="2" placeholder="Catatan tambahan..."></textarea></div>
       <div class="form-group"><label>Tanggal Mutasi</label><input type="datetime-local" id="m-tgl"></div>
       <div class="modal-actions">
@@ -243,54 +220,33 @@
   </div>
 </div>
 
-<!-- ===== MODAL EDIT ASET ===== -->
+<!-- MODAL EDIT ASET -->
 <div class="modal-overlay" id="modal-edit" onclick="tutupModal('modal-edit',event)">
   <div class="modal" style="width:600px">
     <h3>✏️ Edit Aset &mdash; <span id="e-kode-judul" style="color:#1a56db;font-family:monospace"></span></h3>
-
-    <div class="section-label">📍 Lokasi & Identitas</div>
+    <div class="section-label">📍 Lokasi &amp; Identitas</div>
     <div class="form-group"><label>Alamat <span class="wajib">*</span></label><input type="text" id="e-alamat"></div>
     <div class="form-row">
       <div class="form-group"><label>Latitude <span class="wajib">*</span></label><input type="number" id="e-lat" step="0.000001"></div>
       <div class="form-group"><label>Longitude <span class="wajib">*</span></label><input type="number" id="e-lng" step="0.000001"></div>
     </div>
     <div class="form-row">
-      <div class="form-group">
-        <label>Kategori PJU</label>
-        <select id="e-id-kategori"><option value="">— pilih —</option></select>
-      </div>
-      <div class="form-group">
-        <label>Wilayah</label>
-        <select id="e-id-wilayah"><option value="">— pilih —</option></select>
-      </div>
+      <div class="form-group"><label>Kategori PJU</label><select id="e-id-kategori"><option value="">— pilih —</option></select></div>
+      <div class="form-group"><label>Wilayah</label><select id="e-id-wilayah"><option value="">— pilih —</option></select></div>
     </div>
     <div class="form-row">
-      <div class="form-group">
-        <label>Kategori Jalan</label>
-        <select id="e-kat-jalan" onchange="toggleSubKat('e-wrap-sub','e-kat-jalan')">
-          <option>Jalan Kota</option><option>Jalan Lingkungan</option>
-          <option>Jalan Lingkungan Kampung</option><option>Lainnya</option>
-        </select>
-      </div>
-      <div class="form-group" id="e-wrap-sub" style="display:none">
-        <label>Sub Kategori</label>
-        <select id="e-sub-kat"><option>Taman</option><option>Makam</option><option>Sorot Sungai</option><option>Hias/Budaya</option></select>
-      </div>
+      <div class="form-group"><label>Kategori Jalan</label><select id="e-kat-jalan" onchange="toggleSubKat('e-wrap-sub','e-kat-jalan')"><option>Jalan Kota</option><option>Jalan Lingkungan</option><option>Jalan Lingkungan Kampung</option><option>Lainnya</option></select></div>
+      <div class="form-group" id="e-wrap-sub" style="display:none"><label>Sub Kategori</label><select id="e-sub-kat"><option>Taman</option><option>Makam</option><option>Sorot Sungai</option><option>Hias/Budaya</option></select></div>
     </div>
     <div class="form-row">
       <div class="form-group"><label>Tahun Pemasangan</label><input type="number" id="e-tahun" min="2000" max="2099"></div>
-      <div class="form-group">
-        <label>Status</label>
-        <select id="e-status"><option>Menyala</option><option>Rusak</option><option>Dalam Pengerjaan</option></select>
-      </div>
+      <div class="form-group"><label>Status</label><select id="e-status"><option>Menyala</option><option>Rusak</option><option>Dalam Pengerjaan</option></select></div>
     </div>
-
     <div class="section-label">🔩 Data Tiang</div>
     <div class="form-row">
       <div class="form-group"><label>Jenis Tiang</label><input type="text" id="e-jenis-tiang" placeholder="Besi, Beton, dll"></div>
       <div class="form-group"><label>Tinggi (m)</label><input type="number" id="e-tinggi" step="0.1" placeholder="7"></div>
     </div>
-
     <div class="section-label">💡 Data Lampu</div>
     <div class="form-row">
       <div class="form-group"><label>Jenis Lampu</label><input type="text" id="e-jenis-lampu" placeholder="LED, HPS, dll"></div>
@@ -300,7 +256,6 @@
       <div class="form-group"><label>Merk Lampu</label><input type="text" id="e-merk-lampu" placeholder="Philips, Osram, dll"></div>
       <div class="form-group"><label>Tipe / Model</label><input type="text" id="e-tipe-lampu" placeholder="BRP131, SON-T, dll"></div>
     </div>
-
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="document.getElementById('modal-edit').classList.remove('show')">Batal</button>
       <button class="btn btn-primary" onclick="submitEditAset()">💾 Simpan Perubahan</button>
@@ -312,58 +267,86 @@
 const API='https://api.pjujogja.id';
 const TOKEN=()=>localStorage.getItem('pijar_token');
 const H=()=>({'Content-Type':'application/json','Authorization':'Bearer '+TOKEN()});
+const HN=()=>({'Authorization':'Bearer '+TOKEN()}); // no content-type, no-store for GET
 const bS={'Menyala':'badge-hijau','Rusak':'badge-merah','Dalam Pengerjaan':'badge-kuning'};
-const bK={'Jalan Kota':'badge-biru','Jalan Lingkungan':'badge-biru','Jalan Lingkungan Kampung':'badge-biru','Lainnya':'badge-kuning'};
 
-let curPage=1, totalPages=1, debTimer=null;
-let detailAsetId=null, suggestKode='';
-let daftarWilayah=[], daftarKategori=[];
+let curPage=1,totalPages=1,debTimer=null;
+let detailAsetId=null,suggestKode='';
+let daftarWilayah=[],daftarKategori=[];
 
-// ---- Debounce filter teks ----
+// ===== Toast =====
+function pijarToast(msg, type='success', durasi=3000){
+  const icons={success:'✅',error:'❌',info:'ℹ️',warn:'⚠️'};
+  const wrap=document.getElementById('pijar-toast-wrap');
+  const el=document.createElement('div');
+  el.className=`pijar-toast toast-${type}`;
+  el.innerHTML=`<span>${icons[type]||''}</span><span>${msg}</span>`;
+  wrap.appendChild(el);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('show')));
+  setTimeout(()=>{
+    el.classList.remove('show');
+    setTimeout(()=>el.remove(),300);
+  },durasi);
+}
+
+// ===== Modal Konfirmasi =====
+function pijarConfirm(msg, icon='⚠️', labelOk='Ya, Lanjutkan', tipeBtnOk='btn-danger'){
+  return new Promise(resolve=>{
+    document.getElementById('konfirm-icon').textContent=icon;
+    document.getElementById('konfirm-msg').textContent=msg;
+    const btnOk=document.getElementById('konfirm-ok');
+    const btnBatal=document.getElementById('konfirm-batal');
+    btnOk.className=`btn ${tipeBtnOk}`;
+    btnOk.textContent=labelOk;
+    document.getElementById('modal-konfirmasi').classList.add('show');
+    const tutup=(val)=>{
+      document.getElementById('modal-konfirmasi').classList.remove('show');
+      btnOk.onclick=null; btnBatal.onclick=null;
+      resolve(val);
+    };
+    btnOk.onclick=()=>tutup(true);
+    btnBatal.onclick=()=>tutup(false);
+  });
+}
+
+// ===== Debounce =====
 function debounceLoad(){clearTimeout(debTimer);debTimer=setTimeout(()=>loadAset(1),500);}
 
-// ---- Reset filter ----
 function resetFilter(){
   ['f-status','f-kategori','f-id-kategori'].forEach(id=>document.getElementById(id).value='');
   ['f-kemantren','f-kelurahan'].forEach(id=>document.getElementById(id).value='');
   loadAset(1);
 }
 
-// ---- Load master kategori PJU untuk filter & form ----
 async function loadKategoriPJU(){
   try{
-    const res=await fetch(`${API}/api/kategori-pju`,{headers:H()});
-    const json=await res.json();
-    daftarKategori=json.data||[];
+    const r=await fetch(`${API}/api/kategori-pju`,{headers:HN()});
+    const j=await r.json();
+    daftarKategori=j.data||[];
     const selF=document.getElementById('f-id-kategori');
     const selT=document.getElementById('t-id-kategori');
     const selE=document.getElementById('e-id-kategori');
     daftarKategori.forEach(k=>{
       const opt=`<option value="${k.id}" data-kode="${k.kode}">${k.kode} — ${k.nama}</option>`;
-      selF.innerHTML+=opt;
-      selT.innerHTML+=opt;
-      selE.innerHTML+=opt;
+      selF.innerHTML+=opt; selT.innerHTML+=opt; selE.innerHTML+=opt;
     });
-  }catch(e){console.warn('Gagal load kategori PJU',e);}
+  }catch(e){console.warn('Gagal load kategori',e);}
 }
 
-// ---- Load master wilayah untuk form ----
 async function loadWilayah(){
   try{
-    const res=await fetch(`${API}/api/wilayah`,{headers:H()});
-    const json=await res.json();
-    daftarWilayah=json.data||[];
+    const r=await fetch(`${API}/api/wilayah`,{headers:HN()});
+    const j=await r.json();
+    daftarWilayah=j.data||[];
     const selT=document.getElementById('t-id-wilayah');
     const selE=document.getElementById('e-id-wilayah');
     daftarWilayah.forEach(w=>{
       const opt=`<option value="${w.id_wilayah}" data-kode="${w.kode_wilayah}">${w.kode_wilayah} — ${w.nama_kelurahan} (${w.nama_kemantren})</option>`;
-      selT.innerHTML+=opt;
-      selE.innerHTML+=opt;
+      selT.innerHTML+=opt; selE.innerHTML+=opt;
     });
   }catch(e){console.warn('Gagal load wilayah',e);}
 }
 
-// ---- Load aset ----
 async function loadAset(page=1){
   curPage=page;
   const status=document.getElementById('f-status').value;
@@ -380,7 +363,7 @@ async function loadAset(page=1){
   const tbody=document.getElementById('tbody-aset');
   tbody.innerHTML='<tr><td colspan="8" class="loading">🔄 Memuat...</td></tr>';
   try{
-    const res=await fetch(url,{headers:H()});
+    const res=await fetch(url,{headers:HN(),cache:'no-store'});
     if(res.status===401){window.location='/login.html';return;}
     const json=await res.json();
     const data=json.data||[];
@@ -415,7 +398,6 @@ async function loadAset(page=1){
   }catch(e){tbody.innerHTML='<tr><td colspan="8" class="loading">❌ Gagal memuat data.</td></tr>';console.error(e);}
 }
 
-// ---- Export JSON ----
 async function exportAset(){
   let url=`${API}/api/aset/export?`;
   const status=document.getElementById('f-status').value;
@@ -429,27 +411,26 @@ async function exportAset(){
   if(kemantren)url+=`kemantren=${encodeURIComponent(kemantren)}&`;
   if(kelurahan)url+=`kelurahan=${encodeURIComponent(kelurahan)}&`;
   try{
-    const res=await fetch(url,{headers:H()});
+    const res=await fetch(url,{headers:HN(),cache:'no-store'});
     const json=await res.json();
     const blob=new Blob([JSON.stringify(json,null,2)],{type:'application/json'});
     const a=document.createElement('a');
     a.href=URL.createObjectURL(blob);
     a.download=`aset-pju-${new Date().toISOString().slice(0,10)}.json`;
     a.click();
-  }catch(e){alert('Gagal export: '+e.message);}
+  }catch(e){pijarToast('Gagal export: '+e.message,'error');}
 }
 
-// ---- Buka detail aset ----
+// ===== Detail Aset (cache:no-store) =====
 async function bukaDetail(id){
   detailAsetId=id;
   switchTab('tab-info',document.querySelector('.tab-btn'));
   document.getElementById('modal-detail').classList.add('show');
   document.getElementById('detail-body').innerHTML='<div class="loading">🔄 Memuat...</div>';
   try{
-    const res=await fetch(`${API}/api/aset/${id}`,{headers:H()});
+    const res=await fetch(`${API}/api/aset/${id}`,{headers:HN(),cache:'no-store'});
     const json=await res.json();
     const a=json.data;
-    document.getElementById('btn-hapus-aset').dataset.id=id;
     document.getElementById('detail-body').innerHTML=`
       <table style="width:100%;font-size:.83rem;border-collapse:collapse">
         <tr><td style="padding:5px 8px;color:#94a3b8;width:38%">Kode Aset</td><td><b>${a.kode_aset||'—'}</b></td></tr>
@@ -469,33 +450,27 @@ async function bukaDetail(id){
   }catch(e){document.getElementById('detail-body').innerHTML='<div class="loading">❌ Gagal memuat.</div>';}
 }
 
-// ---- Shortcut: buka detail lalu langsung buka edit ----
 async function bukaDetailLaluEdit(id){
   detailAsetId=id;
-  await bukaDetail(id); // pastikan data ter-load
-  // Ambil data fresh lalu isi form edit
   try{
-    const res=await fetch(`${API}/api/aset/${id}`,{headers:H()});
+    const res=await fetch(`${API}/api/aset/${id}`,{headers:HN(),cache:'no-store'});
     const json=await res.json();
     _isiFormEdit(json.data);
-    document.getElementById('modal-detail').classList.remove('show');
     document.getElementById('modal-edit').classList.add('show');
-  }catch(e){alert('Gagal memuat data aset.');}
+  }catch(e){pijarToast('Gagal memuat data aset.','error');}
 }
 
-// ---- Buka modal edit dari tab Info ----
 async function bukaModalEdit(){
   if(!detailAsetId)return;
   try{
-    const res=await fetch(`${API}/api/aset/${detailAsetId}`,{headers:H()});
+    const res=await fetch(`${API}/api/aset/${detailAsetId}`,{headers:HN(),cache:'no-store'});
     const json=await res.json();
     _isiFormEdit(json.data);
     document.getElementById('modal-detail').classList.remove('show');
     document.getElementById('modal-edit').classList.add('show');
-  }catch(e){alert('Gagal memuat data aset.');}
+  }catch(e){pijarToast('Gagal memuat data aset.','error');}
 }
 
-// ---- Helper: isi semua field form edit ----
 function _isiFormEdit(a){
   document.getElementById('e-kode-judul').textContent=a.kode_aset||'';
   document.getElementById('e-alamat').value=a.alamat||'';
@@ -508,26 +483,15 @@ function _isiFormEdit(a){
   document.getElementById('e-watt').value=a.watt||'';
   document.getElementById('e-merk-lampu').value=a.merk_lampu||'';
   document.getElementById('e-tipe-lampu').value=a.tipe_lampu||'';
-  // Status
-  const selStatus=document.getElementById('e-status');
-  [...selStatus.options].forEach(o=>o.selected=o.value===a.status);
-  // Kategori Jalan
-  const selKatJalan=document.getElementById('e-kat-jalan');
-  [...selKatJalan.options].forEach(o=>o.selected=o.value===a.kategori_jalan);
+  const sel=(id,val)=>{const s=document.getElementById(id);[...s.options].forEach(o=>o.selected=o.value===String(val||''));};
+  sel('e-status',a.status);
+  sel('e-kat-jalan',a.kategori_jalan);
   toggleSubKat('e-wrap-sub','e-kat-jalan');
-  if(a.sub_kategori_lainnya){
-    const selSub=document.getElementById('e-sub-kat');
-    [...selSub.options].forEach(o=>o.selected=o.value===a.sub_kategori_lainnya);
-  }
-  // Kategori PJU
-  const selKatPJU=document.getElementById('e-id-kategori');
-  [...selKatPJU.options].forEach(o=>o.selected=parseInt(o.value)===a.id_kategori);
-  // Wilayah
-  const selWil=document.getElementById('e-id-wilayah');
-  [...selWil.options].forEach(o=>o.selected=parseInt(o.value)===a.id_wilayah);
+  if(a.sub_kategori_lainnya)sel('e-sub-kat',a.sub_kategori_lainnya);
+  sel('e-id-kategori',String(a.id_kategori||''));
+  sel('e-id-wilayah',String(a.id_wilayah||''));
 }
 
-// ---- Submit edit aset ----
 async function submitEditAset(){
   if(!detailAsetId)return;
   const body={
@@ -547,35 +511,29 @@ async function submitEditAset(){
     tipe_lampu:document.getElementById('e-tipe-lampu').value.trim()||null,
     status:document.getElementById('e-status').value,
   };
-  if(!body.alamat||isNaN(body.lat)||isNaN(body.lng)){
-    alert('Alamat dan koordinat wajib diisi!');return;
-  }
+  if(!body.alamat||isNaN(body.lat)||isNaN(body.lng)){pijarToast('Alamat dan koordinat wajib diisi!','error');return;}
   try{
     const res=await fetch(`${API}/api/aset/${detailAsetId}`,{method:'PUT',headers:H(),body:JSON.stringify(body)});
     const json=await res.json();
     if(json.success){
       document.getElementById('modal-edit').classList.remove('show');
+      pijarToast(`✅ Aset ${json.data.kode_aset} berhasil diperbarui`,'success');
       loadAset(curPage);
-      alert('✅ Aset berhasil diperbarui: '+json.data.kode_aset);
-    }else{alert('Gagal: '+json.error);}
-  }catch(e){alert('Error: '+e.message);}
+    }else{pijarToast('Gagal: '+json.error,'error');}
+  }catch(e){pijarToast('Error: '+e.message,'error');}
 }
 
-// ---- Load riwayat mutasi ----
 async function loadMutasi(){
   if(!detailAsetId)return;
   document.getElementById('mutasi-list').innerHTML='<div class="loading">🔄 Memuat...</div>';
   try{
-    const res=await fetch(`${API}/api/aset/${detailAsetId}/mutasi`,{headers:H()});
+    const res=await fetch(`${API}/api/aset/${detailAsetId}/mutasi`,{headers:HN(),cache:'no-store'});
     const json=await res.json();
     const data=json.data||[];
     if(!data.length){document.getElementById('mutasi-list').innerHTML='<div class="loading">Belum ada riwayat mutasi.</div>';return;}
     document.getElementById('mutasi-list').innerHTML=data.map(m=>`
       <div class="mutasi-item">
-        <div class="mutasi-header">
-          <span class="mutasi-jenis">${m.jenis_mutasi}</span>
-          <span class="mutasi-tgl">${new Date(m.tanggal_mutasi).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})}</span>
-        </div>
+        <div class="mutasi-header"><span class="mutasi-jenis">${m.jenis_mutasi}</span><span class="mutasi-tgl">${new Date(m.tanggal_mutasi).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})}</span></div>
         <div class="mutasi-ket">${m.komponen?'<b>'+m.komponen+'</b> x'+m.qty+' — ':''} ${m.keterangan||''}</div>
         ${m.status_sesudah?`<div style="margin-top:3px"><span class="badge ${bS[m.status_sesudah]||'badge-biru'}" style="font-size:.7rem">${m.status_sesudah}</span></div>`:''}
         ${m.nama_petugas?`<div style="font-size:.75rem;color:#94a3b8;margin-top:2px">oleh ${m.nama_petugas}</div>`:''}
@@ -583,49 +541,44 @@ async function loadMutasi(){
   }catch(e){document.getElementById('mutasi-list').innerHTML='<div class="loading">❌ Gagal memuat.</div>';}
 }
 
-// ---- Submit mutasi ----
 async function submitMutasi(){
   if(!detailAsetId)return;
-  const jenis=document.getElementById('m-jenis').value;
-  const tglRaw=document.getElementById('m-tgl').value;
   const body={
-    jenis_mutasi:jenis,
+    jenis_mutasi:document.getElementById('m-jenis').value,
     status_sebelum:document.getElementById('m-status-sbl').value||null,
     status_sesudah:document.getElementById('m-status-ssd').value||null,
     komponen:document.getElementById('m-komponen').value||null,
     qty:parseInt(document.getElementById('m-qty').value)||1,
     keterangan:document.getElementById('m-ket').value||null,
     alamat_baru:document.getElementById('m-alamat-baru').value||null,
-    tanggal_mutasi:tglRaw?new Date(tglRaw).toISOString():null,
+    tanggal_mutasi:document.getElementById('m-tgl').value?new Date(document.getElementById('m-tgl').value).toISOString():null,
   };
   try{
     const res=await fetch(`${API}/api/aset/${detailAsetId}/mutasi`,{method:'POST',headers:H(),body:JSON.stringify(body)});
     const json=await res.json();
     if(json.success){
-      alert('Mutasi berhasil dicatat!');
+      pijarToast('Mutasi berhasil dicatat!','success');
       switchTab('tab-mutasi',document.querySelectorAll('.tab-btn')[1]);
-      loadMutasi();
-      loadAset(curPage);
-    }else{alert('Gagal: '+json.error);}
-  }catch(e){alert('Error: '+e.message);}
+      loadMutasi(); loadAset(curPage);
+    }else{pijarToast('Gagal: '+json.error,'error');}
+  }catch(e){pijarToast('Error: '+e.message,'error');}
 }
 
-// ---- Hapus aset ----
 async function hapusAset(){
   if(!detailAsetId)return;
-  if(!confirm('Yakin hapus aset ini? Tidak bisa dibatalkan.'))return;
+  const ok=await pijarConfirm('Hapus aset ini? Tindakan tidak bisa dibatalkan.','🗑️','Ya, Hapus','btn-danger');
+  if(!ok)return;
   try{
     const res=await fetch(`${API}/api/aset/${detailAsetId}`,{method:'DELETE',headers:H()});
     const json=await res.json();
     if(json.success){
       document.getElementById('modal-detail').classList.remove('show');
+      pijarToast('Aset berhasil dihapus.','success');
       loadAset(curPage);
-      alert('Aset berhasil dihapus.');
-    }else{alert('Gagal: '+json.error);}
-  }catch(e){alert('Error: '+e.message);}
+    }else{pijarToast('Gagal: '+json.error,'error');}
+  }catch(e){pijarToast('Error: '+e.message,'error');}
 }
 
-// ---- Tab handler ----
 function switchTab(id,btn){
   ['tab-info','tab-mutasi','tab-catat'].forEach(t=>document.getElementById(t).style.display='none');
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
@@ -635,15 +588,11 @@ function switchTab(id,btn){
   if(id==='tab-catat'){
     const now=new Date();now.setMinutes(now.getMinutes()-now.getTimezoneOffset());
     document.getElementById('m-tgl').value=now.toISOString().slice(0,16);
-    document.getElementById('m-wrap-pindah').style.display=
-      document.getElementById('m-jenis').value==='Pindah Lokasi'?'block':'none';
-    document.getElementById('m-jenis').onchange=function(){
-      document.getElementById('m-wrap-pindah').style.display=this.value==='Pindah Lokasi'?'block':'none';
-    };
+    document.getElementById('m-wrap-pindah').style.display=document.getElementById('m-jenis').value==='Pindah Lokasi'?'block':'none';
+    document.getElementById('m-jenis').onchange=function(){document.getElementById('m-wrap-pindah').style.display=this.value==='Pindah Lokasi'?'block':'none';};
   }
 }
 
-// ---- Modal tambah aset ----
 function bukaModalTambah(){
   document.getElementById('modal-tambah').classList.add('show');
   suggestKode='';
@@ -652,7 +601,6 @@ function bukaModalTambah(){
 function tutupModal(id,e){if(e.target.classList.contains('modal-overlay'))document.getElementById(id).classList.remove('show');}
 function toggleSubKat(wrapId,selId){document.getElementById(wrapId).style.display=document.getElementById(selId).value==='Lainnya'?'block':'none';}
 
-// ---- Suggest kode aset (modal tambah) ----
 let suggestTimer=null;
 function onKategoriChange(){clearTimeout(suggestTimer);suggestTimer=setTimeout(fetchSuggest,300);}
 function onWilayahChange(){clearTimeout(suggestTimer);suggestTimer=setTimeout(fetchSuggest,300);}
@@ -665,17 +613,13 @@ async function fetchSuggest(){
   const kodeKat=selKat.options[selKat.selectedIndex].dataset.kode;
   const kodeWil=selWil.options[selWil.selectedIndex].dataset.kode;
   try{
-    const res=await fetch(`${API}/api/aset/suggest-kode?kategori=${kodeKat}&wilayah=${kodeWil}&tahun=${tahun}`,{headers:H()});
+    const res=await fetch(`${API}/api/aset/suggest-kode?kategori=${kodeKat}&wilayah=${kodeWil}&tahun=${tahun}`,{headers:HN()});
     const json=await res.json();
-    if(json.success){
-      suggestKode=json.suggest;
-      document.getElementById('kode-hint').textContent=`💡 Saran: ${suggestKode} (klik untuk pakai)`;
-    }
+    if(json.success){suggestKode=json.suggest;document.getElementById('kode-hint').textContent=`💡 Saran: ${suggestKode} (klik untuk pakai)`;}
   }catch(e){}
 }
 function pakaiSuggest(){if(suggestKode)document.getElementById('t-kode-aset').value=suggestKode;}
 
-// ---- Cek kode real-time (modal tambah) ----
 let cekTimer=null;
 async function cekKodeAset(){
   clearTimeout(cekTimer);
@@ -683,22 +627,19 @@ async function cekKodeAset(){
     const kode=document.getElementById('t-kode-aset').value.trim();
     if(kode.length<8)return;
     try{
-      const res=await fetch(`${API}/api/aset/cek-kode?kode=${encodeURIComponent(kode)}`,{headers:H()});
+      const res=await fetch(`${API}/api/aset/cek-kode?kode=${encodeURIComponent(kode)}`,{headers:HN()});
       const json=await res.json();
       const hint=document.getElementById('kode-hint');
-      if(json.tersedia)hint.textContent='✅ Kode tersedia';
-      else hint.textContent='⛔ '+json.pesan+(json.dipakai_oleh?' ('+json.dipakai_oleh+')':'');
+      hint.textContent=json.tersedia?'✅ Kode tersedia':'⛔ '+json.pesan+(json.dipakai_oleh?' ('+json.dipakai_oleh+')':'');
     }catch(e){}
   },400);
 }
 
-// ---- Submit tambah aset ----
 async function submitTambahAset(){
-  const selWil=document.getElementById('t-id-wilayah');
   const body={
     kode_aset:document.getElementById('t-kode-aset').value.trim().toUpperCase(),
     id_kategori:parseInt(document.getElementById('t-id-kategori').value)||null,
-    id_wilayah:parseInt(selWil.value)||null,
+    id_wilayah:parseInt(document.getElementById('t-id-wilayah').value)||null,
     tahun_pemasangan:parseInt(document.getElementById('t-tahun').value)||null,
     alamat:document.getElementById('t-alamat').value.trim(),
     lat:parseFloat(document.getElementById('t-lat').value),
@@ -713,21 +654,18 @@ async function submitTambahAset(){
     tipe_lampu:document.getElementById('t-tipe-lampu').value||null,
     status:document.getElementById('t-status').value,
   };
-  if(!body.kode_aset||!body.alamat||isNaN(body.lat)||isNaN(body.lng)){
-    alert('Lengkapi field wajib: Kode Aset, Alamat, Lat, Lng!');return;
-  }
+  if(!body.kode_aset||!body.alamat||isNaN(body.lat)||isNaN(body.lng)){pijarToast('Lengkapi field wajib: Kode Aset, Alamat, Lat, Lng!','error');return;}
   try{
     const res=await fetch(`${API}/api/aset`,{method:'POST',headers:H(),body:JSON.stringify(body)});
     const json=await res.json();
     if(json.success){
       document.getElementById('modal-tambah').classList.remove('show');
+      pijarToast('Aset berhasil ditambahkan: '+json.data.kode_aset,'success');
       loadAset(1);
-      alert('Aset berhasil ditambahkan: '+json.data.kode_aset);
-    }else{alert('Gagal: '+json.error);}
-  }catch(e){alert('Error: '+e.message);}
+    }else{pijarToast('Gagal: '+json.error,'error');}
+  }catch(e){pijarToast('Error: '+e.message,'error');}
 }
 
-// ---- Init ----
 loadKategoriPJU();
 loadWilayah();
 loadAset(1);
