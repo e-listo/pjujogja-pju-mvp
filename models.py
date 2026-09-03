@@ -212,7 +212,9 @@ class AsetPJU(db.Model):
     sub_kategori_lainnya = db.Column(db.Enum(*SUB_KATEGORI_LAINNYA), nullable=True)
     jenis_tiang        = db.Column(db.String(50),  nullable=True)
     tinggi_meter       = db.Column(db.Numeric(5, 2), nullable=True)
-    jenis_lampu        = db.Column(db.String(50))
+    jenis_lampu        = db.Column(db.String(50),  nullable=True)
+    merk_lampu         = db.Column(db.String(100), nullable=True)
+    tipe_lampu         = db.Column(db.String(100), nullable=True)
     watt               = db.Column(db.SmallInteger)
     status             = db.Column(
         db.Enum("Menyala", "Rusak", "Dalam Pengerjaan"), default="Menyala"
@@ -254,6 +256,8 @@ class AsetPJU(db.Model):
             "jenis_tiang":         self.jenis_tiang,
             "tinggi_meter":        float(self.tinggi_meter) if self.tinggi_meter else None,
             "jenis_lampu":         self.jenis_lampu,
+            "merk_lampu":          self.merk_lampu,
+            "tipe_lampu":          self.tipe_lampu,
             "watt":                self.watt,
             "status":              self.status,
             "foto_url":            self.foto_url,
