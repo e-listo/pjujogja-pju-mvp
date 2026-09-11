@@ -5,6 +5,7 @@ Fase 2: Proteksi JWT, endpoint baru, pagination, atomisitas stok PINS.
 Fase 3: Endpoint KategoriPJU, suggest-kode, cek-kode.
 Fase 4: Endpoint mutasi aset, export aset, hapus aset.
 Fase 5: Filter multi-select (checkbox) + sort untuk toolbar desktop baru.
+Fase 6: Field sektor (Sektor 1-4) manual per-aset.
 """
 import os
 import re
@@ -198,6 +199,7 @@ def create_app():
                 sub_kategori_lainnya=sub_kategori,
                 id_wilayah=body.get("id_wilayah"),
                 id_panel=body.get("id_panel"),
+                sektor=body.get("sektor"),
                 jenis_tiang=body.get("jenis_tiang"),
                 tinggi_meter=body.get("tinggi_meter"),
                 jenis_lampu=body.get("jenis_lampu"),
@@ -223,7 +225,7 @@ def create_app():
         try:
             for field in [
                 "alamat", "kategori_jalan", "sub_kategori_lainnya",
-                "id_wilayah", "id_panel", "id_kategori",
+                "id_wilayah", "id_panel", "id_kategori", "sektor",
                 "jenis_tiang", "tinggi_meter", "jenis_lampu",
                 "merk_lampu", "tipe_lampu", "watt",
                 "status", "tahun_pemasangan", "foto_url",
