@@ -326,6 +326,10 @@
       <div class="form-group"><label>Wilayah <span class="wajib">*</span></label><select id="t-id-wilayah" onchange="onWilayahChange()"><option value="">— pilih —</option></select></div>
     </div>
     <div class="form-row">
+      <div class="form-group"><label>Sektor</label><select id="t-sektor"><option value="">— pilih —</option><option>Sektor 1</option><option>Sektor 2</option><option>Sektor 3</option><option>Sektor 4</option></select></div>
+      <div></div>
+    </div>
+    <div class="form-row">
       <div class="form-group"><label>Tahun Pemasangan <span class="wajib">*</span></label><input type="number" id="t-tahun" placeholder="2026" min="2000" max="2099" oninput="onTahunChange()"></div>
       <div class="form-group"><label>Kode Aset <span class="wajib">*</span></label><input type="text" id="t-kode-aset" placeholder="PJUP-UH2-26-001" oninput="cekKodeAset()"><div class="kode-hint" id="kode-hint" onclick="pakaiSuggest()"></div></div>
     </div>
@@ -420,6 +424,10 @@
     <div class="form-row">
       <div class="form-group"><label>Kategori PJU</label><select id="e-id-kategori"><option value="">— pilih —</option></select></div>
       <div class="form-group"><label>Wilayah</label><select id="e-id-wilayah"><option value="">— pilih —</option></select></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Sektor</label><select id="e-sektor"><option value="">— pilih —</option><option>Sektor 1</option><option>Sektor 2</option><option>Sektor 3</option><option>Sektor 4</option></select></div>
+      <div></div>
     </div>
     <div class="form-row">
       <div class="form-group"><label>Kategori Jalan</label><select id="e-kat-jalan" onchange="toggleSubKat('e-wrap-sub','e-kat-jalan')"><option>Jalan Kota</option><option>Jalan Lingkungan</option><option>Jalan Lingkungan Kampung</option><option>Lainnya</option></select></div>
@@ -908,6 +916,7 @@ function _isiFormEdit(a){
   const sel=(id,val)=>{const s=document.getElementById(id);[...s.options].forEach(o=>o.selected=o.value===String(val||''));};
   sel('e-status',a.status);
   sel('e-kat-jalan',a.kategori_jalan);
+  sel('e-sektor',a.sektor);
   toggleSubKat('e-wrap-sub','e-kat-jalan');
   if(a.sub_kategori_lainnya)sel('e-sub-kat',a.sub_kategori_lainnya);
   sel('e-id-kategori',String(a.id_kategori||''));
@@ -930,6 +939,7 @@ async function submitEditAset(){
     tahun_pemasangan:document.getElementById('e-tahun').value?parseInt(document.getElementById('e-tahun').value):null,
     id_kategori:parseInt(document.getElementById('e-id-kategori').value)||null,
     id_wilayah:parseInt(document.getElementById('e-id-wilayah').value)||null,
+    sektor:document.getElementById('e-sektor').value||null,
     kategori_jalan:document.getElementById('e-kat-jalan').value,
     sub_kategori_lainnya:document.getElementById('e-kat-jalan').value==='Lainnya'?document.getElementById('e-sub-kat').value:null,
     jenis_tiang:document.getElementById('e-jenis-tiang').value.trim()||null,
@@ -1072,6 +1082,7 @@ async function submitTambahAset(){
     kode_aset:document.getElementById('t-kode-aset').value.trim().toUpperCase(),
     id_kategori:parseInt(document.getElementById('t-id-kategori').value)||null,
     id_wilayah:parseInt(document.getElementById('t-id-wilayah').value)||null,
+    sektor:document.getElementById('t-sektor').value||null,
     tahun_pemasangan:parseInt(document.getElementById('t-tahun').value)||null,
     alamat:document.getElementById('t-alamat').value.trim(),
     lat:parseFloat(latStr.replace(',','.')),
