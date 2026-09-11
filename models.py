@@ -28,6 +28,11 @@ SEKTOR_WILAYAH = (
     "Sektor Tengah",
 )
 
+# Sektor kerja regu UPT PJU (entri manual per-aset, bisa berbeda dalam 1 kelurahan
+# jika terbelah oleh jalan/sungai batas sektor, contoh: Muja-Muju terbelah
+# Jl. Kusumanegara antara Sektor 1 & Sektor 2).
+SEKTOR_ASET = ("Sektor 1", "Sektor 2", "Sektor 3", "Sektor 4")
+
 
 # ===========================================================================
 # FASE 1 — Model yang sudah ada (tidak diubah, backward compatible)
@@ -195,6 +200,9 @@ class AsetPJU(db.Model):
     """
     Aset tiang PJU.
     Fase 3: tambah id_kategori, kode_aset format baru, tahun_pemasangan.
+    Fase 3b: tambah kolom sektor (Sektor 1-4) — entri manual per-aset, terpisah
+    dari Wilayah.sektor, karena satu kelurahan bisa terbelah 2 sektor kerja
+    (misal Muja-Muju terbelah Jl. Kusumanegara antara Sektor 1 & Sektor 2).
     kode_aset_legacy: backup kode lama format PJU-YK-XXXX.
     """
     __tablename__ = "aset_pju"
@@ -202,6 +210,7 @@ class AsetPJU(db.Model):
     id_kategori        = db.Column(db.Integer, db.ForeignKey("kategori_pju.id"),       nullable=True)
     id_wilayah         = db.Column(db.Integer, db.ForeignKey("wilayah.id_wilayah"),    nullable=True)
     id_panel           = db.Column(db.Integer, db.ForeignKey("panel_pju.id_panel"),    nullable=True)
+    sektor             = db.Column(db.Enum(*SEKTOR_ASET), nullable=True)
     kode_aset          = db.Column(db.String(20),  unique=True, nullable=True)
     kode_aset_legacy   = db.Column(db.String(50),  nullable=True)
     tahun_pemasangan   = db.Column(db.SmallInteger, nullable=True)
@@ -240,7 +249,7 @@ class AsetPJU(db.Model):
             "kode_kategori":       self.kategori_pju.kode if self.kategori_pju else None,
             "nama_kategori":       self.kategori_pju.nama if self.kategori_pju else None,
             "id_wilayah":          self.id_wilayah,
-            "sektor":              w.sektor         if w else None,
+            "sektor":              self.sektor,
             "nama_kemantren":      w.nama_kemantren if w else None,
             "nama_kelurahan":      w.nama_kelurahan if w else None,
             "kode_wilayah":        w.kode_wilayah   if w else None,
