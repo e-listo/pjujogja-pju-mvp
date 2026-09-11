@@ -85,6 +85,11 @@
     .mutasi-item .mutasi-jenis{font-weight:700;color:#1a56db;}
     .mutasi-item .mutasi-tgl{color:#94a3b8;font-size:.75rem;}
     .mutasi-item .mutasi-ket{color:#64748b;}
+    .lampu-item{padding:10px 12px;border-bottom:1px solid #f1f5f9;font-size:.82rem;}
+    .lampu-item:last-child{border-bottom:none;}
+    .lampu-item .lampu-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;}
+    .lampu-item .lampu-jenis{font-weight:700;color:#1a56db;}
+    .lampu-item .lampu-meta{color:#64748b;font-size:.78rem;margin-top:2px;}
     .tab-bar{display:flex;gap:0;border-bottom:2px solid #e2e8f0;margin-bottom:16px;}
     .tab-btn{padding:8px 16px;border:none;background:none;font-size:.82rem;font-weight:600;color:#94a3b8;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;}
     .tab-btn.active{color:#1a56db;border-bottom-color:#1a56db;}
@@ -361,6 +366,7 @@
   <div class="modal" style="width:620px">
     <div class="tab-bar">
       <button class="tab-btn active" onclick="switchTab('tab-info',this)">ℹ Info Aset</button>
+      <button class="tab-btn" onclick="switchTab('tab-lampu',this)">💡 Data Lampu</button>
       <button class="tab-btn" onclick="switchTab('tab-mutasi',this)">📋 Riwayat Mutasi</button>
       <button class="tab-btn" onclick="switchTab('tab-catat',this)">✏ Catat Mutasi</button>
     </div>
@@ -371,6 +377,10 @@
         <button class="btn btn-warning btn-sm" onclick="bukaModalEdit()">✏️ Edit</button>
         <button class="btn btn-secondary" onclick="document.getElementById('modal-detail').classList.remove('show')">Tutup</button>
       </div>
+    </div>
+    <div id="tab-lampu" style="display:none">
+      <div id="lampu-list"><div class="loading">🔄 Memuat...</div></div>
+      <div class="modal-actions"><button class="btn btn-secondary" onclick="document.getElementById('modal-detail').classList.remove('show')">Tutup</button></div>
     </div>
     <div id="tab-mutasi" style="display:none">
       <div id="mutasi-list"><div class="loading">🔄 Memuat...</div></div>
@@ -839,6 +849,29 @@ async function bukaDetail(id){
   }catch(e){document.getElementById('detail-body').innerHTML='<div class="loading">❌ Gagal memuat.</div>';}
 }
 
+async function loadLampu(){
+  if(!detailAsetId)return;
+  document.getElementById('lampu-list').innerHTML='<div class="loading">🔄 Memuat...</div>';
+  try{
+    const res=await fetch(`${API}/api/aset/${detailAsetId}/lampu`,{headers:HN(),cache:'no-store'});
+    const json=await res.json();
+    const data=json.data||[];
+    if(!data.length){
+      document.getElementById('lampu-list').innerHTML='<div class="loading">Belum ada data lampu terpisah untuk aset ini.<br><span style="font-size:.75rem;color:#cbd5e1">(Data lampu utama sudah tercatat di tab Info Aset)</span></div>';
+      return;
+    }
+    document.getElementById('lampu-list').innerHTML=data.map(l=>`
+      <div class="lampu-item">
+        <div class="lampu-header">
+          <span class="lampu-jenis">${l.jenis_lampu||l.jenis||'—'}${l.watt?' · '+l.watt+'W':''}</span>
+          ${l.status?`<span class="badge ${bS[l.status]||'badge-biru'}" style="font-size:.7rem">${l.status}</span>`:''}
+        </div>
+        <div class="lampu-meta">${l.merk_lampu||l.merk||''}${(l.merk_lampu||l.merk)&&(l.tipe_lampu||l.tipe)?' · ':''}${l.tipe_lampu||l.tipe||''}</div>
+        ${l.tanggal_pasang?`<div style="font-size:.72rem;color:#94a3b8;margin-top:2px">Pasang: ${new Date(l.tanggal_pasang).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})}</div>`:''}
+      </div>`).join('');
+  }catch(e){document.getElementById('lampu-list').innerHTML='<div class="loading">❌ Gagal memuat data lampu.</div>';}
+}
+
 async function bukaDetailLaluEdit(id){
   detailAsetId=id;
   try{
@@ -977,10 +1010,11 @@ async function hapusAset(){
 }
 
 function switchTab(id,btn){
-  ['tab-info','tab-mutasi','tab-catat'].forEach(t=>document.getElementById(t).style.display='none');
+  ['tab-info','tab-lampu','tab-mutasi','tab-catat'].forEach(t=>document.getElementById(t).style.display='none');
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById(id).style.display='block';
   if(btn)btn.classList.add('active');
+  if(id==='tab-lampu')loadLampu();
   if(id==='tab-mutasi')loadMutasi();
   if(id==='tab-catat'){
     const now=new Date();now.setMinutes(now.getMinutes()-now.getTimezoneOffset());
