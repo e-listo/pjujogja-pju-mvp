@@ -14,7 +14,7 @@
     .topbar h2{font-size:.95rem;font-weight:700;color:#0f172a;}
     .topbar-meta{font-size:.78rem;color:#94a3b8;}
     .content{padding:20px 24px;}
-    .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
+    .stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px;}
     .stat-card{background:#fff;border-radius:12px;padding:16px 18px;border-top:3px solid #1a56db;box-shadow:0 1px 4px rgba(0,0,0,.06);}
     .stat-card.merah{border-top-color:#dc2626;}
     .stat-card.kuning{border-top-color:#d97706;}
@@ -33,7 +33,8 @@
     .legend-item{display:flex;align-items:center;gap:5px;font-size:.74rem;color:#64748b;}
     .legend-dot{width:9px;height:9px;border-radius:50%;}
     #peta{height:400px;border-radius:8px;}
-    .table-section{background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+    .table-section{background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:20px;}
+    .table-section:last-child{margin-bottom:0;}
     table{width:100%;border-collapse:collapse;font-size:.875rem;}
     thead th{background:#f8fafc;padding:9px 12px;text-align:left;font-weight:700;font-size:.68rem;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;border-bottom:1px solid #e2e8f0;}
     tbody td{padding:9px 12px;border-bottom:1px solid #f1f5f9;}
@@ -42,6 +43,7 @@
     .badge-merah{background:#fee2e2;color:#991b1b;}
     .badge-kuning{background:#fef3c7;color:#92400e;}
     .badge-biru{background:#dbeafe;color:#1e40af;}
+    .badge-hijau{background:#d1fae5;color:#065f46;}
     .btn{padding:5px 12px;border-radius:6px;border:none;cursor:pointer;font-size:.78rem;font-weight:600;}
     .btn-primary{background:#1a56db;color:#fff;}
     .btn-primary:hover{background:#1648c2;}
@@ -71,11 +73,21 @@
         <div class="stat-sub">perlu penanganan</div>
       </div>
       <div class="stat-card kuning">
+        <div class="stat-label">Dalam Pengerjaan</div>
+        <div class="stat-value" id="stat-pengerjaan"><span class="skeleton"></span></div>
+        <div class="stat-sub">sedang ditangani regu</div>
+      </div>
+      <div class="stat-card orange">
         <div class="stat-label">Tiket Baru</div>
         <div class="stat-value" id="stat-tiket"><span class="skeleton"></span></div>
         <div class="stat-sub">laporan belum diproses</div>
       </div>
-      <div class="stat-card orange">
+      <div class="stat-card hijau">
+        <div class="stat-label">Tiket Diproses</div>
+        <div class="stat-value" id="stat-diproses"><span class="skeleton"></span></div>
+        <div class="stat-sub">sedang dikerjakan regu</div>
+      </div>
+      <div class="stat-card merah">
         <div class="stat-label">Stok Kritis</div>
         <div class="stat-value" id="stat-stok"><span class="skeleton"></span></div>
         <div class="stat-sub">komponen PINS hampir habis</div>
@@ -94,8 +106,18 @@
     </div>
     <div class="table-section">
       <div class="section-title">
-        <span>⚠️ Aset Memerlukan Perhatian</span>
+        <span>📋 Tiket Kerusakan Terbaru</span>
         <a href="laporan.html"><button class="btn btn-primary">Lihat Semua Laporan</button></a>
+      </div>
+      <table>
+        <thead><tr><th>Kode Aset</th><th>Alamat</th><th>Sumber</th><th>Tanggal Lapor</th><th>Aksi</th></tr></thead>
+        <tbody id="tabel-tiket-terbaru"><tr><td colspan="5" class="loading">🔄 Memuat data...</td></tr></tbody>
+      </table>
+    </div>
+    <div class="table-section">
+      <div class="section-title">
+        <span>⚠️ Aset Memerlukan Perhatian</span>
+        <a href="aset.html"><button class="btn btn-primary">Lihat Semua Aset</button></a>
       </div>
       <table>
         <thead><tr><th>Kode Aset</th><th>Alamat</th><th>Kategori</th><th>Status</th><th>Aksi</th></tr></thead>
@@ -125,7 +147,7 @@ setInterval(updateWaktu, 1000); updateWaktu();
 // Peta Leaflet
 const peta = L.map('peta').setView([-7.8, 110.366], 13);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-  attribution: '\u00a9 OpenStreetMap contributors', maxZoom: 18
+  attribution: '© OpenStreetMap contributors', maxZoom: 18
 }).addTo(peta);
 
 const warna = {'Menyala':'#059669','Rusak':'#dc2626','Dalam Pengerjaan':'#d97706'};
@@ -144,12 +166,14 @@ async function loadSummary(){
     if(res.status === 401){ window.location.href = 'login.html'; return; }
     const json = await res.json();
     const d    = json.data || {};
-    document.getElementById('stat-total').textContent = d.total_aset  ?? '-';
-    document.getElementById('stat-rusak').textContent = d.total_rusak ?? '-';
-    document.getElementById('stat-tiket').textContent = d.tiket_baru  ?? '-';
-    document.getElementById('stat-stok').textContent  = d.stok_kritis ?? '-';
+    document.getElementById('stat-total').textContent      = d.total_aset       ?? '-';
+    document.getElementById('stat-rusak').textContent      = d.total_rusak      ?? '-';
+    document.getElementById('stat-pengerjaan').textContent = d.total_pengerjaan ?? '-';
+    document.getElementById('stat-tiket').textContent      = d.tiket_baru       ?? '-';
+    document.getElementById('stat-diproses').textContent   = d.tiket_diproses   ?? '-';
+    document.getElementById('stat-stok').textContent       = d.stok_kritis      ?? '-';
   }catch(e){
-    ['stat-total','stat-rusak','stat-tiket','stat-stok'].forEach(id =>{
+    ['stat-total','stat-rusak','stat-pengerjaan','stat-tiket','stat-diproses','stat-stok'].forEach(id =>{
       document.getElementById(id).textContent = '?';
     });
   }
@@ -188,7 +212,30 @@ async function loadAset(){
   }
 }
 
-Promise.all([loadSummary(), loadAset()]);
+async function loadTiketTerbaru(){
+  try{
+    const res  = await apiFetch(`${API}/api/laporan-kerusakan?status=Baru&per_page=10`);
+    if(res.status === 401){ window.location.href = 'login.html'; return; }
+    const json = await res.json();
+    const data = json.data || [];
+    const tbody = document.getElementById('tabel-tiket-terbaru');
+    tbody.innerHTML = data.length
+      ? data.map(t => `
+          <tr>
+            <td><code style="font-size:.78rem">${t.kode_aset || '-'}</code></td>
+            <td>${t.alamat || '-'}</td>
+            <td><span class="badge badge-biru">${t.sumber_laporan || '-'}</span></td>
+            <td style="font-size:.78rem;color:#64748b">${new Date(t.tanggal_lapor).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})}</td>
+            <td><a href="laporan.html?aset=${t.id_aset}"><button class="btn btn-primary">Tindak Lanjut</button></a></td>
+          </tr>`).join('')
+      : '<tr><td colspan="5" class="loading">✅ Tidak ada tiket baru saat ini</td></tr>';
+  }catch(e){
+    document.getElementById('tabel-tiket-terbaru').innerHTML =
+      '<tr><td colspan="5" class="loading">❌ Gagal memuat data tiket.</td></tr>';
+  }
+}
+
+Promise.all([loadSummary(), loadAset(), loadTiketTerbaru()]);
 </script>
 </body>
 </html>
