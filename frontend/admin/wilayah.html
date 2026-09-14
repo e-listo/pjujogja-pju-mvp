@@ -12,49 +12,148 @@
     .topbar{background:#fff;padding:11px 24px;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:50;box-shadow:0 1px 3px rgba(0,0,0,.04);}
     .topbar h2{font-size:.95rem;font-weight:700;}
     .content{padding:20px 24px;}
-    .sektor-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}
+    .btn{padding:6px 12px;border-radius:7px;border:none;cursor:pointer;font-size:.78rem;font-weight:600;background:#f1f5f9;color:#374151;}
+    .badge{display:inline-block;padding:2px 9px;border-radius:99px;font-size:.7rem;font-weight:600;white-space:nowrap;}
+    .badge-merah{background:#fee2e2;color:#991b1b;}
+    .badge-kuning{background:#fef3c7;color:#92400e;}
+    .badge-hijau{background:#d1fae5;color:#065f46;}
+    .badge-biru{background:#dbeafe;color:#1e40af;}
+    .sektor-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:24px;}
     .sektor-card{background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.06);border-top:3px solid #1a56db;}
     .sektor-card h3{font-size:.95rem;font-weight:700;color:#0f172a;margin-bottom:4px;}
     .sektor-card .sektor-num{font-size:2rem;font-weight:900;color:#1a56db;line-height:1;margin-bottom:6px;}
     .sektor-card p{font-size:.8rem;color:#64748b;line-height:1.6;}
-    .sektor-card .meta{margin-top:10px;display:flex;gap:10px;flex-wrap:wrap;}
+    .sektor-card .meta{margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;}
     .meta-item{font-size:.72rem;background:#f1f5f9;color:#475569;padding:3px 9px;border-radius:99px;}
     .info-box{background:#fff;border-radius:12px;padding:18px 20px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:16px;border-left:4px solid #f97316;}
     .info-box h3{font-size:.88rem;font-weight:700;color:#0f172a;margin-bottom:6px;}
     .info-box p{font-size:.82rem;color:#64748b;line-height:1.7;}
-    @media(max-width:768px){.pijar-main{margin-left:0;}.sektor-grid{grid-template-columns:1fr;}}
+    .card{background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden;}
+    .card-header{padding:14px 18px;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;}
+    .card-header h3{font-size:.88rem;font-weight:700;}
+    .search-input{padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:.82rem;width:240px;}
+    .kemantren-group summary{padding:10px 18px;font-weight:700;font-size:.82rem;color:#1a56db;cursor:pointer;background:#f8fafc;border-bottom:1px solid #f1f5f9;list-style:none;display:flex;justify-content:space-between;align-items:center;}
+    .kemantren-group summary::-webkit-details-marker{display:none;}
+    table{width:100%;border-collapse:collapse;font-size:.85rem;}
+    thead th{background:#fbfcfd;padding:8px 18px;text-align:left;font-weight:700;font-size:.67rem;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;border-bottom:1px solid #f1f5f9;}
+    tbody td{padding:8px 18px;border-bottom:1px solid #f8fafc;}
+    .loading{color:#94a3b8;font-size:.85rem;padding:20px;text-align:center;}
+    @media(max-width:768px){.pijar-main{margin-left:0;}.sektor-grid{grid-template-columns:1fr;}.search-input{width:100%;}.card-header{flex-direction:column;align-items:flex-start;gap:8px;}}
   </style>
 </head>
 <body>
-<script src="js/sidebar.js" data-page="wilayah"></script>
+<script src="js/sidebar.js?v=20260903" data-page="wilayah"></script>
 <div class="pijar-main">
-  <div class="topbar"><h2>Wilayah Kerja PJU</h2></div>
+  <div class="topbar"><h2>🗺️ Wilayah Kerja PJU</h2></div>
   <div class="content">
     <div class="info-box">
       <h3>Pembagian 4 Sektor</h3>
       <p>Wilayah Kota Yogyakarta dibagi menjadi <strong>4 sektor</strong> menggunakan batas <em>melintang</em> (Jl. Kusumanegara – Jl. RE Martadinata) dan batas <em>membujur</em> (Sungai Code). Penomoran dimulai dari kuadran Utara–Timur, searah jarum jam.</p>
     </div>
-    <div class="sektor-grid">
-      <div class="sektor-card"><div class="sektor-num">1</div><h3>Sektor 1 — Utara Timur</h3><p>Wilayah di utara Jl. Kusumanegara dan di timur Sungai Code. Meliputi kawasan Gondokusuman, Umbulharjo bagian utara, dan sekitarnya.</p><div class="meta"><span class="meta-item">Utara × Timur</span><span class="meta-item" id="jml-s1">Memuat...</span></div></div>
-      <div class="sektor-card" style="border-top-color:#f97316"><div class="sektor-num" style="color:#f97316">2</div><h3>Sektor 2 — Selatan Timur</h3><p>Wilayah di selatan Jl. RE Martadinata dan di timur Sungai Code. Meliputi kawasan Mergangsan, Umbulharjo selatan, Kotagede.</p><div class="meta"><span class="meta-item">Selatan × Timur</span><span class="meta-item" id="jml-s2">Memuat...</span></div></div>
-      <div class="sektor-card" style="border-top-color:#059669"><div class="sektor-num" style="color:#059669">3</div><h3>Sektor 3 — Selatan Barat</h3><p>Wilayah di selatan Jl. RE Martadinata dan di barat Sungai Code. Meliputi kawasan Mantrijeron, Kraton, Pakualaman.</p><div class="meta"><span class="meta-item">Selatan × Barat</span><span class="meta-item" id="jml-s3">Memuat...</span></div></div>
-      <div class="sektor-card" style="border-top-color:#d97706"><div class="sektor-num" style="color:#d97706">4</div><h3>Sektor 4 — Utara Barat</h3><p>Wilayah di utara Jl. Kusumanegara dan di barat Sungai Code. Meliputi kawasan Jetis, Danurejan, Gedongtengen, Tegalrejo.</p><div class="meta"><span class="meta-item">Utara × Barat</span><span class="meta-item" id="jml-s4">Memuat...</span></div></div>
+
+    <div class="sektor-grid" id="sektor-grid">
+      <div class="sektor-card"><div class="sektor-num">1</div><h3>Sektor 1 — Utara Timur</h3><p>Gondokusuman, Umbulharjo bagian utara, dan sekitarnya.</p><div class="meta" id="meta-s1"><span class="meta-item">Memuat...</span></div></div>
+      <div class="sektor-card" style="border-top-color:#f97316"><div class="sektor-num" style="color:#f97316">2</div><h3>Sektor 2 — Selatan Timur</h3><p>Mergangsan, Umbulharjo selatan, Kotagede.</p><div class="meta" id="meta-s2"><span class="meta-item">Memuat...</span></div></div>
+      <div class="sektor-card" style="border-top-color:#059669"><div class="sektor-num" style="color:#059669">3</div><h3>Sektor 3 — Selatan Barat</h3><p>Mantrijeron, Kraton, Pakualaman.</p><div class="meta" id="meta-s3"><span class="meta-item">Memuat...</span></div></div>
+      <div class="sektor-card" style="border-top-color:#d97706"><div class="sektor-num" style="color:#d97706">4</div><h3>Sektor 4 — Utara Barat</h3><p>Jetis, Danurejan, Gedongtengen, Tegalrejo.</p><div class="meta" id="meta-s4"><span class="meta-item">Memuat...</span></div></div>
     </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h3>📍 45 Kelurahan &amp; Jumlah Aset</h3>
+        <input type="text" id="cari-wilayah" class="search-input" placeholder="🔍 Cari kemantren / kelurahan..." oninput="renderWilayah()">
+      </div>
+      <div id="wilayah-body"><div class="loading">🔄 Memuat data wilayah...</div></div>
+    </div>
+
   </div>
 </div>
 <script>
 const API='https://api.pjujogja.id';
+const TOKEN=()=>localStorage.getItem('pijar_token');
+const HN=()=>({'Authorization':'Bearer '+TOKEN()});
+const bS={'Menyala':'badge-hijau','Rusak':'badge-merah','Dalam Pengerjaan':'badge-kuning'};
+
+let semuaAset=[];
+let semuaWilayah=[];
+
+async function loadSemuaAset(){
+  try{
+    const res=await fetch(`${API}/api/aset/export`,{headers:HN(),cache:'no-store'});
+    if(res.status===401){window.location='/login.html';return;}
+    const json=await res.json();
+    semuaAset=json.data||[];
+    renderSektor();
+    renderWilayah();
+  }catch(e){console.error(e);}
+}
+
+function renderSektor(){
+  for(let s=1;s<=4;s++){
+    const label=`Sektor ${s}`;
+    const list=semuaAset.filter(a=>a.sektor===label);
+    const total=list.length;
+    const menyala=list.filter(a=>a.status==='Menyala').length;
+    const rusak=list.filter(a=>a.status==='Rusak').length;
+    const proses=list.filter(a=>a.status==='Dalam Pengerjaan').length;
+    const el=document.getElementById(`meta-s${s}`);
+    if(el){
+      el.innerHTML=`
+        <span class="meta-item"><b>${total}</b> titik lampu</span>
+        <span class="badge badge-hijau">${menyala} menyala</span>
+        <span class="badge badge-merah">${rusak} rusak</span>
+        <span class="badge badge-kuning">${proses} proses</span>`;
+    }
+  }
+}
+
 async function loadWilayah(){
   try{
-    const res=await fetch(`${API}/api/aset`);
-    const json=await res.json();const data=json.data||[];
-    for(let s=1;s<=4;s++){
-      const el=document.getElementById(`jml-s${s}`);
-      const jml=data.filter(a=>a.sektor===s).length;
-      if(el)el.textContent=`${jml} titik lampu`;
-    }
-  }catch(e){}
+    const res=await fetch(`${API}/api/wilayah`);
+    const json=await res.json();
+    semuaWilayah=json.data||[];
+    renderWilayah();
+  }catch(e){
+    document.getElementById('wilayah-body').innerHTML='<div class="loading">❌ Gagal memuat data wilayah.</div>';
+  }
 }
+
+function renderWilayah(){
+  if(!semuaWilayah.length)return;
+  const cari=document.getElementById('cari-wilayah').value.trim().toLowerCase();
+  const filtered=cari?semuaWilayah.filter(w=>`${w.nama_kemantren} ${w.nama_kelurahan} ${w.kode_wilayah}`.toLowerCase().includes(cari)):semuaWilayah;
+  if(!filtered.length){
+    document.getElementById('wilayah-body').innerHTML='<div class="loading">Tidak ada wilayah yang cocok.</div>';
+    return;
+  }
+  const grup={};
+  filtered.forEach(w=>{
+    const k=w.nama_kemantren||'Lainnya';
+    if(!grup[k])grup[k]=[];
+    grup[k].push(w);
+  });
+  const kemantrenList=Object.keys(grup).sort();
+  document.getElementById('wilayah-body').innerHTML=kemantrenList.map(kem=>{
+    const rows=grup[kem].map(w=>{
+      const jumlah=semuaAset.length?semuaAset.filter(a=>a.id_wilayah===w.id_wilayah).length:'—';
+      return `<tr>
+        <td><code style="font-size:.78rem;color:#1a56db">${w.kode_wilayah||'-'}</code></td>
+        <td>${w.nama_kelurahan||'-'}</td>
+        <td style="text-align:right"><b>${jumlah}</b> aset</td>
+      </tr>`;
+    }).join('');
+    return `<details class="kemantren-group" open>
+      <summary>${kem} <span class="badge badge-biru">${grup[kem].length} kelurahan</span></summary>
+      <table>
+        <thead><tr><th>Kode</th><th>Kelurahan</th><th style="text-align:right">Jumlah Aset</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </details>`;
+  }).join('');
+}
+
+loadSemuaAset();
 loadWilayah();
 </script>
-</body></html>
+</body>
+</html>
