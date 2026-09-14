@@ -94,6 +94,14 @@
     .tab-btn{padding:8px 16px;border:none;background:none;font-size:.82rem;font-weight:600;color:#94a3b8;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;}
     .tab-btn.active{color:#1a56db;border-bottom-color:#1a56db;}
     .section-label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8;margin:14px 0 6px;padding-bottom:4px;border-bottom:1px solid #f1f5f9;}
+    .pemeliharaan-item{padding:10px 12px;border-bottom:1px solid #f1f5f9;font-size:.82rem;}
+    .pemeliharaan-item:last-child{border-bottom:none;}
+    .pemeliharaan-item .pw-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;}
+    .pemeliharaan-item .pw-jenis{font-weight:700;color:#1a56db;}
+    .pemeliharaan-item .pw-tgl{color:#94a3b8;font-size:.75rem;}
+    .pemeliharaan-item .pw-meta{color:#64748b;font-size:.78rem;margin-top:2px;}
+    .pw-foto-row{display:flex;gap:8px;margin-top:6px;}
+    .pw-foto-row img{width:70px;height:70px;object-fit:cover;border-radius:6px;border:1px solid #f1f5f9;}
 
     /* ===== Toast ===== */
     #pijar-toast-wrap{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;}
@@ -372,6 +380,7 @@
       <button class="tab-btn active" onclick="switchTab('tab-info',this)">ℹ Info Aset</button>
       <button class="tab-btn" onclick="switchTab('tab-lampu',this)">💡 Data Lampu</button>
       <button class="tab-btn" onclick="switchTab('tab-mutasi',this)">📋 Riwayat Mutasi</button>
+      <button class="tab-btn" onclick="switchTab('tab-pemeliharaan',this)">🛠 Riwayat Pemeliharaan</button>
       <button class="tab-btn" onclick="switchTab('tab-catat',this)">✏ Catat Mutasi</button>
     </div>
     <div id="tab-info">
@@ -389,6 +398,13 @@
     <div id="tab-mutasi" style="display:none">
       <div id="mutasi-list"><div class="loading">🔄 Memuat...</div></div>
       <div class="modal-actions"><button class="btn btn-secondary" onclick="document.getElementById('modal-detail').classList.remove('show')">Tutup</button></div>
+    </div>
+    <div id="tab-pemeliharaan" style="display:none">
+      <div id="pemeliharaan-list"><div class="loading">🔄 Memuat...</div></div>
+      <div class="modal-actions">
+        <a href="pemeliharaan.html" id="link-lihat-semua-pw"><button class="btn btn-secondary btn-sm">Lihat di Halaman Pemeliharaan</button></a>
+        <button class="btn btn-secondary" onclick="document.getElementById('modal-detail').classList.remove('show')">Tutup</button>
+      </div>
     </div>
     <div id="tab-catat" style="display:none">
       <div class="form-group"><label>Jenis Mutasi <span class="wajib">*</span></label><select id="m-jenis"><option>Pasang Baru</option><option>Ganti Lampu</option><option>Ganti Tiang</option><option>Pindah Lokasi</option><option>Pensiun / Bongkar</option><option>Temuan Lapangan</option><option>Stok Opname</option></select></div>
@@ -464,6 +480,7 @@ const TOKEN=()=>localStorage.getItem('pijar_token');
 const H=()=>({'Content-Type':'application/json','Authorization':'Bearer '+TOKEN()});
 const HN=()=>({'Authorization':'Bearer '+TOKEN()});
 const bS={'Menyala':'badge-hijau','Rusak':'badge-merah','Dalam Pengerjaan':'badge-kuning'};
+const bSPw={'Dalam Pengerjaan':'badge-kuning','Selesai':'badge-hijau'};
 const SORT_LABEL={'terbaru':'Terbaru ditambahkan','kode_asc':'Kode Aset A-Z','tahun_desc':'Tahun (baru→lama)'};
 
 // Desktop state
@@ -879,6 +896,31 @@ async function loadLampu(){
   }catch(e){document.getElementById('lampu-list').innerHTML='<div class="loading">❌ Gagal memuat data lampu.</div>';}
 }
 
+async function loadPemeliharaanAset(){
+  if(!detailAsetId)return;
+  document.getElementById('pemeliharaan-list').innerHTML='<div class="loading">🔄 Memuat...</div>';
+  document.getElementById('link-lihat-semua-pw').setAttribute('href',`pemeliharaan.html?aset=${detailAsetId}`);
+  try{
+    const res=await fetch(`${API}/api/pemeliharaan?id_aset=${detailAsetId}&per_page=50`,{headers:HN(),cache:'no-store'});
+    const json=await res.json();
+    const data=json.data||[];
+    if(!data.length){
+      document.getElementById('pemeliharaan-list').innerHTML='<div class="loading">Belum ada riwayat pemeliharaan untuk aset ini.</div>';
+      return;
+    }
+    document.getElementById('pemeliharaan-list').innerHTML=data.map(p=>`
+      <div class="pemeliharaan-item">
+        <div class="pw-header">
+          <span class="pw-jenis">${p.jenis_pekerjaan||'—'}</span>
+          <span class="badge ${bSPw[p.status_pekerjaan]||'badge-biru'}" style="font-size:.7rem">${p.status_pekerjaan||'—'}</span>
+        </div>
+        <div class="pw-meta">${p.nama_regu?'Tim '+p.nama_regu:'—'}${p.deskripsi_pekerjaan?' · '+p.deskripsi_pekerjaan:''}</div>
+        <div class="pw-tgl">${p.tanggal_pengerjaan?new Date(p.tanggal_pengerjaan).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}):'—'}</div>
+        ${(p.foto_sebelum||p.foto_sesudah)?`<div class="pw-foto-row">${p.foto_sebelum?`<img src="${API}/uploads/${p.foto_sebelum}" title="Sebelum">`:''}${p.foto_sesudah?`<img src="${API}/uploads/${p.foto_sesudah}" title="Sesudah">`:''}</div>`:''}
+      </div>`).join('');
+  }catch(e){document.getElementById('pemeliharaan-list').innerHTML='<div class="loading">❌ Gagal memuat riwayat pemeliharaan.</div>';}
+}
+
 async function bukaDetailLaluEdit(id){
   detailAsetId=id;
   try{
@@ -1019,12 +1061,13 @@ async function hapusAset(){
 }
 
 function switchTab(id,btn){
-  ['tab-info','tab-lampu','tab-mutasi','tab-catat'].forEach(t=>document.getElementById(t).style.display='none');
+  ['tab-info','tab-lampu','tab-mutasi','tab-pemeliharaan','tab-catat'].forEach(t=>document.getElementById(t).style.display='none');
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById(id).style.display='block';
   if(btn)btn.classList.add('active');
   if(id==='tab-lampu')loadLampu();
   if(id==='tab-mutasi')loadMutasi();
+  if(id==='tab-pemeliharaan')loadPemeliharaanAset();
   if(id==='tab-catat'){
     const now=new Date();now.setMinutes(now.getMinutes()-now.getTimezoneOffset());
     document.getElementById('m-tgl').value=now.toISOString().slice(0,16);
