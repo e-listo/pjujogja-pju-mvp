@@ -27,10 +27,10 @@
 
   const ALL_BOTTOM = [
     { id:'dashboard',       label:'Dashboard',  href: adminBase + 'index.html',        icon:'M3 3h7v7H3zm11 0h7v7h-7zM3 14h7v7H3zm11 0h7v7h-7z' },
-    { id:'aset',            label:'Aset',       href: adminBase + 'aset.html',         icon:'M12 2a7 7 0 1 1 0 14A7 7 0 0 1 12 2zm0 2a5 5 0 1 0 0 10A5 5 0 0 0 12 4zm0 2v4l3 2' },
+    { id:'aset',            label:'Aset',       href: adminBase + 'aset.html',         icon:'M12 2a77 0 1 1 0 14A7 7 0 0 1 12 2zm0 2a5 5 0 1 0 0 10A5 5 0 0 0 12 4zm0 2v4l3 2' },
     { id:'laporan',         label:'Laporan',    href: adminBase + 'laporan.html',      icon:'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8' },
     { id:'pemeliharaan',    label:'Pelihara',   href: adminBase + 'pemeliharaan.html', icon:'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z' },
-    { id:'more',            label:'Lainnya',    href: '#',                             icon:'M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm0 7a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm0 7a1 1 0 1 1 0-2 1 1 0 0 1 0 2z' },
+    { id:'more',            label:'Lainnya',    href: '#',                             icon:'M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm0 7a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm0 7a1 1 0 11 0-2 1 1 0 0 1 0 2z' },
   ];
 
   const EXTRA_MENU = [
@@ -201,6 +201,13 @@
 .drawer-item:hover{background:rgba(255,255,255,.05);color:#e2e8f0;}
 .drawer-item.active{color:#f97316;border-left-color:#f97316;font-weight:700;}
 
+/* ========= BADGE NOTIFIKASI STOK KRITIS ========= */
+.pijar-stok-dot{
+  position:absolute;top:-2px;right:-2px;width:8px;height:8px;
+  border-radius:50%;background:#dc2626;border:1.5px solid #0f2236;
+  box-shadow:0 0 0 1px rgba(220,38,38,.35);
+}
+
 /* ========= RESPONSIVE ========= */
 @media(max-width:768px){
   .pijar-sidebar{display:none!important;}
@@ -258,5 +265,41 @@
     localStorage.removeItem('pijar_user');
     window.location.href = logoutHref;
   };
+
+  // ---- Badge notifikasi stok kritis (di ikon menu Dashboard) ----
+  function addStokBadge(count){
+    if(!count || count <= 0) return;
+    document.querySelectorAll('a[href$="index.html"]').forEach(a => {
+      if(a.querySelector('.pijar-stok-dot')) return;
+      const svg = a.querySelector('svg');
+      if(!svg) return;
+      const wrap = document.createElement('span');
+      wrap.style.position = 'relative';
+      wrap.style.display = 'inline-flex';
+      wrap.style.flexShrink = '0';
+      svg.parentNode.insertBefore(wrap, svg);
+      wrap.appendChild(svg);
+      const dot = document.createElement('span');
+      dot.className = 'pijar-stok-dot';
+      dot.title = `${count} komponen stok kritis`;
+      wrap.appendChild(dot);
+    });
+  }
+
+  async function loadStokBadge(){
+    try{
+      const token = localStorage.getItem('pijar_token');
+      if(!token) return;
+      const res = await fetch('https://api.pjujogja.id/api/dashboard/summary', {
+        headers: {'Authorization': 'Bearer ' + token}, cache: 'no-store'
+      });
+      if(!res.ok) return;
+      const json = await res.json();
+      const stok = (json.data && json.data.stok_kritis) || 0;
+      addStokBadge(stok);
+    }catch(e){}
+  }
+
+  loadStokBadge();
 
 })();
