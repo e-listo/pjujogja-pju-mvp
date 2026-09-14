@@ -541,7 +541,6 @@ function getSortValue(){
   const r=document.querySelector('input[name="f-sort"]:checked');
   return r?r.value:'terbaru';
 }
-
 function toggleFilterPanel(){
   document.getElementById('sort-panel').classList.remove('show');
   document.getElementById('filter-panel').classList.toggle('show');
@@ -1126,5 +1125,6 @@ window.addEventListener('resize',()=>{
   },300);
 });
 </script>
+<script src="js/detail-deeplink.js"></script>
 </body>
 </html>
