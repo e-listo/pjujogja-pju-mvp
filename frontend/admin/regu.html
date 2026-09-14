@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Regu Lapangan — PIJAR</title>
+  <title>Tim Lapangan — PIJAR</title>
   <script src="js/auth.js"></script>
   <style>
     *{box-sizing:border-box;margin:0;padding:0;}
@@ -12,50 +12,159 @@
     .topbar{background:#fff;padding:11px 24px;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:50;box-shadow:0 1px 3px rgba(0,0,0,.04);}
     .topbar h2{font-size:.95rem;font-weight:700;}
     .content{padding:20px 24px;}
-    .regu-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;}
-    .regu-card{background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,.06);display:flex;flex-direction:column;gap:8px;}
+    .btn{padding:6px 12px;border-radius:7px;border:none;cursor:pointer;font-size:.78rem;font-weight:600;}
+    .btn-secondary{background:#f1f5f9;color:#374151;}
+    .badge{display:inline-block;padding:2px 9px;border-radius:99px;font-size:.7rem;font-weight:600;white-space:nowrap;}
+    .badge-merah{background:#fee2e2;color:#991b1b;}
+    .badge-kuning{background:#fef3c7;color:#92400e;}
+    .badge-hijau{background:#d1fae5;color:#065f46;}
+    .badge-biru{background:#dbeafe;color:#1e40af;}
+    .badge-abu{background:#f1f5f9;color:#475569;}
+    .regu-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;}
+    .regu-card{background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,.06);display:flex;flex-direction:column;gap:10px;cursor:pointer;transition:box-shadow .15s;}
+    .regu-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.1);}
     .regu-header{display:flex;align-items:center;gap:12px;}
     .regu-avatar{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#1e3a5f,#1a56db);display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:700;color:#fff;flex-shrink:0;}
     .regu-name{font-size:.9rem;font-weight:700;color:#0f172a;}
-    .regu-sektor{font-size:.72rem;color:#64748b;margin-top:1px;}
     .regu-stats{display:flex;gap:8px;flex-wrap:wrap;}
     .stat-pill{font-size:.72rem;padding:3px 10px;border-radius:99px;background:#f1f5f9;color:#475569;}
     .loading-grid{color:#94a3b8;font-size:.85rem;padding:20px;text-align:center;grid-column:1/-1;}
+
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;align-items:center;justify-content:center;backdrop-filter:blur(2px);}
+    .modal-overlay.show{display:flex;}
+    .modal{background:#fff;border-radius:14px;padding:24px;width:560px;max-width:94vw;max-height:88vh;overflow-y:auto;box-shadow:0 24px 48px rgba(0,0,0,.18);}
+    .modal h3{font-size:1rem;font-weight:700;margin-bottom:14px;border-bottom:1px solid #f1f5f9;padding-bottom:10px;}
+    .modal-actions{display:flex;justify-content:flex-end;margin-top:16px;padding-top:12px;border-top:1px solid #f1f5f9;}
+    .section-label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8;margin:14px 0 8px;}
+    .anggota-item{padding:8px 0;border-bottom:1px solid #f8fafc;font-size:.85rem;display:flex;justify-content:space-between;align-items:center;}
+    .tugas-item{padding:8px 0;border-bottom:1px solid #f8fafc;font-size:.82rem;}
+    .tugas-item .tugas-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;}
+    .kosong{font-size:.8rem;color:#cbd5e1;padding:10px 0;}
+
     @media(max-width:768px){.pijar-main{margin-left:0;}}
   </style>
 </head>
 <body>
-<script src="js/sidebar.js?v=20260826" data-page="regu"></script>
+<script src="js/sidebar.js?v=20260903" data-page="regu"></script>
 <div class="pijar-main">
-  <div class="topbar"><h2>Regu Lapangan</h2></div>
+  <div class="topbar"><h2>👷 Tim Lapangan</h2></div>
   <div class="content">
-    <div class="regu-grid" id="regu-grid"><p class="loading-grid">🔄 Memuat data regu...</p></div>
+    <div class="regu-grid" id="regu-grid"><p class="loading-grid">🔄 Memuat data tim...</p></div>
   </div>
 </div>
+
+<!-- MODAL DETAIL TIM -->
+<div class="modal-overlay" id="modal-detail" onclick="tutupModal(event)">
+  <div class="modal">
+    <h3 id="modal-judul">👷 Detail Tim</h3>
+    <div id="modal-info"></div>
+
+    <div class="section-label">Anggota Tim</div>
+    <div id="anggota-list"><div class="kosong">🔄 Memuat...</div></div>
+
+    <div class="section-label">Tugas Terbaru</div>
+    <div id="tugas-list"><div class="kosong">🔄 Memuat...</div></div>
+
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="document.getElementById('modal-detail').classList.remove('show')">Tutup</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const API='https://api.pjujogja.id';
+const TOKEN=()=>localStorage.getItem('pijar_token');
+const HN=()=>({'Authorization':'Bearer '+TOKEN()});
+const bSPw={'Dalam Pengerjaan':'badge-kuning','Selesai':'badge-hijau'};
+
+let daftarRegu=[];
+
+function tutupModal(e){if(e.target.classList.contains('modal-overlay'))document.getElementById('modal-detail').classList.remove('show');}
+
 async function loadRegu(){
   const grid=document.getElementById('regu-grid');
   try{
-    const res=await fetch(`${API}/api/regu`,{headers:{'Authorization':'Bearer '+localStorage.getItem('pijar_token')}});
-    const json=await res.json();const data=json.data||[];
-    if(!data.length){grid.innerHTML='<p class="loading-grid">Belum ada data regu.</p>';return;}
-    grid.innerHTML=data.map(r=>`
-      <div class="regu-card">
+    const res=await fetch(`${API}/api/regu`,{headers:HN(),cache:'no-store'});
+    if(res.status===401){window.location='/login.html';return;}
+    const json=await res.json();
+    daftarRegu=json.data||[];
+    if(!daftarRegu.length){grid.innerHTML='<p class="loading-grid">Belum ada data tim.</p>';return;}
+    grid.innerHTML=daftarRegu.map(r=>`
+      <div class="regu-card" onclick="bukaDetailRegu(${r.id_regu})">
         <div class="regu-header">
-          <div class="regu-avatar">${(r.nama_regu||'R').charAt(0)}</div>
+          <div class="regu-avatar">${(r.nama_regu||'T').charAt(0)}</div>
           <div>
             <div class="regu-name">${r.nama_regu||'-'}</div>
-            <div class="regu-sektor">Sektor ${r.sektor||'-'}</div>
+            <span class="badge ${r.status_aktif?'badge-hijau':'badge-abu'}">${r.status_aktif?'Aktif':'Nonaktif'}</span>
           </div>
         </div>
-        <div class="regu-stats">
-          <span class="stat-pill">${r.jumlah_anggota||0} anggota</span>
-          <span class="stat-pill">${r.jumlah_tugas||0} tugas aktif</span>
+        <div class="regu-stats" id="stats-regu-${r.id_regu}">
+          <span class="stat-pill">🔄 memuat...</span>
         </div>
       </div>`).join('');
-  }catch(e){grid.innerHTML='<p class="loading-grid">Gagal memuat data.</p>';}
+    daftarRegu.forEach(r=>muatRingkasanRegu(r.id_regu));
+  }catch(e){grid.innerHTML='<p class="loading-grid">❌ Gagal memuat data.</p>';console.error(e);}
 }
+
+async function muatRingkasanRegu(idRegu){
+  try{
+    const [resAnggota,resAktif,resSelesai]=await Promise.all([
+      fetch(`${API}/api/regu/${idRegu}/anggota`,{headers:HN()}),
+      fetch(`${API}/api/pemeliharaan?id_regu=${idRegu}&status=${encodeURIComponent('Dalam Pengerjaan')}&per_page=1`,{headers:HN()}),
+      fetch(`${API}/api/pemeliharaan?id_regu=${idRegu}&status=Selesai&per_page=1`,{headers:HN()})
+    ]);
+    const jAnggota=await resAnggota.json();
+    const jAktif=await resAktif.json();
+    const jSelesai=await resSelesai.json();
+    const jmlAnggota=(jAnggota.data||[]).length;
+    const jmlAktif=jAktif.meta?.total??0;
+    const jmlSelesai=jSelesai.meta?.total??0;
+    const el=document.getElementById(`stats-regu-${idRegu}`);
+    if(el){
+      el.innerHTML=`
+        <span class="stat-pill">👥 ${jmlAnggota} anggota</span>
+        <span class="badge badge-kuning">${jmlAktif} tugas aktif</span>
+        <span class="badge badge-hijau">${jmlSelesai} selesai</span>`;
+    }
+  }catch(e){console.warn('Gagal muat ringkasan regu',idRegu,e);}
+}
+
+async function bukaDetailRegu(idRegu){
+  const regu=daftarRegu.find(r=>r.id_regu===idRegu);
+  if(!regu)return;
+  document.getElementById('modal-judul').textContent=`👷 ${regu.nama_regu||'Detail Tim'}`;
+  document.getElementById('modal-info').innerHTML=`<span class="badge ${regu.status_aktif?'badge-hijau':'badge-abu'}">${regu.status_aktif?'Aktif':'Nonaktif'}</span>`;
+  document.getElementById('anggota-list').innerHTML='<div class="kosong">🔄 Memuat...</div>';
+  document.getElementById('tugas-list').innerHTML='<div class="kosong">🔄 Memuat...</div>';
+  document.getElementById('modal-detail').classList.add('show');
+
+  try{
+    const res=await fetch(`${API}/api/regu/${idRegu}/anggota`,{headers:HN()});
+    const json=await res.json();
+    const data=json.data||[];
+    document.getElementById('anggota-list').innerHTML=data.length?data.map(p=>{
+      const nama=p.nama||p.nama_lengkap||p.username||p.nama_pengguna||'—';
+      const jabatan=p.jabatan||p.role||p.posisi||'';
+      return `<div class="anggota-item"><span>${nama}</span>${jabatan?`<span class="badge badge-biru">${jabatan}</span>`:''}</div>`;
+    }).join(''):'<div class="kosong">Belum ada anggota terdaftar.</div>';
+  }catch(e){document.getElementById('anggota-list').innerHTML='<div class="kosong">❌ Gagal memuat anggota.</div>';}
+
+  try{
+    const res=await fetch(`${API}/api/pemeliharaan?id_regu=${idRegu}&per_page=10`,{headers:HN()});
+    const json=await res.json();
+    const data=json.data||[];
+    document.getElementById('tugas-list').innerHTML=data.length?data.map(p=>`
+      <div class="tugas-item">
+        <div class="tugas-top">
+          <span><code style="font-size:.75rem;color:#1a56db">${p.kode_aset||'-'}</code> — ${p.jenis_pekerjaan||'-'}</span>
+          <span class="badge ${bSPw[p.status_pekerjaan]||'badge-abu'}">${p.status_pekerjaan||'-'}</span>
+        </div>
+        <div style="font-size:.72rem;color:#94a3b8">${p.tanggal_pengerjaan?new Date(p.tanggal_pengerjaan).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}):'-'}</div>
+      </div>`).join(''):'<div class="kosong">Belum ada tugas tercatat.</div>';
+  }catch(e){document.getElementById('tugas-list').innerHTML='<div class="kosong">❌ Gagal memuat tugas.</div>';}
+}
+
 loadRegu();
 </script>
-</body></html>
+</body>
+</html>
