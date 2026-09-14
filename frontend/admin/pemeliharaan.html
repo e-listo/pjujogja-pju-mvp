@@ -44,6 +44,9 @@
     .toolbar-v2 select,.toolbar-v2 input{padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:.85rem;background:#fff;color:#0f172a;}
     .toolbar-v2 input{flex:1;min-width:180px;}
     .jumlah-v2{font-size:.8rem;color:#94a3b8;margin-left:auto;}
+    .filter-aktif-banner{background:#eef2ff;color:#1a56db;font-size:.8rem;font-weight:600;padding:8px 12px;border-radius:8px;margin-bottom:12px;display:none;align-items:center;justify-content:space-between;}
+    .filter-aktif-banner.show{display:flex;}
+    .filter-aktif-banner button{background:none;border:none;color:#1a56db;font-weight:700;cursor:pointer;font-size:.85rem;}
 
     /* Modal */
     .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;align-items:center;justify-content:center;backdrop-filter:blur(2px);}
@@ -101,6 +104,11 @@
     <button class="btn btn-primary btn-sm" onclick="bukaModalTambah()">+ <span>Tambah Pekerjaan</span></button>
   </div>
   <div class="content">
+
+    <div class="filter-aktif-banner" id="filter-aktif-banner">
+      <span id="filter-aktif-teks"></span>
+      <button onclick="hapusFilterAset()">✕ Hapus Filter</button>
+    </div>
 
     <div class="toolbar-v2">
       <input type="text" id="d-search" placeholder="🔍 Cari kode aset / jenis pekerjaan (di halaman ini)..." oninput="debounceRender()">
@@ -208,6 +216,8 @@ let daftarRegu=[];
 let curPage=1,totalPages=1;
 let detailPw=null;
 let debTimer=null;
+let filterAsetId=null;
+let filterAsetKode=null;
 
 // ===== Toast =====
 function pijarToast(msg,type='success',durasi=4000){
@@ -225,6 +235,17 @@ function tutupModal(id,e){if(e.target.classList.contains('modal-overlay'))docume
 function gantiFilter(){curPage=1;muatUlang();}
 function muatUlang(){loadPemeliharaan(curPage);}
 function debounceRender(){clearTimeout(debTimer);debTimer=setTimeout(renderTampilan,300);}
+
+function hapusFilterAset(){
+  filterAsetId=null;
+  filterAsetKode=null;
+  document.getElementById('filter-aktif-banner').classList.remove('show');
+  const url=new URL(window.location);
+  url.searchParams.delete('aset');
+  url.searchParams.delete('laporan');
+  window.history.replaceState({},'',url);
+  loadPemeliharaan(1);
+}
 
 // ===== Load daftar tim (endpoint /api/regu) untuk dropdown filter & form tambah =====
 async function loadRegu(){
@@ -248,6 +269,7 @@ async function loadPemeliharaan(page=1){
   let url=`${API}/api/pemeliharaan?page=${page}&per_page=20`;
   if(idRegu)url+=`&id_regu=${idRegu}`;
   if(status)url+=`&status=${encodeURIComponent(status)}`;
+  if(filterAsetId)url+=`&id_aset=${filterAsetId}`;
   try{
     const res=await fetch(url,{headers:HN(),cache:'no-store'});
     if(res.status===401){window.location='/login.html';return;}
@@ -257,6 +279,9 @@ async function loadPemeliharaan(page=1){
     totalPages=meta.total_pages||1;
     document.getElementById('jumlah-pw').textContent=`${meta.total??dataHalamanIni.length} pekerjaan`;
     renderTampilan();
+    if(filterAsetId && dataHalamanIni.length===1 && curPage===1){
+      bukaDetail(dataHalamanIni[0].id_pemeliharaan);
+    }
   }catch(e){
     tbody.innerHTML='<tr><td colspan="6" class="loading">❌ Gagal memuat data.</td></tr>';
     console.error(e);
@@ -340,15 +365,17 @@ function bukaDetail(id){
   document.getElementById('foto-sesudah-wrap').innerHTML=p.foto_sesudah?`<img src="${API}/uploads/${p.foto_sesudah}">`:'<div class="kosong">Belum ada foto</div>';
   document.getElementById('d-ubah-status').value=p.status_pekerjaan||'Dalam Pengerjaan';
   document.getElementById('d-foto-sesudah').value='';
+  document.getElementById('modal-tambah').classList.remove('show');
   document.getElementById('modal-detail').classList.add('show');
 }
 
 async function simpanStatusPw(){
   if(!detailPw)return;
+  const statusBaru=document.getElementById('d-ubah-status').value;
   const btn=document.getElementById('btn-simpan-status');
   btn.disabled=true;btn.textContent='Menyimpan...';
   const fd=new FormData();
-  fd.append('status_pekerjaan',document.getElementById('d-ubah-status').value);
+  fd.append('status_pekerjaan',statusBaru);
   const foto=document.getElementById('d-foto-sesudah').files[0];
   if(foto)fd.append('foto_sesudah',foto);
   try{
@@ -367,6 +394,7 @@ async function simpanStatusPw(){
 
 // ===== Modal tambah =====
 function bukaModalTambah(){
+  document.getElementById('modal-detail').classList.remove('show');
   document.getElementById('modal-tambah').classList.add('show');
 }
 
@@ -418,27 +446,43 @@ async function submitTambahPw(){
   finally{btn.disabled=false;btn.innerHTML='💾 Simpan Pekerjaan';}
 }
 
-// ===== Deep-link dari laporan.html: ?laporan=<id>&aset=<id_aset> =====
-function cekDeepLink(){
+// ===== Deep-link =====
+// - ?laporan=<id>&aset=<id_aset>  -> dari tombol "Buat Pekerjaan" di laporan.html -> buka form Tambah Pekerjaan
+// - ?aset=<id_aset> saja          -> dari tombol "Lihat di Halaman Pemeliharaan" di aset.html -> filter riwayat aset ini (buka Detail bila cuma 1)
+async function cekDeepLink(){
   const params=new URLSearchParams(window.location.search);
   const laporan=params.get('laporan');
   const aset=params.get('aset');
-  if(aset){
-    document.getElementById('t-id-aset').value=aset;
-    isiOtomatisAset();
-  }
+
   if(laporan){
     document.getElementById('t-id-laporan').value=laporan;
-  }
-  if(aset||laporan){
+    if(aset){
+      document.getElementById('t-id-aset').value=aset;
+      isiOtomatisAset();
+    }
     bukaModalTambah();
+    return;
+  }
+
+  if(aset){
+    filterAsetId=parseInt(aset);
+    let kode=filterAsetId;
+    try{
+      const res=await fetch(`${API}/api/aset/${filterAsetId}`,{headers:HN()});
+      const json=await res.json();
+      if(json.success)kode=json.data.kode_aset;
+    }catch(e){}
+    document.getElementById('filter-aktif-teks').textContent=`📌 Menampilkan riwayat pemeliharaan untuk aset: ${kode}`;
+    document.getElementById('filter-aktif-banner').classList.add('show');
   }
 }
 
 // ===== Init =====
 loadRegu();
-loadPemeliharaan(1);
-cekDeepLink();
+(async()=>{
+  await cekDeepLink();
+  loadPemeliharaan(1);
+})();
 window.addEventListener('resize',()=>renderTampilan());
 </script>
 </body>
