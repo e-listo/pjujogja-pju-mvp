@@ -9,74 +9,331 @@
     *{box-sizing:border-box;margin:0;padding:0;}
     body{font-family:'Segoe UI',system-ui,sans-serif;background:#f1f5f9;color:#0f172a;}
     .pijar-main{margin-left:224px;min-height:100vh;}
-    .topbar{background:#fff;padding:11px 24px;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:50;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+    .topbar{background:#fff;padding:11px 24px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:50;box-shadow:0 1px 3px rgba(0,0,0,.04);}
     .topbar h2{font-size:.95rem;font-weight:700;color:#0f172a;}
     .content{padding:20px 24px;}
-    .toolbar{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center;}
-    .toolbar select{padding:7px 11px;border:1px solid #e2e8f0;border-radius:7px;font-size:.82rem;background:#fff;}
-    .btn{padding:7px 14px;border-radius:7px;border:none;cursor:pointer;font-size:.82rem;font-weight:600;transition:opacity .15s;}
+    .btn{padding:7px 14px;border-radius:7px;border:none;cursor:pointer;font-size:.82rem;font-weight:600;transition:opacity .15s;display:inline-flex;align-items:center;gap:5px;}
+    .btn:hover{opacity:.85;}
     .btn-primary{background:#1a56db;color:#fff;}
-    .btn-primary:hover{opacity:.88;}
-    .btn-sm{padding:4px 10px;font-size:.75rem;}
     .btn-success{background:#059669;color:#fff;}
+    .btn-warning{background:#d97706;color:#fff;}
+    .btn-danger{background:#dc2626;color:#fff;}
+    .btn-secondary{background:#f1f5f9;color:#374151;border:1px solid #e2e8f0;}
+    .btn-sm{padding:4px 9px;font-size:.75rem;}
     .card{background:#fff;border-radius:12px;padding:0;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden;}
-    table{width:100%;border-collapse:collapse;font-size:.875rem;}
-    thead th{background:#f8fafc;padding:9px 12px;text-align:left;font-weight:700;font-size:.67rem;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;border-bottom:1px solid #e2e8f0;}
+    .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+    table{width:100%;border-collapse:collapse;font-size:.875rem;min-width:600px;}
+    thead th{background:#f8fafc;padding:9px 12px;text-align:left;font-weight:700;font-size:.67rem;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;border-bottom:1px solid #e2e8f0;white-space:nowrap;}
     tbody td{padding:9px 12px;border-bottom:1px solid #f1f5f9;vertical-align:middle;}
-    tbody tr:hover{background:#f8fafc;}
-    .badge{display:inline-block;padding:2px 9px;border-radius:99px;font-size:.72rem;font-weight:600;}
+    tbody tr:hover{background:#f8fafc;cursor:pointer;}
+    .badge{display:inline-block;padding:2px 9px;border-radius:99px;font-size:.72rem;font-weight:600;white-space:nowrap;}
     .badge-merah{background:#fee2e2;color:#991b1b;}
     .badge-kuning{background:#fef3c7;color:#92400e;}
     .badge-hijau{background:#d1fae5;color:#065f46;}
+    .badge-biru{background:#dbeafe;color:#1e40af;}
     .badge-abu{background:#f1f5f9;color:#475569;}
     .loading{color:#94a3b8;font-size:.85rem;padding:20px;text-align:center;}
-    @media(max-width:768px){.pijar-main{margin-left:0;}}
+    .skeleton{background:linear-gradient(90deg,#e2e8f0 25%,#f1f5f9 50%,#e2e8f0 75%);background-size:200% 100%;animation:shimmer 1.2s infinite;border-radius:4px;display:inline-block;min-width:60px;min-height:1.2rem;vertical-align:middle;}
+    @keyframes shimmer{to{background-position:-200% 0}}
+    .pagination{display:flex;align-items:center;gap:8px;padding:12px 16px;font-size:.82rem;color:#64748b;border-top:1px solid #f1f5f9;flex-wrap:wrap;}
+    .pagination button{padding:4px 10px;border-radius:6px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;font-size:.8rem;}
+    .pagination button:disabled{opacity:.4;cursor:default;}
+
+    /* Toolbar */
+    .toolbar-v2{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center;}
+    .toolbar-v2 select,.toolbar-v2 input{padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:.85rem;background:#fff;color:#0f172a;}
+    .toolbar-v2 input{flex:1;min-width:180px;}
+    .jumlah-laporan-v2{font-size:.8rem;color:#94a3b8;margin-left:auto;}
+
+    /* Modal */
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;align-items:center;justify-content:center;backdrop-filter:blur(2px);}
+    .modal-overlay.show{display:flex;}
+    .modal{background:#fff;border-radius:14px;padding:24px;width:520px;max-width:94vw;max-height:90vh;overflow-y:auto;box-shadow:0 24px 48px rgba(0,0,0,.18);}
+    .modal h3{font-size:1rem;font-weight:700;margin-bottom:16px;color:#0f172a;border-bottom:1px solid #f1f5f9;padding-bottom:10px;}
+    .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:16px;padding-top:12px;border-top:1px solid #f1f5f9;flex-wrap:wrap;}
+    .form-group{margin-bottom:12px;}
+    .form-group label{display:block;font-size:.75rem;font-weight:600;margin-bottom:4px;color:#64748b;text-transform:uppercase;letter-spacing:.04em;}
+    .form-group select{width:100%;padding:8px 11px;border:1px solid #e2e8f0;border-radius:7px;font-size:.85rem;font-family:inherit;}
+    .form-group select:focus{outline:none;border-color:#1a56db;box-shadow:0 0 0 3px rgba(26,86,219,.1);}
+    .foto-preview{max-width:100%;border-radius:8px;margin-top:8px;display:none;}
+
+    /* Toast */
+    #pijar-toast-wrap{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;}
+    .pijar-toast{min-width:220px;max-width:88vw;padding:12px 20px;border-radius:10px;font-size:.88rem;font-weight:600;color:#fff;box-shadow:0 8px 24px rgba(0,0,0,.18);opacity:0;transform:translateY(16px);transition:opacity .25s,transform .25s;pointer-events:auto;display:flex;align-items:center;gap:10px;}
+    .pijar-toast.show{opacity:1;transform:translateY(0);}
+    .pijar-toast.toast-success{background:#059669;}
+    .pijar-toast.toast-error{background:#dc2626;}
+    .pijar-toast.toast-info{background:#1a56db;}
+    .pijar-toast.toast-warn{background:#d97706;}
+
+    /* Mobile */
+    .card-list{display:none;}
+    .laporan-card{background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.07);padding:13px 14px;margin-bottom:10px;cursor:pointer;border:1px solid #f1f5f9;}
+    .laporan-card-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+    .laporan-card-kode{font-family:monospace;font-size:.82rem;font-weight:700;color:#1a56db;}
+    .laporan-card-alamat{font-size:.85rem;color:#1e293b;margin-bottom:4px;line-height:1.4;}
+    .laporan-card-desk{font-size:.78rem;color:#64748b;margin-bottom:8px;}
+    .laporan-card-meta{display:flex;justify-content:space-between;align-items:center;}
+
+    @media(max-width:768px){
+      .pijar-main{margin-left:0;}
+      .card{display:none;}
+      .toolbar-v2 input{min-width:100%;order:-1;}
+      .card-list{display:block;}
+      .content{padding:12px;padding-bottom:82px;}
+      .topbar{padding:10px 14px;}
+    }
   </style>
 </head>
 <body>
-<script src="js/sidebar.js?v=20260826" data-page="laporan"></script>
+<script src="js/sidebar.js?v=20260903" data-page="laporan"></script>
 <div class="pijar-main">
   <div class="topbar">
-    <h2>Laporan Kerusakan</h2>
+    <h2>📋 Laporan Kerusakan</h2>
   </div>
   <div class="content">
-    <div class="toolbar">
-      <select id="filter-status" onchange="loadLaporan()"><option value="">Semua Status</option><option value="Baru">Baru</option><option value="Diproses">Diproses</option><option value="Selesai">Selesai</option></select>
-      <button class="btn btn-primary" onclick="loadLaporan()">Refresh</button>
-      <span id="jumlah-laporan" style="font-size:.8rem;color:#94a3b8;margin-left:auto"></span>
+
+    <div class="toolbar-v2">
+      <input type="text" id="d-search" placeholder="🔍 Cari kode aset / alamat / deskripsi (di halaman ini)..." oninput="debounceRender()">
+      <select id="f-status" onchange="gantiFilter()">
+        <option value="">Semua Status</option>
+        <option value="Baru">Baru</option>
+        <option value="Diproses">Diproses</option>
+        <option value="Selesai">Selesai</option>
+      </select>
+      <select id="f-sumber" onchange="gantiFilter()">
+        <option value="">Semua Sumber</option>
+        <option value="Lapangan">Lapangan</option>
+        <option value="Warga">Warga</option>
+        <option value="WhatsApp">WhatsApp</option>
+        <option value="Sistem">Sistem</option>
+      </select>
+      <button class="btn btn-secondary btn-sm" onclick="muatUlang()">🔄 Refresh</button>
+      <span id="jumlah-laporan" class="jumlah-laporan-v2"></span>
     </div>
+
+    <!-- TABEL DESKTOP -->
     <div class="card">
-      <table>
-        <thead><tr><th>#</th><th>Kode Aset</th><th>Alamat</th><th>Deskripsi</th><th>Prioritas</th><th>Status</th><th>Tanggal</th><th>Aksi</th></tr></thead>
-        <tbody id="tbody-laporan"><tr><td colspan="8" class="loading">🔄 Memuat data...</td></tr></tbody>
-      </table>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Kode Aset</th><th>Alamat</th><th>Deskripsi</th><th>Sumber</th><th>Status</th><th>Tanggal Lapor</th><th>Aksi</th>
+          </tr></thead>
+          <tbody id="tbody-laporan"><tr><td colspan="7" class="loading"><span class="skeleton"></span></td></tr></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="pagination" style="display:none">
+        <button id="btn-prev" onclick="gantiHalaman(curPage-1)" disabled>‹ Prev</button>
+        <span id="page-info"></span>
+        <button id="btn-next" onclick="gantiHalaman(curPage+1)">Next ›</button>
+      </div>
+    </div>
+
+    <!-- CARD LIST MOBILE -->
+    <div class="card-list" id="card-list"></div>
+
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="pijar-toast-wrap"></div>
+
+<!-- MODAL DETAIL -->
+<div class="modal-overlay" id="modal-detail" onclick="tutupModal(event)">
+  <div class="modal">
+    <h3>📋 Detail Laporan Kerusakan</h3>
+    <div id="detail-body" style="font-size:.85rem;margin-bottom:6px;"></div>
+    <img id="foto-preview" class="foto-preview" alt="Foto laporan">
+    <div class="form-group">
+      <label>Ubah Status</label>
+      <select id="d-ubah-status">
+        <option value="Baru">Baru</option>
+        <option value="Diproses">Diproses</option>
+        <option value="Selesai">Selesai</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="document.getElementById('modal-detail').classList.remove('show')">Tutup</button>
+      <button class="btn btn-warning" onclick="buatPekerjaan()">🛠 Buat Pekerjaan</button>
+      <button class="btn btn-primary" id="btn-simpan-status" onclick="simpanStatus()">💾 Simpan Status</button>
     </div>
   </div>
 </div>
+
 <script>
 const API='https://api.pjujogja.id';
+const TOKEN=()=>localStorage.getItem('pijar_token');
+const H=()=>({'Content-Type':'application/json','Authorization':'Bearer '+TOKEN()});
+const HN=()=>({'Authorization':'Bearer '+TOKEN()});
 const bS={'Baru':'badge-merah','Diproses':'badge-kuning','Selesai':'badge-hijau'};
-const bP={'Tinggi':'badge-merah','Sedang':'badge-kuning','Rendah':'badge-abu'};
-async function loadLaporan(){
-  const status=document.getElementById('filter-status').value;
-  let url=`${API}/api/laporan?`;
-  if(status)url+=`status=${encodeURIComponent(status)}&`;
+
+let laporanHalamanIni=[];
+let curPage=1,totalPages=1;
+let detailLaporan=null;
+let debTimer=null;
+
+const isMobile=()=>window.innerWidth<=768;
+
+// ===== Toast =====
+function pijarToast(msg,type='success',durasi=4000){
+  const icons={success:'✅',error:'❌',info:'ℹ️',warn:'⚠️'};
+  const wrap=document.getElementById('pijar-toast-wrap');
+  const el=document.createElement('div');
+  el.className=`pijar-toast toast-${type}`;
+  el.innerHTML=`<span>${icons[type]||''}</span><span>${msg}</span>`;
+  wrap.appendChild(el);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('show')));
+  setTimeout(()=>{el.classList.remove('show');setTimeout(()=>el.remove(),300);},durasi);
+}
+function tutupModal(e){if(e.target.classList.contains('modal-overlay'))document.getElementById('modal-detail').classList.remove('show');}
+
+function gantiFilter(){curPage=1;muatUlang();}
+function muatUlang(){loadLaporan(curPage);}
+function debounceRender(){clearTimeout(debTimer);debTimer=setTimeout(renderTampilan,300);}
+
+// ===== Load data dari server (pagination + filter server-side) =====
+async function loadLaporan(page=1){
+  curPage=page;
   const tbody=document.getElementById('tbody-laporan');
-  tbody.innerHTML='<tr><td colspan="8" class="loading">🔄 Memuat...</td></tr>';
+  tbody.innerHTML='<tr><td colspan="7" class="loading"><span class="skeleton"></span></td></tr>';
+  const status=document.getElementById('f-status').value;
+  const sumber=document.getElementById('f-sumber').value;
+  let url=`${API}/api/laporan-kerusakan?page=${page}&per_page=20`;
+  if(status)url+=`&status=${encodeURIComponent(status)}`;
+  if(sumber)url+=`&sumber=${encodeURIComponent(sumber)}`;
   try{
-    const res=await fetch(url,{headers:{'Authorization':'Bearer '+localStorage.getItem('pijar_token')}});
-    const json=await res.json();const data=json.data||[];
-    document.getElementById('jumlah-laporan').textContent=`${data.length} laporan`;
-    if(!data.length){tbody.innerHTML='<tr><td colspan="8" class="loading">✅ Tidak ada laporan.</td></tr>';return;}
-    tbody.innerHTML=data.map((l,i)=>`<tr><td style="color:#94a3b8;font-size:.78rem">${i+1}</td><td><code style="font-size:.78rem;color:#1a56db">${l.kode_aset||'-'}</code></td><td style="font-size:.82rem;max-width:160px">${l.alamat||'-'}</td><td style="font-size:.82rem;max-width:200px">${l.deskripsi||'-'}</td><td><span class="badge ${bP[l.prioritas]||'badge-abu'}">${l.prioritas||'-'}</span></td><td><span class="badge ${bS[l.status]||'badge-abu'}">${l.status}</span></td><td style="font-size:.78rem;color:#64748b">${l.tanggal_laporan?l.tanggal_laporan.slice(0,10):'-'}</td><td><button class="btn btn-success btn-sm" onclick="updateStatus(${l.id_laporan},'Selesai')">Selesai</button></td></tr>`).join('');
-  }catch(e){tbody.innerHTML='<tr><td colspan="8" class="loading">Gagal memuat data.</td></tr>';}
+    const res=await fetch(url,{headers:HN(),cache:'no-store'});
+    if(res.status===401){window.location='/login.html';return;}
+    const json=await res.json();
+    laporanHalamanIni=json.data||[];
+    const meta=json.meta||{};
+    totalPages=meta.total_pages||1;
+    document.getElementById('jumlah-laporan').textContent=`${meta.total??laporanHalamanIni.length} laporan`;
+    renderTampilan();
+  }catch(e){
+    tbody.innerHTML='<tr><td colspan="7" class="loading">❌ Gagal memuat data.</td></tr>';
+    console.error(e);
+  }
 }
-async function updateStatus(id,status){
+
+function filterLokal(list){
+  const cari=document.getElementById('d-search').value.trim().toLowerCase();
+  if(!cari)return list;
+  return list.filter(l=>{
+    const teks=`${l.kode_aset||''} ${l.alamat||''} ${l.deskripsi_kerusakan||''}`.toLowerCase();
+    return teks.includes(cari);
+  });
+}
+
+function renderTampilan(){
+  renderTable();
+  renderMobile();
+}
+
+function renderTable(){
+  const data=filterLokal(laporanHalamanIni);
+  const tbody=document.getElementById('tbody-laporan');
+  if(!data.length){
+    tbody.innerHTML='<tr><td colspan="7" class="loading">✅ Tidak ada laporan.</td></tr>';
+    document.getElementById('pagination').style.display='none';
+    return;
+  }
+  tbody.innerHTML=data.map(l=>`<tr onclick="bukaDetail(${l.id_laporan})">
+      <td><code style="font-size:.78rem;color:#1a56db">${l.kode_aset||'-'}</code></td>
+      <td style="max-width:180px;font-size:.8rem">${l.alamat||'-'}</td>
+      <td style="max-width:220px;font-size:.8rem;color:#64748b">${l.deskripsi_kerusakan||'-'}</td>
+      <td><span class="badge badge-biru" style="font-size:.7rem">${l.sumber_laporan||'-'}</span></td>
+      <td><span class="badge ${bS[l.status_laporan]||'badge-abu'}">${l.status_laporan||'-'}</span></td>
+      <td style="font-size:.78rem;color:#64748b">${l.tanggal_lapor?new Date(l.tanggal_lapor).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}):'-'}</td>
+      <td onclick="event.stopPropagation()"><button class="btn btn-secondary btn-sm" onclick="bukaDetail(${l.id_laporan})">Detail</button></td>
+    </tr>`).join('');
+  const pgEl=document.getElementById('pagination');
+  if(totalPages>1){
+    pgEl.style.display='flex';
+    document.getElementById('page-info').textContent=`Hal ${curPage} / ${totalPages}`;
+    document.getElementById('btn-prev').disabled=curPage<=1;
+    document.getElementById('btn-next').disabled=curPage>=totalPages;
+  }else{pgEl.style.display='none';}
+}
+function gantiHalaman(p){if(p<1||p>totalPages)return;loadLaporan(p);}
+
+// ===== Mobile card list =====
+function renderMobile(){
+  const data=filterLokal(laporanHalamanIni);
+  const container=document.getElementById('card-list');
+  if(!data.length){
+    container.innerHTML='<div class="loading" style="background:#fff;border-radius:12px;padding:24px">Tidak ada laporan.</div>';
+    return;
+  }
+  container.innerHTML=data.map(l=>`
+    <div class="laporan-card" onclick="bukaDetail(${l.id_laporan})">
+      <div class="laporan-card-top">
+        <span class="laporan-card-kode">${l.kode_aset||'-'}</span>
+        <span class="badge ${bS[l.status_laporan]||'badge-abu'}">${l.status_laporan||'-'}</span>
+      </div>
+      <div class="laporan-card-alamat">${l.alamat||'-'}</div>
+      <div class="laporan-card-desk">${l.deskripsi_kerusakan||'-'}</div>
+      <div class="laporan-card-meta">
+        <span class="badge badge-biru" style="font-size:.7rem">${l.sumber_laporan||'-'}</span>
+        <span style="font-size:.75rem;color:#94a3b8">${l.tanggal_lapor?new Date(l.tanggal_lapor).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}):'-'}</span>
+      </div>
+    </div>`).join('');
+}
+
+// ===== Detail modal =====
+function bukaDetail(id){
+  const l=laporanHalamanIni.find(x=>x.id_laporan===id);
+  if(!l){pijarToast('Data laporan tidak ditemukan di halaman ini.','error');return;}
+  detailLaporan=l;
+  document.getElementById('detail-body').innerHTML=`
+    <table style="width:100%;font-size:.83rem;border-collapse:collapse">
+      <tr><td style="padding:5px 8px;color:#94a3b8;width:36%">Kode Aset</td><td><b>${l.kode_aset||'-'}</b></td></tr>
+      <tr><td style="padding:5px 8px;color:#94a3b8">Alamat</td><td>${l.alamat||'-'}</td></tr>
+      <tr><td style="padding:5px 8px;color:#94a3b8">Deskripsi Kerusakan</td><td>${l.deskripsi_kerusakan||'-'}</td></tr>
+      <tr><td style="padding:5px 8px;color:#94a3b8">Sumber Laporan</td><td><span class="badge badge-biru">${l.sumber_laporan||'-'}</span></td></tr>
+      <tr><td style="padding:5px 8px;color:#94a3b8">Status</td><td><span class="badge ${bS[l.status_laporan]||'badge-abu'}">${l.status_laporan||'-'}</span></td></tr>
+      <tr><td style="padding:5px 8px;color:#94a3b8">Tanggal Lapor</td><td>${l.tanggal_lapor?new Date(l.tanggal_lapor).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}):'-'}</td></tr>
+    </table>`;
+  const foto=document.getElementById('foto-preview');
+  if(l.foto_url){
+    foto.src=`${API}/uploads/${l.foto_url}`;
+    foto.style.display='block';
+  }else{
+    foto.style.display='none';
+  }
+  document.getElementById('d-ubah-status').value=l.status_laporan||'Baru';
+  document.getElementById('modal-detail').classList.add('show');
+}
+
+async function simpanStatus(){
+  if(!detailLaporan)return;
+  const statusBaru=document.getElementById('d-ubah-status').value;
+  const btn=document.getElementById('btn-simpan-status');
+  btn.disabled=true;btn.textContent='Menyimpan...';
   try{
-    await fetch(`${API}/api/laporan/${id}`,{method:'PUT',headers:{'Content-Type':'application/json','Authorization':'Bearer '+localStorage.getItem('pijar_token')},body:JSON.stringify({status})});
-    loadLaporan();
-  }catch(e){alert('Gagal update.');}
+    const res=await fetch(`${API}/api/laporan-kerusakan/${detailLaporan.id_laporan}/status`,{
+      method:'PATCH',headers:H(),body:JSON.stringify({status_laporan:statusBaru})
+    });
+    const json=await res.json();
+    if(json.success){
+      pijarToast('Status laporan berhasil diperbarui','success');
+      document.getElementById('modal-detail').classList.remove('show');
+      loadLaporan(curPage);
+    }else{
+      pijarToast('Gagal: '+(json.error||'Tidak punya izin (perlu role koordinator/admin)'),'error',6000);
+    }
+  }catch(e){pijarToast('Error: '+e.message,'error',6000);}
+  finally{btn.disabled=false;btn.innerHTML='💾 Simpan Status';}
 }
-loadLaporan();
+
+function buatPekerjaan(){
+  if(!detailLaporan)return;
+  window.location=`pemeliharaan.html?laporan=${detailLaporan.id_laporan}&aset=${detailLaporan.id_aset}`;
+}
+
+// ===== Init =====
+loadLaporan(1);
+window.addEventListener('resize',()=>renderTampilan());
 </script>
-</body></html>
+</body>
+</html>
