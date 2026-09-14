@@ -77,6 +77,12 @@ const bS={'Menyala':'badge-hijau','Rusak':'badge-merah','Dalam Pengerjaan':'badg
 let semuaAset=[];
 let semuaWilayah=[];
 
+function sektorNum(val){
+  if(val==null)return null;
+  const m=String(val).match(/\d+/);
+  return m?parseInt(m[0],10):null;
+}
+
 async function loadSemuaAset(){
   try{
     const res=await fetch(`${API}/api/aset/export`,{headers:HN(),cache:'no-store'});
@@ -90,8 +96,7 @@ async function loadSemuaAset(){
 
 function renderSektor(){
   for(let s=1;s<=4;s++){
-    const label=`Sektor ${s}`;
-    const list=semuaAset.filter(a=>a.sektor===label);
+    const list=semuaAset.filter(a=>sektorNum(a.sektor)===s);
     const total=list.length;
     const menyala=list.filter(a=>a.status==='Menyala').length;
     const rusak=list.filter(a=>a.status==='Rusak').length;
