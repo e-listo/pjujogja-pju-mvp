@@ -190,7 +190,7 @@ async function loadAset(){
       if(a.lat && a.lng){
         L.marker([a.lat, a.lng], {icon: markerIcon(a.status)})
           .addTo(peta)
-          .bindPopup(`<strong>${a.kode_aset}</strong><br>${a.alamat}<br><span style="color:${warna[a.status]||'#333'};font-weight:600">${a.status}</span>`);
+          .bindPopup(`<strong>${a.kode_aset}</strong><br>${a.alamat}<br><span style="color:${warna[a.status]||'#333'};font-weight:600">${a.status}</span><br><a href="aset.html?detail=${a.id_aset}" style="color:#1a56db;font-weight:600;font-size:.8rem;display:inline-block;margin-top:4px">Lihat Detail →</a>`);
       }
     });
 
@@ -203,7 +203,7 @@ async function loadAset(){
             <td>${a.alamat}</td>
             <td><span class="badge badge-biru">${a.kategori_jalan || '-'}</span></td>
             <td><span class="badge ${a.status === 'Rusak' ? 'badge-merah' : 'badge-kuning'}">${a.status}</span></td>
-            <td><a href="laporan.html?aset=${a.id_aset}"><button class="btn btn-primary">Laporan</button></a></td>
+            <td><a href="aset.html?detail=${a.id_aset}"><button class="btn btn-primary">Detail</button></a></td>
           </tr>`).join('')
       : '<tr><td colspan="5" class="loading">✅ Semua aset dalam kondisi baik</td></tr>';
   }catch(e){
