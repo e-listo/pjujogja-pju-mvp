@@ -30,6 +30,7 @@ class Config:
     CORS_ORIGINS = [
         "https://admin.pjujogja.id",
         "https://pjujogja.id",
+        "https://api-pins.dpupkp.my.id",
         "http://localhost:3000",
         "http://localhost:5500",
     ]
