@@ -162,9 +162,6 @@
 
 <script>
 const API='https://api.pjujogja.id';
-const TOKEN=()=>localStorage.getItem('pijar_token');
-const H=()=>({'Content-Type':'application/json','Authorization':'Bearer '+TOKEN()});
-const HN=()=>({'Authorization':'Bearer '+TOKEN()});
 const bS={'Baru':'badge-merah','Diproses':'badge-kuning','Selesai':'badge-hijau'};
 
 let laporanHalamanIni=[];
@@ -202,7 +199,7 @@ async function loadLaporan(page=1){
   if(status)url+=`&status=${encodeURIComponent(status)}`;
   if(sumber)url+=`&sumber=${encodeURIComponent(sumber)}`;
   try{
-    const res=await fetch(url,{headers:HN(),cache:'no-store'});
+    const res=await apiFetch(url,{cache:'no-store'});
     if(res.status===401){window.location='/login.html';return;}
     const json=await res.json();
     laporanHalamanIni=json.data||[];
@@ -311,8 +308,8 @@ async function simpanStatus(){
   const btn=document.getElementById('btn-simpan-status');
   btn.disabled=true;btn.textContent='Menyimpan...';
   try{
-    const res=await fetch(`${API}/api/laporan-kerusakan/${detailLaporan.id_laporan}/status`,{
-      method:'PATCH',headers:H(),body:JSON.stringify({status_laporan:statusBaru})
+    const res=await apiFetch(`${API}/api/laporan-kerusakan/${detailLaporan.id_laporan}/status`,{
+      method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status_laporan:statusBaru})
     });
     const json=await res.json();
     if(json.success){
