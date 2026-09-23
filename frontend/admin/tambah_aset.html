@@ -149,13 +149,10 @@ const API = 'https://api.pjujogja.id';
 let _kodeStatus = null; // 'ok' | 'error' | null
 let _cekTimeout = null;
 
-// ─── Init ──────────────────────────────────────────────
+// ─── Init ──────────────────────────────────────
 async function init() {
-  const token = localStorage.getItem('pijar_token');
-  const h = { 'Authorization': 'Bearer ' + token };
-
   try {
-    const r = await fetch(`${API}/api/kategori-pju`, { headers: h });
+    const r = await apiFetch(`${API}/api/kategori-pju`);
     const j = await r.json();
     const sel = document.getElementById('id_kategori');
     (j.data || []).forEach(k => {
@@ -167,7 +164,7 @@ async function init() {
   } catch(e) { console.warn('Gagal load kategori', e); }
 
   try {
-    const r = await fetch(`${API}/api/wilayah`, { headers: h });
+    const r = await apiFetch(`${API}/api/wilayah`);
     const j = await r.json();
     const sel = document.getElementById('id_wilayah');
     (j.data || []).forEach(w => {
@@ -179,7 +176,7 @@ async function init() {
   } catch(e) { console.warn('Gagal load wilayah', e); }
 }
 
-// ─── Suggest kode dari kategori+wilayah+tahun ──────────────────
+// ─── Suggest kode dari kategori+wilayah+tahun ────────────────────
 async function updateKodeSuggest() {
   const katSel  = document.getElementById('id_kategori');
   const wilSel  = document.getElementById('id_wilayah');
@@ -190,9 +187,8 @@ async function updateKodeSuggest() {
   if (!katSel.value || !wilSel.value || !tahun || tahun < 2000) return;
 
   try {
-    const token = localStorage.getItem('pijar_token');
     const url = `${API}/api/aset/suggest-kode?kategori=${encodeURIComponent(katKode)}&wilayah=${encodeURIComponent(wilKode)}&tahun=${tahun}`;
-    const r = await fetch(url, { headers: { 'Authorization': 'Bearer ' + token } });
+    const r = await apiFetch(url);
     const j = await r.json();
     if (j.success && j.suggest) {
       const inp = document.getElementById('kode_aset');
@@ -204,7 +200,7 @@ async function updateKodeSuggest() {
   } catch(e) { console.warn('Gagal suggest kode', e); }
 }
 
-// ─── Cek availability kode (debounce 500ms) ──────────────────
+// ─── Cek availability kode (debounce 500ms) ────────────────
 function onKodeInput() {
   clearTimeout(_cekTimeout);
   const val = document.getElementById('kode_aset').value.trim().toUpperCase();
@@ -219,10 +215,8 @@ function onKodeInput() {
 
 async function cekKode(kode) {
   try {
-    const token = localStorage.getItem('pijar_token');
-    const r = await fetch(
-      `${API}/api/aset/cek-kode?kode=${encodeURIComponent(kode)}`,
-      { headers: { 'Authorization': 'Bearer ' + token } }
+    const r = await apiFetch(
+      `${API}/api/aset/cek-kode?kode=${encodeURIComponent(kode)}`
     );
     const j = await r.json();
     if (!j.success) { setBadge('error', 'Error', j.error || ''); _kodeStatus = null; return; }
@@ -249,13 +243,13 @@ function setBadge(state, text, hint) {
   if (hint !== undefined) hintEl.textContent = hint;
 }
 
-// ─── Toggle sub-kategori ────────────────────────────────────
+// ─── Toggle sub-kategori ──────────────────────────
 function toggleSub() {
   document.getElementById('wrap-sub').style.display =
     document.getElementById('kategori_jalan').value === 'Lainnya' ? 'block' : 'none';
 }
 
-// ─── Submit ───────────────────────────────────────────────
+// ─── Submit ────────────────────────────────
 async function submitAset() {
   const kode = document.getElementById('kode_aset').value.trim();
   if (!kode) { alert('Kode aset wajib diisi!'); return; }
@@ -284,9 +278,9 @@ async function submitAset() {
   }
 
   try {
-    const res = await fetch(`${API}/api/aset`, {
+    const res = await apiFetch(`${API}/api/aset`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('pijar_token') },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
     const json = await res.json();
