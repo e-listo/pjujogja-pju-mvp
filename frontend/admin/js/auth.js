@@ -32,10 +32,16 @@
     return;
   }
 
-  // Helper global: fetch dengan token otomatis
-  window.apiFetch = function (url, options = {}) {
+  // Helper global: fetch dengan token otomatis + auto-redirect saat 401
+  window.apiFetch = async function (url, options = {}) {
     const headers = Object.assign({ 'Authorization': 'Bearer ' + token }, options.headers || {});
-    return fetch(url, Object.assign({}, options, { headers }));
+    const res = await fetch(url, Object.assign({}, options, { headers }));
+    if (res.status === 401) {
+      localStorage.removeItem('pijar_token');
+      localStorage.removeItem('pijar_user');
+      window.location.href = LOGIN_PAGE;
+    }
+    return res;
   };
 
   // Helper global: logout
