@@ -70,8 +70,6 @@
 </div>
 <script>
 const API='https://api.pjujogja.id';
-const TOKEN=()=>localStorage.getItem('pijar_token');
-const HN=()=>({'Authorization':'Bearer '+TOKEN()});
 const bS={'Menyala':'badge-hijau','Rusak':'badge-merah','Dalam Pengerjaan':'badge-kuning'};
 
 let semuaAset=[];
@@ -85,7 +83,7 @@ function sektorNum(val){
 
 async function loadSemuaAset(){
   try{
-    const res=await fetch(`${API}/api/aset/export`,{headers:HN(),cache:'no-store'});
+    const res=await apiFetch(`${API}/api/aset/export`,{cache:'no-store'});
     if(res.status===401){window.location='/login.html';return;}
     const json=await res.json();
     semuaAset=json.data||[];
@@ -114,7 +112,7 @@ function renderSektor(){
 
 async function loadWilayah(){
   try{
-    const res=await fetch(`${API}/api/wilayah`);
+    const res=await apiFetch(`${API}/api/wilayah`);
     const json=await res.json();
     semuaWilayah=json.data||[];
     renderWilayah();
