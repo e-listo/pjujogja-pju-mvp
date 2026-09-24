@@ -476,9 +476,6 @@
 
 <script>
 const API='https://api.pjujogja.id';
-const TOKEN=()=>localStorage.getItem('pijar_token');
-const H=()=>({'Content-Type':'application/json','Authorization':'Bearer '+TOKEN()});
-const HN=()=>({'Authorization':'Bearer '+TOKEN()});
 const bS={'Menyala':'badge-hijau','Rusak':'badge-merah','Dalam Pengerjaan':'badge-kuning'};
 const bSPw={'Dalam Pengerjaan':'badge-kuning','Selesai':'badge-hijau'};
 const SORT_LABEL={'terbaru':'Terbaru ditambahkan','kode_asc':'Kode Aset A-Z','tahun_desc':'Tahun (baru→lama)'};
@@ -672,7 +669,7 @@ function buildParams(page,perPage){
 // ===== Load Kategori & Wilayah =====
 async function loadKategoriPJU(){
   try{
-    const r=await fetch(`${API}/api/kategori-pju`,{headers:HN()});
+    const r=await apiFetch(`${API}/api/kategori-pju`);
     const j=await r.json();
     daftarKategori=j.data||[];
     const targets=['t-id-kategori','e-id-kategori','d-id-kategori'];
@@ -689,7 +686,7 @@ async function loadKategoriPJU(){
 
 async function loadWilayah(){
   try{
-    const r=await fetch(`${API}/api/wilayah`,{headers:HN()});
+    const r=await apiFetch(`${API}/api/wilayah`);
     const j=await r.json();
     daftarWilayah=j.data||[];
     ['t-id-wilayah','e-id-wilayah'].forEach(id=>{
@@ -720,8 +717,8 @@ async function loadAset(page=1){
   const tbody=document.getElementById('tbody-aset');
   tbody.innerHTML='<tr><td colspan="7" class="loading">🔄 Memuat...</td></tr>';
   try{
-    const res=await fetch(url,{headers:HN(),cache:'no-store'});
-    if(res.status===401){window.location='/login.html';return;}
+    const res=await apiFetch(url,{cache:'no-store'});
+    if(res.status===401)return;
     const json=await res.json();
     const data=json.data||[];
     const meta=json.meta||{};
@@ -766,8 +763,8 @@ async function loadMobilePage(){
   spinner.style.display='block';
   const url=buildParams(mPage,25);
   try{
-    const res=await fetch(url,{headers:HN(),cache:'no-store'});
-    if(res.status===401){window.location='/login.html';return;}
+    const res=await apiFetch(url,{cache:'no-store'});
+    if(res.status===401)return;
     const json=await res.json();
     const data=json.data||[];
     const meta=json.meta||{};
@@ -834,7 +831,7 @@ async function exportAset(){
   if(kelurahanList.length)url+=`kelurahan=${encodeURIComponent(kelurahanList.join(','))}&`;
   if(cari)url+=`q=${encodeURIComponent(cari)}&`;
   try{
-    const res=await fetch(url,{headers:HN(),cache:'no-store'});
+    const res=await apiFetch(url,{cache:'no-store'});
     const json=await res.json();
     const blob=new Blob([JSON.stringify(json,null,2)],{type:'application/json'});
     const a=document.createElement('a');
@@ -851,7 +848,7 @@ async function bukaDetail(id){
   document.getElementById('modal-detail').classList.add('show');
   document.getElementById('detail-body').innerHTML='<div class="loading">🔄 Memuat...</div>';
   try{
-    const res=await fetch(`${API}/api/aset/${id}`,{headers:HN(),cache:'no-store'});
+    const res=await apiFetch(`${API}/api/aset/${id}`,{cache:'no-store'});
     const json=await res.json();
     const a=json.data;
     document.getElementById('detail-body').innerHTML=`
@@ -877,7 +874,7 @@ async function loadLampu(){
   if(!detailAsetId)return;
   document.getElementById('lampu-list').innerHTML='<div class="loading">🔄 Memuat...</div>';
   try{
-    const res=await fetch(`${API}/api/aset/${detailAsetId}/lampu`,{headers:HN(),cache:'no-store'});
+    const res=await apiFetch(`${API}/api/aset/${detailAsetId}/lampu`,{cache:'no-store'});
     const json=await res.json();
     const data=json.data||[];
     if(!data.length){
@@ -901,7 +898,7 @@ async function loadPemeliharaanAset(){
   document.getElementById('pemeliharaan-list').innerHTML='<div class="loading">🔄 Memuat...</div>';
   document.getElementById('link-lihat-semua-pw').setAttribute('href',`pemeliharaan.html?aset=${detailAsetId}`);
   try{
-    const res=await fetch(`${API}/api/pemeliharaan?id_aset=${detailAsetId}&per_page=50`,{headers:HN(),cache:'no-store'});
+    const res=await apiFetch(`${API}/api/pemeliharaan?id_aset=${detailAsetId}&per_page=50`,{cache:'no-store'});
     const json=await res.json();
     const data=json.data||[];
     if(!data.length){
@@ -924,7 +921,7 @@ async function loadPemeliharaanAset(){
 async function bukaDetailLaluEdit(id){
   detailAsetId=id;
   try{
-    const res=await fetch(`${API}/api/aset/${id}`,{headers:HN(),cache:'no-store'});
+    const res=await apiFetch(`${API}/api/aset/${id}`,{cache:'no-store'});
     const json=await res.json();
     _isiFormEdit(json.data);
     document.getElementById('modal-edit').classList.add('show');
@@ -934,7 +931,7 @@ async function bukaDetailLaluEdit(id){
 async function bukaModalEdit(){
   if(!detailAsetId)return;
   try{
-    const res=await fetch(`${API}/api/aset/${detailAsetId}`,{headers:HN(),cache:'no-store'});
+    const res=await apiFetch(`${API}/api/aset/${detailAsetId}`,{cache:'no-store'});
     const json=await res.json();
     _isiFormEdit(json.data);
     document.getElementById('modal-detail').classList.remove('show');
@@ -992,7 +989,7 @@ async function submitEditAset(){
     status:document.getElementById('e-status').value,
   };
   try{
-    const res=await fetch(`${API}/api/aset/${detailAsetId}`,{method:'PUT',headers:H(),body:JSON.stringify(body)});
+    const res=await apiFetch(`${API}/api/aset/${detailAsetId}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const json=await res.json();
     if(json.success){
       document.getElementById('modal-edit').classList.remove('show');
@@ -1007,7 +1004,7 @@ async function loadMutasi(){
   if(!detailAsetId)return;
   document.getElementById('mutasi-list').innerHTML='<div class="loading">🔄 Memuat...</div>';
   try{
-    const res=await fetch(`${API}/api/aset/${detailAsetId}/mutasi`,{headers:HN(),cache:'no-store'});
+    const res=await apiFetch(`${API}/api/aset/${detailAsetId}/mutasi`,{cache:'no-store'});
     const json=await res.json();
     const data=json.data||[];
     if(!data.length){document.getElementById('mutasi-list').innerHTML='<div class="loading">Belum ada riwayat mutasi.</div>';return;}
@@ -1034,7 +1031,7 @@ async function submitMutasi(){
     tanggal_mutasi:document.getElementById('m-tgl').value?new Date(document.getElementById('m-tgl').value).toISOString():null,
   };
   try{
-    const res=await fetch(`${API}/api/aset/${detailAsetId}/mutasi`,{method:'POST',headers:H(),body:JSON.stringify(body)});
+    const res=await apiFetch(`${API}/api/aset/${detailAsetId}/mutasi`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const json=await res.json();
     if(json.success){
       pijarToast('Mutasi berhasil dicatat!','success');
@@ -1050,7 +1047,7 @@ async function hapusAset(){
   const ok=await pijarConfirm('Hapus aset ini? Tindakan tidak bisa dibatalkan.','🗑️','Ya, Hapus','btn-danger');
   if(!ok)return;
   try{
-    const res=await fetch(`${API}/api/aset/${detailAsetId}`,{method:'DELETE',headers:H()});
+    const res=await apiFetch(`${API}/api/aset/${detailAsetId}`,{method:'DELETE'});
     const json=await res.json();
     if(json.success){
       document.getElementById('modal-detail').classList.remove('show');
@@ -1096,7 +1093,7 @@ async function fetchSuggest(){
   const kodeKat=selKat.options[selKat.selectedIndex].dataset.kode;
   const kodeWil=selWil.options[selWil.selectedIndex].dataset.kode;
   try{
-    const res=await fetch(`${API}/api/aset/suggest-kode?kategori=${kodeKat}&wilayah=${kodeWil}&tahun=${tahun}`,{headers:HN()});
+    const res=await apiFetch(`${API}/api/aset/suggest-kode?kategori=${kodeKat}&wilayah=${kodeWil}&tahun=${tahun}`);
     const json=await res.json();
     if(json.success){suggestKode=json.suggest;document.getElementById('kode-hint').textContent=`💡 Saran: ${suggestKode} (klik untuk pakai)`;}
   }catch(e){}
@@ -1110,7 +1107,7 @@ async function cekKodeAset(){
     const kode=document.getElementById('t-kode-aset').value.trim();
     if(kode.length<8)return;
     try{
-      const res=await fetch(`${API}/api/aset/cek-kode?kode=${encodeURIComponent(kode)}`,{headers:HN()});
+      const res=await apiFetch(`${API}/api/aset/cek-kode?kode=${encodeURIComponent(kode)}`);
       const json=await res.json();
       document.getElementById('kode-hint').textContent=json.tersedia?'✅ Kode tersedia':'⛔ '+json.pesan+(json.dipakai_oleh?' ('+json.dipakai_oleh+')':'');
     }catch(e){}
@@ -1141,7 +1138,7 @@ async function submitTambahAset(){
   };
   if(!body.kode_aset||!body.alamat||isNaN(body.lat)||isNaN(body.lng)){pijarToast('Lengkapi field wajib: Kode Aset, Alamat, Lat, Lng!','error');return;}
   try{
-    const res=await fetch(`${API}/api/aset`,{method:'POST',headers:H(),body:JSON.stringify(body)});
+    const res=await apiFetch(`${API}/api/aset`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const json=await res.json();
     if(json.success){
       document.getElementById('modal-tambah').classList.remove('show');

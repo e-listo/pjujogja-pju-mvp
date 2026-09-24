@@ -207,8 +207,6 @@
 
 <script>
 const API='https://api.pjujogja.id';
-const TOKEN=()=>localStorage.getItem('pijar_token');
-const HN=()=>({'Authorization':'Bearer '+TOKEN()});
 const bS={'Dalam Pengerjaan':'badge-kuning','Selesai':'badge-hijau'};
 
 let dataHalamanIni=[];
@@ -250,7 +248,7 @@ function hapusFilterAset(){
 // ===== Load daftar tim (endpoint /api/regu) untuk dropdown filter & form tambah =====
 async function loadRegu(){
   try{
-    const res=await fetch(`${API}/api/regu`,{headers:HN()});
+    const res=await apiFetch(`${API}/api/regu`);
     const json=await res.json();
     daftarRegu=json.data||[];
     const optFilter=daftarRegu.map(r=>`<option value="${r.id_regu}">${r.nama_regu}</option>`).join('');
@@ -271,7 +269,7 @@ async function loadPemeliharaan(page=1){
   if(status)url+=`&status=${encodeURIComponent(status)}`;
   if(filterAsetId)url+=`&id_aset=${filterAsetId}`;
   try{
-    const res=await fetch(url,{headers:HN(),cache:'no-store'});
+    const res=await apiFetch(url,{cache:'no-store'});
     if(res.status===401){window.location='/login.html';return;}
     const json=await res.json();
     dataHalamanIni=json.data||[];
@@ -379,7 +377,7 @@ async function simpanStatusPw(){
   const foto=document.getElementById('d-foto-sesudah').files[0];
   if(foto)fd.append('foto_sesudah',foto);
   try{
-    const res=await fetch(`${API}/api/pemeliharaan/${detailPw.id_pemeliharaan}/status`,{method:'PATCH',headers:HN(),body:fd});
+    const res=await apiFetch(`${API}/api/pemeliharaan/${detailPw.id_pemeliharaan}/status`,{method:'PATCH',body:fd});
     const json=await res.json();
     if(json.success){
       pijarToast('Status pekerjaan berhasil diperbarui','success');
@@ -402,7 +400,7 @@ async function isiOtomatisAset(){
   const idAset=document.getElementById('t-id-aset').value;
   if(!idAset)return;
   try{
-    const res=await fetch(`${API}/api/aset/${idAset}`,{headers:HN()});
+    const res=await apiFetch(`${API}/api/aset/${idAset}`);
     const json=await res.json();
     if(json.success){
       document.getElementById('t-kode-aset').value=json.data.kode_aset||'';
@@ -433,7 +431,7 @@ async function submitTambahPw(){
   const foto=document.getElementById('t-foto-sebelum').files[0];
   if(foto)fd.append('foto_sebelum',foto);
   try{
-    const res=await fetch(`${API}/api/pemeliharaan`,{method:'POST',headers:HN(),body:fd});
+    const res=await apiFetch(`${API}/api/pemeliharaan`,{method:'POST',body:fd});
     const json=await res.json();
     if(json.success){
       pijarToast('Pekerjaan pemeliharaan berhasil dicatat','success');
@@ -468,7 +466,7 @@ async function cekDeepLink(){
     filterAsetId=parseInt(aset);
     let kode=filterAsetId;
     try{
-      const res=await fetch(`${API}/api/aset/${filterAsetId}`,{headers:HN()});
+      const res=await apiFetch(`${API}/api/aset/${filterAsetId}`);
       const json=await res.json();
       if(json.success)kode=json.data.kode_aset;
     }catch(e){}
