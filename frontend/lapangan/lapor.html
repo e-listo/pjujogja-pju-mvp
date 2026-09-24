@@ -155,6 +155,7 @@
   </style>
 </head>
 <body>
+<script src="../js/auth.js"></script>
 <script src="../js/sidebar.js?v=20260826" data-page="form-laporan"></script>
 
 <div id="alert-sukses" class="alert sukses">
@@ -228,7 +229,7 @@ const API = 'https://api.pjujogja.id';
 
 async function loadAset() {
   try {
-    const res = await fetch(`${API}/api/aset`);
+    const res = await apiFetch(`${API}/api/aset`);
     const json = await res.json();
     const sel = document.getElementById('id_aset');
     (json.data || []).forEach(a => {
@@ -266,7 +267,7 @@ document.getElementById('form-lapor').addEventListener('submit', async function(
   const formData = new FormData(this);
 
   try {
-    const res = await fetch(`${API}/api/laporan-kerusakan`, {
+    const res = await apiFetch(`${API}/api/laporan-kerusakan`, {
       method: 'POST',
       body: formData
     });
