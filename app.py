@@ -501,7 +501,7 @@ def create_app():
             return jsonify({"success": False, "error": str(e)}), 400
 
     @app.route("/api/laporan/<int:id_laporan>/status", methods=["PATCH"])
-    @role_required("koordinator", "admin")
+    @role_required("regu", "koordinator", "admin")
     def update_status_laporan(id_laporan):
         laporan = LaporanKerja.query.get(id_laporan)
         if not laporan:
