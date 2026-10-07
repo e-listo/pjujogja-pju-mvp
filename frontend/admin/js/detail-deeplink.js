@@ -24,7 +24,7 @@
 
 // Muat modal bulk import setelah halaman aset selesai diinisialisasi.
 (function(){
-  var sumber = new URL('aset-bulk.js?v=20261007', document.currentScript.src).href;
+  var sumber = new URL('aset-bulk.js?v=20261007b', document.currentScript.src).href;
   function muatBulk(){
     if(!document.querySelector('.topbar-actions')) return;
     if(document.querySelector('script[data-pijar-bulk]')) return;

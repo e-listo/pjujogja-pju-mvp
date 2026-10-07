@@ -19,16 +19,17 @@ test.beforeEach(async({page,request},info)=>{
  });
  await page.goto('/test-ui/aset.html');
 });
-async function open(page){await page.locator('#bulk-import-open').click();await expect(page.locator('dialog')).toBeVisible();}
+async function open(page){await page.locator('#bulk-import-open').click();await expect(page.locator('#modal-bulk')).toBeVisible();}
 async function upload(page,lat='-7.8'){await page.locator('#bulk-file').setInputFiles({name:'uji.csv',mimeType:'text/csv',buffer:csv(lat)});}
 async function preview(page){await page.locator('#bulk-preview').click();await expect(page.locator('#bulk-save')).toBeEnabled();}
 async function count(request){const r=await request.get(BASE+'/api/aset?q='+CODE,{headers:auth});expect(r.ok()).toBeTruthy();return (await r.json()).data.filter(x=>x.kode_aset===CODE).length;}
 
-test('modal terbuka',async({page})=>{await open(page);await expect(page.locator('#bulk-save')).toBeDisabled();});
+test('modal terbuka',async({page})=>{await open(page);await expect(page.locator('#bulk-save')).toBeDisabled();await expect(page.locator('#bulk-preview')).toBeDisabled();});
+test('modal tertutup dengan tombol Tutup',async({page})=>{await open(page);await page.locator('#bulk-close').click();await expect(page.locator('#modal-bulk')).toBeHidden();});
 test('unduh template Excel',async({page})=>{await open(page);const pending=page.waitForEvent('download');await page.locator('#bulk-xlsx').click();const d=await pending;expect(d.suggestedFilename()).toMatch(/\.xlsx$/);expect(await d.failure()).toBeNull();});
 test('unduh template CSV',async({page})=>{await open(page);const pending=page.waitForEvent('download');await page.locator('#bulk-csv').click();const d=await pending;expect(d.suggestedFilename()).toMatch(/\.csv$/);expect(await d.failure()).toBeNull();});
-test('preview dan simpan',async({page,request})=>{await open(page);await upload(page);await preview(page);expect(await count(request)).toBe(0);page.once('dialog',d=>d.accept());await page.locator('#bulk-save').click();await expect(page.locator('#bulk-status')).toContainText('Berhasil: 1 aset');expect(await count(request)).toBe(1);});
-test('ganti berkas membatalkan preview',async({page})=>{await open(page);await upload(page);await preview(page);await upload(page,'-7.81');await expect(page.locator('#bulk-save')).toBeDisabled();});
+test('preview dan simpan',async({page,request})=>{await open(page);await upload(page);await preview(page);await expect(page.locator('#bulk-result table')).toHaveCount(1);expect(await count(request)).toBe(0);await page.locator('#bulk-save').click();await expect(page.locator('#modal-konfirmasi')).toBeVisible();await page.locator('#konfirm-ok').click();await expect(page.locator('#bulk-status')).toContainText('Berhasil: 1 aset');expect(await count(request)).toBe(1);});
+test('ganti berkas membatalkan preview',async({page})=>{await open(page);await upload(page);await preview(page);await upload(page,'-7.81');await expect(page.locator('#bulk-save')).toBeDisabled();await expect(page.locator('#bulk-result table')).toHaveCount(0);});
 test('koordinat salah ditolak',async({page,request})=>{await open(page);await upload(page,'100');await page.locator('#bulk-preview').click();await expect(page.locator('#bulk-status')).toContainText('Data_Aset baris');await expect(page.locator('#bulk-save')).toBeDisabled();expect(await count(request)).toBe(0);});
-test('batal konfirmasi tidak menyimpan',async({page,request})=>{await open(page);await upload(page);await preview(page);page.once('dialog',d=>d.dismiss());await page.locator('#bulk-save').click();expect(await count(request)).toBe(0);});
+test('batal konfirmasi tidak menyimpan',async({page,request})=>{await open(page);await upload(page);await preview(page);await page.locator('#bulk-save').click();await expect(page.locator('#modal-konfirmasi')).toBeVisible();await page.locator('#konfirm-batal').click();await expect(page.locator('#modal-konfirmasi')).toBeHidden();expect(await count(request)).toBe(0);await expect(page.locator('#bulk-save')).toBeEnabled();});
 test('teknisi tidak melihat tombol',async({page})=>{await expect(page.locator('script[data-pijar-bulk]')).toHaveCount(1);await page.waitForFunction(()=>performance.getEntriesByType('resource').some(r=>r.name.includes('/aset-bulk.js')));await page.evaluate(()=>new Promise(resolve=>setTimeout(resolve,100)));await expect(page.locator('#bulk-import-open')).toHaveCount(0);});
