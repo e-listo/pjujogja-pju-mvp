@@ -21,3 +21,21 @@
     document.addEventListener('DOMContentLoaded', jalankan);
   }
 })();
+
+// Muat modal bulk import setelah halaman aset selesai diinisialisasi.
+(function(){
+  var sumber = new URL('aset-bulk.js?v=20261007', document.currentScript.src).href;
+  function muatBulk(){
+    if(!document.querySelector('.topbar-actions')) return;
+    if(document.querySelector('script[data-pijar-bulk]')) return;
+    var script = document.createElement('script');
+    script.src = sumber;
+    script.dataset.pijarBulk = '1';
+    document.body.appendChild(script);
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', muatBulk);
+  } else {
+    muatBulk();
+  }
+})();
