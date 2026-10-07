@@ -46,12 +46,12 @@ jobs:
       - name: Install dependencies
         run: python -m pip install -r requirements.txt
       - name: Check syntax
-        run: python -m compileall -q models.py aset_bulk_service.py tests/test_aset_bulk_service.py
-      - name: Run validation and MariaDB transaction tests
+        run: python -m compileall -q models.py auth_routes.py aset_bulk_service.py aset_bulk_routes.py tests
+      - name: Run validation, MariaDB and HTTP JWT tests
         shell: bash
         run: |
           set -o pipefail
-          python -m unittest discover -s tests -p test_aset_bulk_service.py -v 2>&1 | tee bulk-import-tests.log
+          python -m unittest discover -s tests -p 'test_aset_bulk*.py' -v 2>&1 | tee bulk-import-tests.log
       - name: Upload test log
         if: always()
         uses: actions/upload-artifact@v4
