@@ -5,3 +5,8 @@ import sys, os
 sys.path.insert(0, os.path.dirname(__file__))
 
 from app import app as application  # noqa
+
+from aset_bulk_routes import bp as aset_bulk_bp
+
+if aset_bulk_bp.name not in application.blueprints:
+    application.register_blueprint(aset_bulk_bp)
