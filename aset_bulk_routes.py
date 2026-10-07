@@ -2,7 +2,7 @@ import csv
 import io
 import hashlib
 import zipfile
-from flask import Blueprint, request, jsonify, send_file, current_app
+from flask import Blueprint, request, jsonify, Response, current_app
 from openpyxl import Workbook
 from sqlalchemy.exc import IntegrityError
 from models import db, AsetPJU, KategoriPJU, Wilayah
@@ -12,6 +12,10 @@ from aset_bulk_service import ASSET, LAMP, BatchError, read_file, validate, pers
 # Blueprint belum didaftarkan pada app.py utama.
 bp=Blueprint('aset_bulk',__name__)
 MAX_FILE=4*1024*1024
+
+def attachment(data,filename,mimetype):
+    # Kirim byte langsung; send_file(BytesIO) gagal (fileno) pada pembungkus berkas LiteSpeed.
+    return Response(data,mimetype=mimetype,headers={'Content-Disposition':f'attachment; filename="{filename}"','Content-Length':str(len(data)),'Cache-Control':'no-store'})
 
 def prepare():
     f=request.files.get('file')
@@ -57,7 +61,7 @@ def template():
     fmt=request.args.get('format','xlsx')
     if fmt=='csv':
         s=io.StringIO();csv.writer(s).writerow(ASSET)
-        return send_file(io.BytesIO(s.getvalue().encode('utf-8-sig')),download_name='template_aset.csv',as_attachment=True,mimetype='text/csv')
+        return attachment(s.getvalue().encode('utf-8-sig'),'template_aset.csv','text/csv')
     if fmt!='xlsx':raise BatchError('Format tidak didukung')
     w=Workbook();w.active.title='Data_Aset';w.active.append(ASSET);w.create_sheet('Data_Lampu').append(LAMP)
     refs=w.create_sheet('Referensi');refs.append(['kode_kategori','nama'])
@@ -71,5 +75,5 @@ def template():
     g=w.create_sheet('Panduan')
     for text in ['Satu baris satu aset; satu baris satu lampu. Hubungkan melalui kode_aset.','CSV hanya aset; Excel dua sheet. Sheet lampu boleh kosong.','Maksimum 4 MB sementara, 1000 baris total. Formula dilarang.','Status dan kategori jalan wajib; kategori dan wilayah harus sesuai master.']:
         g.append([text])
-    b=io.BytesIO();w.save(b);b.seek(0)
-    return send_file(b,download_name='template_import_pijar.xlsx',as_attachment=True,mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    b=io.BytesIO();w.save(b)
+    return attachment(b.getvalue(),'template_import_pijar.xlsx','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
