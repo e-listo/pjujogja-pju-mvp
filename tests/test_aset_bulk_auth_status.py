@@ -39,6 +39,11 @@ class AuthStatusAktifTests(unittest.TestCase):
         def khusus_admin():
             return jsonify(ok=True)
 
+        @app.route("/uji/khusus-regu")
+        @role_required("regu")
+        def khusus_regu():
+            return jsonify(ok=True)
+
         self.app = app
         self.ctx = app.app_context()
         self.ctx.push()
@@ -127,6 +132,12 @@ class AuthStatusAktifTests(unittest.TestCase):
         )
         resp = self.client.get("/uji/khusus-admin", headers=header)
         self.assertEqual(resp.status_code, 403)
+
+    def test_peran_regu_di_kode_berarti_teknisi(self):
+        teknisi = self._akun("lapangan", peran="teknisi")
+        koordinator = self._akun("kantor", peran="koordinator")
+        self.assertEqual(self.client.get("/uji/khusus-regu", headers=self._header(teknisi)).status_code, 200)
+        self.assertEqual(self.client.get("/uji/khusus-regu", headers=self._header(koordinator)).status_code, 403)
 
 
 if __name__ == "__main__":

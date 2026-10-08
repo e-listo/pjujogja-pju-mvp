@@ -24,6 +24,7 @@ class HTTPTests(unittest.TestCase):
             db.session.add(Pengguna(nama_lengkap=role,username=role,password_hash=generate_password_hash('ci-only'),peran=role,status_aktif=True))
         db.session.add(KategoriPJU(id=1,kode='PJUP',nama='Uji',aktif=True));db.session.add(Wilayah(id_wilayah=1,kode_wilayah='UH2',nama_kelurahan='Uji',nama_kemantren='Uji'));db.session.commit()
         self.client=self.app.test_client()
+        self._xlsx=None
     def cleanup(self):
         self.db.session.rollback();self.db.session.remove();self.db.drop_all();self.ctx.pop()
     def headers(self,role='admin'):
@@ -35,6 +36,12 @@ class HTTPTests(unittest.TestCase):
         self.assertEqual(r.status_code,200)
         return {'Authorization':'Bearer '+r.get_json()['token']}
     def data(self):
+        # Dibuat sekali per tes: openpyxl menyimpan waktu pembuatan (detik) di dalam berkas,
+        # sehingga berkas yang dibuat ulang bisa berbeda byte dan hash pratinjau tidak cocok saat commit.
+        if self._xlsx is None:
+            self._xlsx=self.bangun_xlsx()
+        return self._xlsx
+    def bangun_xlsx(self):
         from aset_bulk_service import ASSET,LAMP
         w=Workbook();w.active.title='Data_Aset';w.active.append(ASSET)
         w.active.append(['PJUP-UH2-26-001','PJUP','UH2','Sektor 1',2026,'Uji',-7.8,110.37,'Jalan Kota','','Besi',8,'Menyala'])

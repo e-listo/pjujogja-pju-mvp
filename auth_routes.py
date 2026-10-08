@@ -136,7 +136,15 @@ def jwt_required(f):
 
 
 def role_required(*roles):
-    """Decorator — batasi akses berdasarkan peran."""
+    """
+    Decorator — batasi akses berdasarkan peran.
+
+    Peran "regu" yang dipakai di app.py bukan nilai sah kolom Pengguna.peran
+    (enum: admin, koordinator, teknisi). Regu pelaksana lapangan adalah akun
+    "teknisi", jadi "regu" dipetakan ke "teknisi" di sini.
+    """
+    roles = tuple("teknisi" if r == "regu" else r for r in roles)
+
     def decorator(f):
         @wraps(f)
         @jwt_required
