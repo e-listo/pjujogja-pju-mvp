@@ -54,18 +54,22 @@ def read_file(data, filename):
     finally:
         w.close()
 
-def number(v, low, high, integer=False, places=None):
+def number(v, low, high, integer=False, places=None, label='Angka'):
     if v == '':
         return None
     try:
         d = Decimal(v.replace(',', '.'))
-        if not d.is_finite() or not low <= d <= high or (integer and d != d.to_integral_value()):
-            raise ValueError()
-        if places is not None and d != d.quantize(Decimal(1).scaleb(-places)):
-            raise ValueError()
-        return int(d) if integer else d
-    except (InvalidOperation, ValueError):
-        raise BatchError('Angka tidak valid')
+    except InvalidOperation:
+        raise BatchError(f'{label} bukan angka')
+    if not d.is_finite():
+        raise BatchError(f'{label} bukan angka')
+    if not low <= d <= high:
+        raise BatchError(f'{label} harus antara {low} dan {high}')
+    if integer and d != d.to_integral_value():
+        raise BatchError(f'{label} harus bilangan bulat')
+    if places is not None and d != d.quantize(Decimal(1).scaleb(-places)):
+        raise BatchError(f'{label} maksimum {places} angka desimal')
+    return int(d) if integer else d
 
 def validate(assets, lamps, categories, regions, existing):
     if not assets or len(assets) + len(lamps) > 1000:
@@ -99,13 +103,13 @@ def validate(assets, lamps, categories, regions, existing):
                 raise BatchError('Subkategori hanya untuk Lainnya')
             if len(r['jenis_tiang']) > 50:
                 raise BatchError('Jenis tiang terlalu panjang')
-            lat = number(r['lat'], -90, 90, places=8); lng = number(r['lng'], -180, 180, places=8)
+            lat = number(r['lat'], -90, 90, places=8, label='lat'); lng = number(r['lng'], -180, 180, places=8, label='lng')
             if lat is None or lng is None:
                 raise BatchError('Koordinat wajib')
-            year = number(r['tahun_pemasangan'], 1901, 2155, True)
+            year = number(r['tahun_pemasangan'], 1901, 2155, True, label='tahun_pemasangan')
             if year is not None and str(year)[-2:].zfill(2) != c.split('-')[2]:
                 raise BatchError('Tahun tidak sesuai kode')
-            output.append(dict(kode_aset=c, id_kategori=categories[k], id_wilayah=regions[w], alamat=r['alamat'], sektor=r['sektor'] or None, tahun_pemasangan=year, lokasi_lat=lat, lokasi_lng=lng, kategori_jalan=r['kategori_jalan'], sub_kategori_lainnya=sub or None, jenis_tiang=r['jenis_tiang'] or None, tinggi_meter=number(r['tinggi_meter'], Decimal('0.1'), Decimal('999.9'), places=1), status=r['status']))
+            output.append(dict(kode_aset=c, id_kategori=categories[k], id_wilayah=regions[w], alamat=r['alamat'], sektor=r['sektor'] or None, tahun_pemasangan=year, lokasi_lat=lat, lokasi_lng=lng, kategori_jalan=r['kategori_jalan'], sub_kategori_lainnya=sub or None, jenis_tiang=r['jenis_tiang'] or None, tinggi_meter=number(r['tinggi_meter'], Decimal('0.1'), Decimal('999.9'), places=1, label='tinggi_meter'), status=r['status']))
         except BatchError as e:
             raise BatchError(f'Data_Aset baris {line}: {e}') from e
     for line, r in lamps:
@@ -120,7 +124,7 @@ def validate(assets, lamps, categories, regions, existing):
                 raise BatchError('Jenis lampu wajib')
             if len(kind) > 50 or len(r['merk']) > 100:
                 raise BatchError('Jenis maksimum 50 dan merek maksimum 100 karakter')
-            lights.append(dict(kode_aset=c, jenis_lampu=kind, merk=r['merk'] or None, daya_watt=number(r['daya_watt'], 1, 32767, True), tahun_pasang=number(r['tahun_pasang'], 1901, 2155, True), status_lampu=r['status_lampu']))
+            lights.append(dict(kode_aset=c, jenis_lampu=kind, merk=r['merk'] or None, daya_watt=number(r['daya_watt'], 1, 32767, True, label='daya_watt'), tahun_pasang=number(r['tahun_pasang'], 1901, 2155, True, label='tahun_pasang'), status_lampu=r['status_lampu']))
         except BatchError as e:
             raise BatchError(f'Data_Lampu baris {line}: {e}') from e
     return output, lights
