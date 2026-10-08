@@ -8,21 +8,27 @@ from openpyxl import load_workbook
 
 ASSET = 'kode_aset kode_kategori kode_wilayah sektor tahun_pemasangan alamat lat lng kategori_jalan sub_kategori_lainnya jenis_tiang tinggi_meter status'.split()
 LAMP = 'kode_aset jenis_lampu daya_watt merk tahun_pasang status_lampu'.split()
+ASSET_LEGACY = ASSET
+LAMP_LEGACY = LAMP
+ASSET_V2 = ASSET[:1] + ['nomor_urut'] + ASSET[1:]
+LAMP_V2 = ['kode_aset', 'nomor_urut', 'kode_kategori', 'kode_wilayah', 'tahun_pemasangan'] + LAMP[1:]
+CODE = re.compile(r'([A-Z]{3,6})-([A-Z]{2}[0-9])-([0-9]{2})-([0-9]{3,4})')
 
 class BatchError(ValueError):
     pass
 
-def rows(values, headers):
+def rows(values, headers, legacy=None):
     it = iter(values)
-    if list(next(it, [])) != headers:
+    actual = list(next(it, []))
+    if actual != headers and (legacy is None or actual != legacy):
         raise BatchError('Header tidak sesuai template')
     result = []
     for line, raw in enumerate(it, 2):
         raw = list(raw)
-        if len(raw) > len(headers):
+        if len(raw) > len(actual):
             raise BatchError('Kolom tambahan tidak diizinkan')
-        raw += [None] * (len(headers) - len(raw))
-        r = {k: '' if v is None else str(v).strip() for k, v in zip(headers, raw)}
+        raw += [None] * (len(actual) - len(raw))
+        r = {k: '' if v is None else str(v).strip() for k, v in zip(actual, raw)}
         if any(r.values()):
             result.append((line, r))
         if len(result) > 1000:
@@ -30,10 +36,10 @@ def rows(values, headers):
     return result
 
 def read_file(data, filename):
-    if len(data) > 5 * 1024 * 1024:
-        raise BatchError('Maksimum file 5 MB')
+    if len(data) > 4 * 1024 * 1024:
+        raise BatchError('Maksimum file 4 MB')
     if filename.lower().endswith('.csv'):
-        return rows(csv.reader(io.StringIO(data.decode('utf-8-sig'))), ASSET), []
+        return rows(csv.reader(io.StringIO(data.decode('utf-8-sig'))), ASSET_V2, ASSET), []
     if not filename.lower().endswith('.xlsx'):
         raise BatchError('Gunakan XLSX atau CSV')
     with zipfile.ZipFile(io.BytesIO(data)) as z:
@@ -43,14 +49,14 @@ def read_file(data, filename):
     try:
         if not {'Data_Aset', 'Data_Lampu'}.issubset(w.sheetnames):
             raise BatchError('Dua sheet wajib tersedia')
-        for name, headers in [('Data_Aset', ASSET), ('Data_Lampu', LAMP)]:
+        for name, headers in [('Data_Aset', ASSET_V2), ('Data_Lampu', LAMP_V2)]:
             s = w[name]
             if s.max_row > 1001 or s.max_column > len(headers):
                 raise BatchError('Dimensi sheet melebihi batas')
             for row in s.iter_rows():
                 if any(c.data_type == 'f' for c in row):
                     raise BatchError('Formula tidak diizinkan')
-        return rows(w['Data_Aset'].values, ASSET), rows(w['Data_Lampu'].values, LAMP)
+        return rows(w['Data_Aset'].values, ASSET_V2, ASSET), rows(w['Data_Lampu'].values, LAMP_V2, LAMP)
     finally:
         w.close()
 
@@ -71,22 +77,83 @@ def number(v, low, high, integer=False, places=None, label='Angka'):
         raise BatchError(f'{label} maksimum {places} angka desimal')
     return int(d) if integer else d
 
+def code_identity(code):
+    m = CODE.fullmatch(code.upper())
+    if not m or not 1 <= int(m[4]) <= 9999:
+        raise BatchError('kode_aset harus seperti PJUP-PA1-26-0001; nomor 0001-9999')
+    return m[1], m[2], m[3], int(m[4])
+
+def code_variants(code):
+    k, w, y, n = code_identity(code)
+    return {f'{k}-{w}-{y}-{n:03d}', f'{k}-{w}-{y}-{n:04d}'}
+
+def resolve_code(r, asset=True):
+    c = r.get('kode_aset', '').strip().upper()
+    k = r.get('kode_kategori', '').strip().upper()
+    w = r.get('kode_wilayah', '').strip().upper()
+    raw_n = r.get('nomor_urut', '').strip()
+    raw_y = r.get('tahun_pemasangan', '').strip()
+    identity = code_identity(c) if c else None
+    n = None
+    if raw_n:
+        if not re.fullmatch(r'[0-9]{1,4}', raw_n):
+            raise BatchError('nomor_urut harus 1-4 digit, nilai 1-9999')
+        n = int(raw_n)
+        if not 1 <= n <= 9999:
+            raise BatchError('nomor_urut harus antara 1 dan 9999')
+    y = number(raw_y, 1901, 2155, True, label='tahun_pemasangan')
+    if c:
+        if (asset or k) and identity[0] != k:
+            raise BatchError('Kode tidak sesuai kategori')
+        if (asset or w) and identity[1] != w:
+            raise BatchError('Kode tidak sesuai wilayah')
+        if y is not None and identity[2] != f'{y % 100:02d}':
+            raise BatchError('Tahun tidak sesuai kode')
+        if n is not None and identity[3] != n:
+            raise BatchError('nomor_urut tidak sesuai kode_aset')
+        return c
+    if n is None or not k or not w or y is None:
+        raise BatchError('Isi kode_aset lengkap atau nomor_urut, kategori, wilayah, dan tahun_pemasangan')
+    c = f'{k}-{w}-{y % 100:02d}-{n:04d}'
+    code_identity(c)
+    return c
+
+def normalize_assets(assets):
+    result = []
+    for line, r in assets:
+        try:
+            r = dict(r)
+            r['kode_aset'] = resolve_code(r)
+            r['kode_kategori'] = r['kode_kategori'].upper()
+            r['kode_wilayah'] = r['kode_wilayah'].upper()
+            r['sektor'] = {str(n): f'Sektor {n}' for n in range(1, 5)}.get(r['sektor'], r['sektor'])
+            r['kategori_jalan'] = {'KOTA': 'Jalan Kota'}.get(r['kategori_jalan'], r['kategori_jalan'])
+            result.append((line, r))
+        except BatchError as e:
+            raise BatchError(f'Data_Aset baris {line}: {e}') from e
+    return result
+
 def validate(assets, lamps, categories, regions, existing):
     if not assets or len(assets) + len(lamps) > 1000:
         raise BatchError('Isi 1 sampai 1000 baris total')
-    output = []; lights = []; seen = set()
+    assets = normalize_assets(assets)
+    existing_ids = set()
+    for c in existing:
+        if c:
+            try:
+                existing_ids.add(code_identity(c))
+            except BatchError:
+                pass
+    output = []; lights = []; seen = {}
     for line, r in assets:
         try:
-            c = r['kode_aset'].upper(); k = r['kode_kategori'].upper(); w = r['kode_wilayah'].upper()
-            if not re.fullmatch(r'[A-Z]{3,6}-[A-Z]{2}\d-\d{2}-\d{3}', c):
-                raise BatchError('Format kode salah')
-            if c in seen or c in existing:
-                raise BatchError('Kode duplikat; tidak menimpa')
-            seen.add(c)
+            c = r['kode_aset']; k = r['kode_kategori']; w = r['kode_wilayah']
+            identity = code_identity(c)
+            if identity in seen or identity in existing_ids or c in existing:
+                raise BatchError('Kode duplikat; tidak menimpa (termasuk padanan 3/4 digit)')
+            seen[identity] = c
             if k not in categories or w not in regions:
                 raise BatchError('Master kategori aktif/wilayah tidak ditemukan')
-            if c.split('-')[:2] != [k, w]:
-                raise BatchError('Kode tidak sesuai kategori/wilayah')
             if not r['alamat'] or len(r['alamat']) > 255:
                 raise BatchError('Alamat wajib, maksimum 255 karakter')
             if r['sektor'] not in ('', 'Sektor 1', 'Sektor 2', 'Sektor 3', 'Sektor 4'):
@@ -107,16 +174,15 @@ def validate(assets, lamps, categories, regions, existing):
             if lat is None or lng is None:
                 raise BatchError('Koordinat wajib')
             year = number(r['tahun_pemasangan'], 1901, 2155, True, label='tahun_pemasangan')
-            if year is not None and str(year)[-2:].zfill(2) != c.split('-')[2]:
-                raise BatchError('Tahun tidak sesuai kode')
             output.append(dict(kode_aset=c, id_kategori=categories[k], id_wilayah=regions[w], alamat=r['alamat'], sektor=r['sektor'] or None, tahun_pemasangan=year, lokasi_lat=lat, lokasi_lng=lng, kategori_jalan=r['kategori_jalan'], sub_kategori_lainnya=sub or None, jenis_tiang=r['jenis_tiang'] or None, tinggi_meter=number(r['tinggi_meter'], Decimal('0.1'), Decimal('999.9'), places=1, label='tinggi_meter'), status=r['status']))
         except BatchError as e:
             raise BatchError(f'Data_Aset baris {line}: {e}') from e
     for line, r in lamps:
         try:
-            c = r['kode_aset'].upper()
-            if c not in seen:
+            identity = code_identity(resolve_code(r, asset=False))
+            if identity not in seen:
                 raise BatchError('Lampu tidak terhubung ke aset batch ini')
+            c = seen[identity]
             if r['status_lampu'] not in ('Menyala', 'Mati', 'Redup', 'Rusak'):
                 raise BatchError('Status lampu salah')
             kind = r['jenis_lampu'].strip()
