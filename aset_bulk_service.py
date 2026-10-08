@@ -77,7 +77,7 @@ def validate(assets, lamps, categories, regions, existing):
     output = []; lights = []; seen = set()
     for line, r in assets:
         try:
-            c = r['kode_aset'].upper(); k = r['kode_kategori'].upper();w = r['kode_wilayah'].upper()
+            c = r['kode_aset'].upper(); k = r['kode_kategori'].upper(); w = r['kode_wilayah'].upper()
             if not re.fullmatch(r'[A-Z]{3,6}-[A-Z]{2}\d-\d{2}-\d{3}', c):
                 raise BatchError('Format kode salah')
             if c in seen or c in existing:
@@ -109,7 +109,7 @@ def validate(assets, lamps, categories, regions, existing):
             year = number(r['tahun_pemasangan'], 1901, 2155, True, label='tahun_pemasangan')
             if year is not None and str(year)[-2:].zfill(2) != c.split('-')[2]:
                 raise BatchError('Tahun tidak sesuai kode')
-            output.append(dict(kode_aset=c, id_kategori=categories[k], id_wilayah=regions[w], alamat=r['alamat'], sektor=r['sektor'] or None, tahun_pemasangan=year, lokasi_lat=lat, lokasi_lng=lng, kategori_jalan=r['kategori_jalan'], sub_kategori_lainnya=sub or None, jenis_tiang=r['jenis_tiang'] or None, tinggi_meter=number(r['tinggi_meter'], Decimal('0.1'),Decimal('999.9'), places=1, label='tinggi_meter'), status=r['status']))
+            output.append(dict(kode_aset=c, id_kategori=categories[k], id_wilayah=regions[w], alamat=r['alamat'], sektor=r['sektor'] or None, tahun_pemasangan=year, lokasi_lat=lat, lokasi_lng=lng, kategori_jalan=r['kategori_jalan'], sub_kategori_lainnya=sub or None, jenis_tiang=r['jenis_tiang'] or None, tinggi_meter=number(r['tinggi_meter'], Decimal('0.1'), Decimal('999.9'), places=1, label='tinggi_meter'), status=r['status']))
         except BatchError as e:
             raise BatchError(f'Data_Aset baris {line}: {e}') from e
     for line, r in lamps:
