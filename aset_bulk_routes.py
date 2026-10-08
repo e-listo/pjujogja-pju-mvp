@@ -7,7 +7,7 @@ from openpyxl import Workbook
 from sqlalchemy.exc import IntegrityError
 from models import db, AsetPJU, KategoriPJU, Wilayah
 from auth_routes import role_required
-from aset_bulk_service import ASSET, LAMP, BatchError, read_file, validate, persist, normalize_assets, code_variants
+from aset_bulk_service import ASSET_V2 as ASSET, LAMP_V2 as LAMP, BatchError, read_file, validate, persist, normalize_assets, code_variants
 
 bp = Blueprint('aset_bulk', __name__)
 MAX_FILE = 4 * 1024 * 1024

@@ -6,10 +6,12 @@ import zipfile
 from decimal import Decimal, InvalidOperation
 from openpyxl import load_workbook
 
-ASSET_LEGACY = 'kode_aset kode_kategori kode_wilayah sektor tahun_pemasangan alamat lat lng kategori_jalan sub_kategori_lainnya jenis_tiang tinggi_meter status'.split()
-LAMP_LEGACY = 'kode_aset jenis_lampu daya_watt merk tahun_pasang status_lampu'.split()
-ASSET = ASSET_LEGACY[:1] + ['nomor_urut'] + ASSET_LEGACY[1:]
-LAMP = ['kode_aset', 'nomor_urut', 'kode_kategori', 'kode_wilayah', 'tahun_pemasangan'] + LAMP_LEGACY[1:]
+ASSET = 'kode_aset kode_kategori kode_wilayah sektor tahun_pemasangan alamat lat lng kategori_jalan sub_kategori_lainnya jenis_tiang tinggi_meter status'.split()
+LAMP = 'kode_aset jenis_lampu daya_watt merk tahun_pasang status_lampu'.split()
+ASSET_LEGACY = ASSET
+LAMP_LEGACY = LAMP
+ASSET_V2 = ASSET[:1] + ['nomor_urut'] + ASSET[1:]
+LAMP_V2 = ['kode_aset', 'nomor_urut', 'kode_kategori', 'kode_wilayah', 'tahun_pemasangan'] + LAMP[1:]
 CODE = re.compile(r'([A-Z]{3,6})-([A-Z]{2}[0-9])-([0-9]{2})-([0-9]{3,4})')
 
 class BatchError(ValueError):
@@ -37,7 +39,7 @@ def read_file(data, filename):
     if len(data) > 4 * 1024 * 1024:
         raise BatchError('Maksimum file 4 MB')
     if filename.lower().endswith('.csv'):
-        return rows(csv.reader(io.StringIO(data.decode('utf-8-sig'))), ASSET, ASSET_LEGACY), []
+        return rows(csv.reader(io.StringIO(data.decode('utf-8-sig'))), ASSET_V2, ASSET), []
     if not filename.lower().endswith('.xlsx'):
         raise BatchError('Gunakan XLSX atau CSV')
     with zipfile.ZipFile(io.BytesIO(data)) as z:
@@ -47,14 +49,14 @@ def read_file(data, filename):
     try:
         if not {'Data_Aset', 'Data_Lampu'}.issubset(w.sheetnames):
             raise BatchError('Dua sheet wajib tersedia')
-        for name, headers in [('Data_Aset', ASSET), ('Data_Lampu', LAMP)]:
+        for name, headers in [('Data_Aset', ASSET_V2), ('Data_Lampu', LAMP_V2)]:
             s = w[name]
             if s.max_row > 1001 or s.max_column > len(headers):
                 raise BatchError('Dimensi sheet melebihi batas')
             for row in s.iter_rows():
                 if any(c.data_type == 'f' for c in row):
                     raise BatchError('Formula tidak diizinkan')
-        return rows(w['Data_Aset'].values, ASSET, ASSET_LEGACY), rows(w['Data_Lampu'].values, LAMP, LAMP_LEGACY)
+        return rows(w['Data_Aset'].values, ASSET_V2, ASSET), rows(w['Data_Lampu'].values, LAMP_V2, LAMP)
     finally:
         w.close()
 
