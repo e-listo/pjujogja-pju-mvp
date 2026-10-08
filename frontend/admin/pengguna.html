@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pengguna - PIJAR</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#f1f5f9;color:#0f172a}
+.main{margin-left:224px;padding:20px 24px 40px}
+h1{font-size:1.35rem;margin:0 0 4px}
+.sub{color:#64748b;font-size:.85rem;margin:0 0 16px}
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+.toolbar input,.toolbar select{height:44px;padding:0 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:.95rem;background:#fff}
+.toolbar input{flex:1 1 220px;min-width:0}
+.btn{height:44px;padding:0 16px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;font-size:.9rem;font-weight:600;cursor:pointer;color:#0f172a}
+.btn-primary{background:#f97316;border-color:#f97316;color:#fff}
+.btn-danger{color:#b91c1c;border-color:#fca5a5}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid #e2e8f0;vertical-align:middle}
+th{background:#f8fafc;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;color:#64748b}
+.badge{display:inline-block;padding:2px 10px;border-radius:999px;font-size:.75rem;font-weight:700;text-transform:capitalize}
+.b-admin{background:#fee2e2;color:#991b1b}
+.b-koordinator{background:#dbeafe;color:#1e40af}
+.b-teknisi{background:#dcfce7;color:#166534}
+.b-aktif{background:#dcfce7;color:#166534}
+.b-nonaktif{background:#e2e8f0;color:#475569}
+.aksi{display:flex;gap:6px;flex-wrap:wrap}
+.aksi .btn{height:40px;padding:0 12px;font-size:.8rem}
+.pager{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px;font-size:.85rem;color:#475569}
+.kosong{padding:30px;text-align:center;color:#64748b;display:none}
+.modal-bg{position:fixed;inset:0;background:rgba(15,34,54,.55);display:none;align-items:center;justify-content:center;z-index:400;padding:12px}
+.modal-bg.show{display:flex}
+.modal{background:#fff;border-radius:14px;width:100%;max-width:460px;max-height:92vh;overflow:auto;padding:20px}
+.modal h2{margin:0 0 14px;font-size:1.1rem}
+.fg{margin-bottom:12px}
+.fg label{display:block;font-size:.8rem;font-weight:600;margin-bottom:4px;color:#334155}
+.fg input[type=text],.fg input[type=password],.fg select{width:100%;height:44px;padding:0 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:.95rem;background:#fff}
+.hint{font-size:.72rem;color:#64748b;margin-top:3px}
+.err{background:#fee2e2;color:#991b1b;border-radius:8px;padding:8px 12px;font-size:.85rem;margin-bottom:12px;display:none}
+.mfoot{display:flex;justify-content:flex-end;gap:8px;margin-top:6px}
+.toast{position:fixed;left:50%;bottom:80px;transform:translateX(-50%);background:#0f2236;color:#fff;padding:10px 18px;border-radius:8px;font-size:.9rem;z-index:500;display:none;max-width:90vw}
+@media (max-width:768px){
+.main{margin-left:0;padding:14px 12px 80px}
+table,thead,tbody,tr,td{display:block}
+thead{display:none}
+tr{padding:10px 12px;border-bottom:1px solid #e2e8f0}
+td{border:0;padding:3px 0}
+td[data-l]::before{content:attr(data-l) ": ";color:#64748b;font-size:.75rem}
+}
+</style>
+</head>
+<body>
+<script src="js/auth.js"></script>
+<script src="js/sidebar.js?v=20260903" data-page="pengguna"></script>
+
+<main class="main">
+<h1>Manajemen Pengguna</h1>
+<p class="sub">Kelola akun admin, koordinator, dan teknisi. Akun tidak dihapus, hanya dinonaktifkan.</p>
+<div class="toolbar">
+<input id="f-q" type="search" placeholder="Cari nama, username, atau no. HP">
+<select id="f-peran"><option value="">Semua peran</option><option value="admin">Admin</option><option value="koordinator">Koordinator</option><option value="teknisi">Teknisi</option></select>
+<select id="f-status"><option value="semua">Semua status</option><option value="aktif">Aktif</option><option value="nonaktif">Nonaktif</option></select>
+<button type="button" class="btn btn-primary" id="btn-tambah">+ Tambah Pengguna</button>
+</div>
+<div class="card">
+<table>
+<thead><tr><th>Nama</th><th>Username</th><th>Peran</th><th>Regu</th><th>No. HP</th><th>Status</th><th>Aksi</th></tr></thead>
+<tbody id="tbody"></tbody>
+</table>
+<div id="kosong" class="kosong">Tidak ada pengguna yang cocok.</div>
+<div class="pager">
+<button type="button" class="btn" id="btn-prev">Sebelumnya</button>
+<span id="pg-info"></span>
+<button type="button" class="btn" id="btn-next">Berikutnya</button>
+</div>
+</div>
+</main>
+
+<div class="modal-bg" id="m-form"><div class="modal" role="dialog" aria-modal="true">
+<h2 id="form-judul">Tambah Pengguna</h2>
+<div class="err" id="form-err"></div>
+<div class="fg"><label for="i-nama">Nama lengkap</label><input id="i-nama" type="text" maxlength="100" autocomplete="off"></div>
+<div class="fg"><label for="i-user">Username</label><input id="i-user" type="text" maxlength="50" autocomplete="off" autocapitalize="none"><div class="hint">3-50 karakter: huruf, angka, titik, garis bawah, atau minus.</div></div>
+<div class="fg"><label for="i-peran">Peran</label><select id="i-peran"><option value="teknisi">Teknisi</option><option value="koordinator">Koordinator</option><option value="admin">Admin</option></select><div class="hint" id="h-peran" style="display:none">Peran akun Anda sendiri tidak bisa diubah.</div></div>
+<div class="fg"><label for="i-regu">Regu</label><select id="i-regu"><option value="">Tanpa regu</option></select></div>
+<div class="fg"><label for="i-hp">No. HP (opsional)</label><input id="i-hp" type="text" inputmode="tel" maxlength="20" autocomplete="off"></div>
+<div class="fg" id="w-pass"><label for="i-pass">Password</label><input id="i-pass" type="password" autocomplete="new-password"><div class="hint">Minimal 8 karakter.</div></div>
+<div class="mfoot"><button type="button" class="btn" id="form-batal">Batal</button><button type="button" class="btn btn-primary" id="form-simpan">Simpan</button></div>
+</div></div>
+
+<div class="modal-bg" id="m-reset"><div class="modal" role="dialog" aria-modal="true">
+<h2 id="reset-judul">Reset Password</h2>
+<div class="err" id="reset-err"></div>
+<div class="fg"><label for="r-pass">Password baru</label><input id="r-pass" type="password" autocomplete="new-password"><div class="hint">Minimal 8 karakter. Sampaikan ke pemilik akun lewat jalur yang aman.</div></div>
+<div class="fg"><label for="r-pass2">Ulangi password baru</label><input id="r-pass2" type="password" autocomplete="new-password"></div>
+<div class="mfoot"><button type="button" class="btn" id="reset-batal">Batal</button><button type="button" class="btn btn-primary" id="reset-simpan">Ganti Password</button></div>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+'use strict';
+var API_URL = 'https://api.pjujogja.id';
+var U = window.PIJAR_USER || {};
+var myId = String(U.sub);
+
+function $(id) { return document.getElementById(id); }
+
+if (U.peran !== 'admin') {
+var m = document.querySelector('.main');
+m.textContent = 'Halaman ini hanya untuk admin.';
+return;
+}
+
+var page = 1, perPage = 20, items = [], meta = {}, reguList = [];
+var editing = null, resetting = null, timer = null, tt = null;
+
+function el(tag, attrs, kids) {
+var e = document.createElement(tag);
+Object.keys(attrs || {}).forEach(function (k) {
+if (k === 'text') e.textContent = attrs[k];
+else if (k === 'class') e.className = attrs[k];
+else if (k.slice(0, 2) === 'on') e.addEventListener(k.slice(2), attrs[k]);
+else e.setAttribute(k, attrs[k]);
+});
+(kids || []).forEach(function (c) { if (c) e.appendChild(c); });
+return e;
+}
+
+function toast(msg) {
+var t = $('toast');
+t.textContent = msg;
+t.style.display = 'block';
+clearTimeout(tt);
+tt = setTimeout(function () { t.style.display = 'none'; }, 3500);
+}
+
+async function api(path, method, body) {
+var opt = { method: method || 'GET', headers: {} };
+if (body !== undefined) {
+opt.headers['Content-Type'] = 'application/json';
+opt.body = JSON.stringify(body);
+}
+try {
+var res = await window.apiFetch(API_URL + path, opt);
+if (!res) return { ok: false, status: 401, json: { error: 'Sesi berakhir, silakan login ulang' } };
+var json = {};
+try { json = await res.json(); } catch (e) { json = {}; }
+return { ok: res.ok, status: res.status, json: json || {} };
+} catch (e) {
+return { ok: false, status: 0, json: { error: 'Tidak dapat terhubung ke server' } };
+}
+}
+
+function badge(text, cls) { return el('span', { 'class': 'badge ' + cls, text: text }); }
+
+function cell(label, child) {
+var c = el('td');
+if (label) c.setAttribute('data-l', label);
+c.appendChild(typeof child === 'string' ? document.createTextNode(child) : child);
+return c;
+}
+
+function pid(p) { return p.id_pengguna !== undefined ? p.id_pengguna : p.id; }
+
+function gambar() {
+var tb = $('tbody');
+tb.textContent = '';
+$('kosong').style.display = items.length ? 'none' : 'block';
+items.forEach(function (p) {
+var self = String(pid(p)) === myId;
+var aksi = el('div', { 'class': 'aksi' }, [
+el('button', { type: 'button', 'class': 'btn', text: 'Ubah', onclick: function () { bukaForm(p); } }),
+el('button', { type: 'button', 'class': 'btn', text: 'Reset PW', onclick: function () { bukaReset(p); } }),
+el('button', {
+type: 'button',
+'class': 'btn' + (p.status_aktif ? ' btn-danger' : ''),
+text: p.status_aktif ? 'Nonaktifkan' : 'Aktifkan',
+disabled: self ? 'disabled' : null,
+onclick: function () { ubahStatus(p); }
+})
+]);
+if (self) aksi.lastChild.removeAttribute('disabled'), aksi.lastChild.disabled = true;
+else aksi.lastChild.disabled = false;
+var tr = el('tr');
+tr.appendChild(cell('Nama', p.nama_lengkap + (self ? ' (Anda)' : '')));
+tr.appendChild(cell('Username', p.username));
+tr.appendChild(cell('Peran', badge(p.peran, 'b-' + p.peran)));
+tr.appendChild(cell('Regu', p.nama_regu || '-'));
+tr.appendChild(cell('No. HP', p.no_hp || '-'));
+tr.appendChild(cell('Status', badge(p.status_aktif ? 'aktif' : 'nonaktif', p.status_aktif ? 'b-aktif' : 'b-nonaktif')));
+tr.appendChild(cell('', aksi));
+tb.appendChild(tr);
+});
+var tp = meta.total_pages || 1;
+$('pg-info').textContent = 'Halaman ' + (meta.page || 1) + ' dari ' + tp + ' (' + (meta.total || 0) + ' akun)';
+$('btn-prev').disabled = (meta.page || 1) <= 1;
+$('btn-next').disabled = (meta.page || 1) >= tp;
+}
+
+async function muat() {
+var p = new URLSearchParams({ page: page, per_page: perPage, status: $('f-status').value });
+var q = $('f-q').value.trim();
+if (q) p.set('q', q);
+if ($('f-peran').value) p.set('peran', $('f-peran').value);
+var r = await api('/api/pengguna?' + p.toString());
+if (!r.ok) { toast(r.json.error || 'Gagal memuat daftar pengguna'); return; }
+items = r.json.data || [];
+meta = r.json.meta || {};
+gambar();
+}
+
+async function muatRegu() {
+var r = await api('/api/regu');
+if (!r.ok) return;
+reguList = r.json.data || [];
+var sel = $('i-regu');
+reguList.forEach(function (g) {
+sel.appendChild(el('option', { value: String(g.id_regu), text: g.nama_regu || ('Regu ' + g.id_regu) }));
+});
+}
+
+function tampilErr(id, msg) {
+var e = $(id);
+e.textContent = msg || '';
+e.style.display = msg ? 'block' : 'none';
+}
+
+function tutup(id) { $(id).classList.remove('show'); }
+
+function bukaForm(p) {
+editing = p || null;
+var self = p && String(pid(p)) === myId;
+$('form-judul').textContent = p ? 'Ubah Pengguna' : 'Tambah Pengguna';
+$('i-nama').value = p ? p.nama_lengkap : '';
+$('i-user').value = p ? p.username : '';
+$('i-peran').value = p ? p.peran : 'teknisi';
+$('i-peran').disabled = !!self;
+$('h-peran').style.display = self ? 'block' : 'none';
+$('i-regu').value = p && p.id_regu ? String(p.id_regu) : '';
+$('i-hp').value = p && p.no_hp ? p.no_hp : '';
+$('i-pass').value = '';
+$('w-pass').style.display = p ? 'none' : 'block';
+tampilErr('form-err', '');
+$('m-form').classList.add('show');
+$('i-nama').focus();
+}
+
+async function simpanForm() {
+var nama = $('i-nama').value.trim();
+var user = $('i-user').value.trim();
+if (!nama) { tampilErr('form-err', 'Nama lengkap wajib diisi'); return; }
+if (!/^[A-Za-z0-9._-]{3,50}$/.test(user)) { tampilErr('form-err', 'Username 3-50 karakter: huruf, angka, titik, garis bawah, atau minus'); return; }
+var body = {
+nama_lengkap: nama,
+username: user,
+no_hp: $('i-hp').value.trim(),
+id_regu: $('i-regu').value === '' ? null : Number($('i-regu').value)
+};
+if (!$('i-peran').disabled) body.peran = $('i-peran').value;
+if (!editing) {
+var pw = $('i-pass').value;
+if (pw.length < 8) { tampilErr('form-err', 'Password minimal 8 karakter'); return; }
+body.password = pw;
+}
+var btn = $('form-simpan');
+btn.disabled = true;
+var r = editing ? await api('/api/pengguna/' + pid(editing), 'PUT', body) : await api('/api/pengguna', 'POST', body);
+btn.disabled = false;
+if (!r.ok) { tampilErr('form-err', r.json.error || 'Gagal menyimpan'); return; }
+tutup('m-form');
+toast(editing ? 'Pengguna diperbarui' : 'Pengguna dibuat');
+muat();
+}
+
+async function ubahStatus(p) {
+var aksi = p.status_aktif ? 'Nonaktifkan' : 'Aktifkan';
+if (!window.confirm(aksi + ' akun ' + p.username + '?')) return;
+var r = await api('/api/pengguna/' + pid(p), 'PUT', { status_aktif: !p.status_aktif });
+if (!r.ok) { toast(r.json.error || 'Gagal mengubah status'); return; }
+toast('Akun ' + p.username + (p.status_aktif ? ' dinonaktifkan' : ' diaktifkan'));
+muat();
+}
+
+function bukaReset(p) {
+resetting = p;
+$('reset-judul').textContent = 'Reset Password: ' + p.username;
+$('r-pass').value = '';
+$('r-pass2').value = '';
+tampilErr('reset-err', '');
+$('m-reset').classList.add('show');
+$('r-pass').focus();
+}
+
+async function simpanReset() {
+var a = $('r-pass').value, b = $('r-pass2').value;
+if (a.length < 8) { tampilErr('reset-err', 'Password minimal 8 karakter'); return; }
+if (a !== b) { tampilErr('reset-err', 'Kedua password tidak sama'); return; }
+var btn = $('reset-simpan');
+btn.disabled = true;
+var r = await api('/api/pengguna/' + pid(resetting) + '/reset-password', 'POST', { password: a });
+btn.disabled = false;
+if (!r.ok) { tampilErr('reset-err', r.json.error || 'Gagal mengganti password'); return; }
+$('r-pass').value = '';
+$('r-pass2').value = '';
+tutup('m-reset');
+toast('Password ' + resetting.username + ' diganti');
+}
+
+$('btn-tambah').addEventListener('click', function () { bukaForm(null); });
+$('form-batal').addEventListener('click', function () { tutup('m-form'); });
+$('form-simpan').addEventListener('click', simpanForm);
+$('reset-batal').addEventListener('click', function () { tutup('m-reset'); });
+$('reset-simpan').addEventListener('click', simpanReset);
+$('btn-prev').addEventListener('click', function () { if (page > 1) { page--; muat(); } });
+$('btn-next').addEventListener('click', function () { page++; muat(); });
+$('f-peran').addEventListener('change', function () { page = 1; muat(); });
+$('f-status').addEventListener('change', function () { page = 1; muat(); });
+$('f-q').addEventListener('input', function () {
+clearTimeout(timer);
+timer = setTimeout(function () { page = 1; muat(); }, 350);
+});
+['m-form', 'm-reset'].forEach(function (id) {
+$(id).addEventListener('click', function (e) { if (e.target === $(id)) tutup(id); });
+});
+document.addEventListener('keydown', function (e) {
+if (e.key === 'Escape') { tutup('m-form'); tutup('m-reset'); }
+});
+
+muatRegu();
+muat();
+})();
+</script>
+</body>
+</html>
