@@ -13,7 +13,7 @@ from werkzeug.security import generate_password_hash
 from auth_routes import _buat_token, auth_bp, jwt_required, role_required
 from models import Pengguna, db
 
-SECRET = "rahasia-uji"
+SECRET = "ci-only-not-production-secret-123456789"
 
 
 class AuthStatusAktifTests(unittest.TestCase):
@@ -93,8 +93,11 @@ class AuthStatusAktifTests(unittest.TestCase):
     def test_akun_dihapus_ditolak(self):
         akun = self._akun("hapus")
         header = self._header(akun)
-        db.session.delete(akun)
+        tabel = Pengguna.__table__
+        # SQL langsung: db.session.delete() akan memuat relasi mutasi (tabel mutasi_aset tidak ada di SQLite uji)
+        db.session.execute(tabel.delete().where(tabel.c.id_pengguna == akun.id_pengguna))
         db.session.commit()
+        db.session.expunge_all()
         self.assertEqual(self.client.get("/uji/terlindungi", headers=header).status_code, 401)
 
     def test_perubahan_peran_langsung_berlaku(self):
