@@ -48,12 +48,23 @@ class HTTPTests(unittest.TestCase):
     def test_invalid_token(self):
         self.assertEqual(self.post('preview',{'Authorization':'Bearer invalid'}).status_code,401)
     def test_forbidden_roles(self):
-        for role in ('regu','teknisi'):
+        for role in ('teknisi',):
             with self.subTest(role=role):
                 h=self.headers(role)
                 self.assertEqual(self.post('preview',h).status_code,403)
                 self.assertEqual(self.post('commit',h).status_code,403)
                 self.assertEqual(self.client.get('/api/aset/import/template',headers=h).status_code,403)
+    def test_token_akun_tidak_terdaftar_ditolak(self):
+        h=self.headers('regu')
+        self.assertEqual(self.post('preview',h).status_code,401)
+        self.assertEqual(self.post('commit',h).status_code,401)
+        self.assertEqual(self.client.get('/api/aset/import/template',headers=h).status_code,401)
+    def test_akun_nonaktif_ditolak(self):
+        from models import Pengguna
+        h=self.headers('koordinator')
+        self.assertEqual(self.post('preview',h).status_code,200)
+        Pengguna.query.filter_by(username='koordinator').update({'status_aktif':False});self.db.session.commit()
+        self.assertEqual(self.post('preview',h).status_code,401)
     def test_koordinator_preview(self):
         from models import AsetPJU
         r=self.post('preview',self.headers('koordinator'));self.assertEqual(r.status_code,200)

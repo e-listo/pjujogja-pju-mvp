@@ -55,10 +55,37 @@ def _buat_token(pengguna):
 
 
 # ------------------------------------------------------------------ #
+# Helper: muat akun dari database berdasarkan isi token
+# ------------------------------------------------------------------ #
+def _muat_pengguna(payload):
+    """
+    Cari akun pemilik token. Utamakan klaim `sub` (id_pengguna).
+    Token lama yang `sub`-nya bukan angka dicari lewat `username`.
+    """
+    sub = payload.get("sub")
+    if sub is not None:
+        try:
+            return db.session.get(Pengguna, int(sub))
+        except (TypeError, ValueError):
+            pass
+    username = payload.get("username")
+    if username:
+        return Pengguna.query.filter_by(username=username).first()
+    return None
+
+
+# ------------------------------------------------------------------ #
 # Decorator: proteksi endpoint
 # ------------------------------------------------------------------ #
 def jwt_required(f):
-    """Decorator — wajib login. Isi g.user_payload dari token."""
+    """
+    Decorator — wajib login. Isi g.user_payload dan g.pengguna.
+
+    Akun diperiksa ulang ke database pada setiap permintaan:
+    - akun dihapus atau status_aktif = False  -> 401 (langsung, tanpa menunggu token habis)
+    - peran, nama, dan username diambil dari database, sehingga perubahan
+      peran oleh admin langsung berlaku tanpa login ulang.
+    """
     @wraps(f)
     def wrapper(*args, **kwargs):
         auth_header = request.headers.get("Authorization", "")
@@ -82,7 +109,17 @@ def jwt_required(f):
         if jti and jti in _BLACKLIST:
             return jsonify({"success": False, "error": "Token sudah tidak aktif, silakan login ulang"}), 401
 
+        # Cek akun di database: masih ada dan aktif?
+        pengguna = _muat_pengguna(payload)
+        if pengguna is None or not pengguna.status_aktif:
+            return jsonify({"success": False, "error": "Akun tidak aktif atau tidak ditemukan"}), 401
+
+        payload = dict(payload)
+        payload["peran"]    = pengguna.peran
+        payload["nama"]     = pengguna.nama_lengkap
+        payload["username"] = pengguna.username
         g.user_payload = payload
+        g.pengguna     = pengguna
         return f(*args, **kwargs)
     return wrapper
 
