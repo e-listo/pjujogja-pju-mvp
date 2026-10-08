@@ -2,14 +2,51 @@
 
 PIJAR: PENGUATAN INVENTARISASI JARINGAN ASET YANG RESPONSIF.
 
-Terakhir diperbarui: 8 Oktober 2026, 17:17 WIB.
-Acuan kode: main setelah PR #28, commit a257ef7e40bc2ea2f3158bd2a1006918bcbed188.
+Terakhir diperbarui: 8 Oktober 2026, 19:32 WIB.
+Acuan rilis bulk import: main setelah PR #30, merge commit 8042a3f6d2fc8091b965bec72354872cc36c60aa.
+
+## Pembaruan terkini: PR #29 dan #30
+
+- PR #29 telah merged: README dan catatan progres diselaraskan sampai perkembangan PR #28. Panduan deployment Fase 1 belum diperbarui.
+- PR #30 telah merged ke main pada 8 Oktober 2026, 18:36:51 WIB. Commit implementasi awal 18332b291d41459e910340f20626906aa960629a; perbaikan header/penemuan tes 83134688d27b64f7ddc445027b5aa6f4e2412622; merge commit 8042a3f6d2fc8091b965bec72354872cc36c60aa.
+- Nomor urut manual 1-9999 didukung pada kolom nomor_urut. Sistem menyusun kode kategori-wilayah-tahun-nomor empat digit, contoh PJUP-PA1-26-0001. Input 1/001/0001 menghasilkan nomor 0001; nol, negatif, pecahan dan lebih dari 9999 ditolak.
+- Isi kode_aset lengkap ATAU nomor_urut + kode_kategori + kode_wilayah + tahun_pemasangan. Jika kode dan komponen diisi bersama, harus sesuai. Tahun wajib untuk penyusunan kode; kode lengkap lama tetap mengikuti aturan tahun opsional yang ada.
+- Kontrak ASSET/LAMP lama dipertahankan. Template baru memakai ASSET_V2/LAMP_V2; parser menerima kedua versi. Kode lengkap tiga digit lama tidak diganti otomatis. Nomor saja pada kolom kode_aset tetap ditolak; pindahkan ke nomor_urut pada template baru dan kosongkan kode_aset.
+- Sheet lampu dapat memakai kode lengkap atau komponen penyusunan yang sama; nomor_urut saja tidak cukup. Relasi diselesaikan terhadap kode akhir aset dalam batch. Data_Lampu wajib tersedia, boleh kosong.
+- Alias sektor angka 1-4 dipetakan ke Sektor 1-4; KOTA dipetakan ke Jalan Kota. Wilayah tidak ditebak dari alamat. Alamat tetap wajib.
+- Pencarian duplikat dilakukan setelah normalisasi, mencakup padanan tiga/empat digit; duplikat dalam batch diperiksa berdasarkan identitas kategori/wilayah/tahun/nomor. Tidak menimpa data existing.
+- Batas route dan layanan disamakan menjadi 4 MB; maksimum 1000 baris aset+lampu. Formula tetap dilarang. Template tetap dikirim sebagai Response berisi byte untuk LiteSpeed.
+
+### Hasil CI dan rollback PR #30
+
+- Run awal integration: 61 tes, failures=3 dan errors=19. Kegagalan berulang nomor_urut terjadi setelah konstanta header diubah; fixture berurutan lama tidak kompatibel. Tes HTTP menerima 400 pada pratinjau; test_rollback berhenti di validate sebelum persist. Ini bukan bukti kerusakan rollback database.
+- Perbaikan: ASSET/LAMP kembali ke header lama, header V2 dipisahkan, pembuat template memakai V2, dan tes dipindahkan ke tests/test_aset_bulk_four_digit.py. Ada 15 metode tes empat digit termasuk regresi header positional lama.
+- Seluruh check commit 83134688d27b64f7ddc445027b5aa6f4e2412622 lulus: integration, browser, production-schema MariaDB 10.6/10.11, dan syntax-check. Enam hasil check tercatat karena syntax-check berjalan pada push dan PR. Ini hasil commit PR, bukan klaim run pasca-merge atau uji production.
+- Log integration yang diberikan pengguna: Ran 76 tests in 16.375s, OK; 15 tes empat digit, test_commit, test_koordinator_preview, test_akun_nonaktif_ditolak, test_save_relations dan test_rollback semuanya ok, tidak skipped.
+- Kode test_rollback memakai listener Lampu.before_insert yang melempar RuntimeError. persist melakukan flush aset terlebih dahulu; kegagalan lampu memicu rollback. Assertion memastikan jumlah aset=0 dan lampu=0 pada database uji yang awalnya kosong.
+- Kelas MariaDBTests hanya opt-in saat PIJAR_DISPOSABLE_DB=yes dan menolak nama database selain pijar_bulk_test. setUp/tearDown memakai drop_all; JANGAN jalankan terhadap database operasional.
+- Belum diuji oleh test_rollback tersebut: pelestarian aset/lampu lama, kegagalan setelah sebagian lampu tersimpan, dan injeksi kegagalan melalui endpoint HTTP commit.
+
+### Status deployment dan data nyata
+
+- Instruksi deploy telah diberikan: backup database, periksa perubahan lokal, update main, verifikasi commit rilis, set PIJAR_EXPECTED_COMMIT, jalankan --dry-run sebelum --apply.
+- Belum ada laporan hasil --dry-run/--apply, verifikasi template live baru, atau simpan batch production sesudah PR #30. Status aktif di server BELUM DIKONFIRMASI; merge tidak sama dengan deploy.
+- Setelah backend baru aktif, unduh ulang template XLSX dan salin berdasarkan nama kolom. Mulai pratinjau 2-5 baris tanpa simpan.
+- Workbook yang dianalisis berisi 501 aset. Setelah nomor dipindahkan ke nomor_urut dalam memori, 500 baris lolos validasi terpisah memakai master contoh; baris Excel 9 ditolak karena alamat kosong. Bukan verifikasi duplikat database live atau batas wilayah.
+- Verifikasi kode wilayah terhadap lokasi sebenarnya sebelum membakukan kode; alamat workbook mengandung nama wilayah yang tidak selalu cocok dengan kode. Jangan memperbaiki wilayah/alamat otomatis hanya untuk lolos validasi.
+
+### Batasan rilis yang tetap terbuka
+
+- Perlindungan duplikat identitas padanan tiga/empat digit pada permintaan bersamaan/lintas endpoint belum menyeluruh; UNIQUE string tidak cukup. Pemeriksaan existing saat preview/commit tidak menghilangkan race condition.
+- Jalur tambah/cek/saran kode manual belum seluruhnya diselaraskan dengan format empat digit dan pemeriksaan identitas padanan. Saran berbasis urutan teks pada suffix campuran perlu ditinjau.
+- Merge PR #30 disetujui dengan batasan tersebut. CI hijau dan merge tidak berarti semua release gates selesai. Lihat docs/BULK-IMPORT-4-DIGIT-RELEASE-GATES.md; bagian bukti CI/HTTP/rollback di atas memperbarui status pengujian, sementara batasan lain tetap berlaku.
+- Tidak ada migrasi database baru pada patch PR #30. Jangan mengimpor ulang SQL inisialisasi untuk deployment ini.
 
 ## Selesai
 
 ### Aset dan bulk import
 
-- Bulk Import aset dan lampu: template Excel, pratinjau, simpan atomik, penolakan kode duplikat tanpa menimpa. Terverifikasi di produksi: pratinjau, simpan, duplikat ditolak, hapus aset uji.
+- Bulk Import aset dan lampu: template Excel, pratinjau, simpan atomik, penolakan kode duplikat tanpa menimpa. Versi sebelum PR #30 terverifikasi di produksi: pratinjau, simpan, duplikat ditolak, hapus aset uji. Verifikasi production format empat digit belum dikonfirmasi.
 - Popup Bulk Import diseragamkan dengan modal aset (PR #17).
 - Unduh template di LiteSpeed memakai Response berisi byte, bukan send_file(BytesIO) (PR #18).
 - Pesan error angka spesifik per kolom, misalnya lat harus antara -90 dan 90 (PR #19).
@@ -74,8 +111,11 @@ Acuan kode: main setelah PR #28, commit a257ef7e40bc2ea2f3158bd2a1006918bcbed188
 6. Hubungkan logout frontend dengan endpoint server dan evaluasi kebijakan sesi setelah reset password; belum ada revokasi seluruh sesi yang terdokumentasi.
 7. Uji browser khusus pengguna/sidebar: admin/teknisi, tambah/ubah/reset/status, pencarian/paginasi, desktop/tablet/mobile, fokus drawer, pembungkusan identitas/footer, dan cache aset.
 8. Uji simpan dengan lampu di produksi memakai data asli kecil setelah persetujuan. Aset yang punya lampu tidak bisa dihapus lewat aplikasi; siapkan strategi pembersihan sebelum uji.
-9. Periksa ulang pembersihan lama: komentar usang aset_bulk_routes.py, dugaan typo return1 pada deploy-production.sh, dan pesan CSV yang menimpa status Berkas valid. Belum dikonfirmasi masih ada di main terbaru.
-10. Selaraskan README dan panduan deployment setelah isi berkas lama ditinjau; pembaruan catatan ini tidak otomatis mengubah kedua berkas tersebut.
+9. Komentar Blueprint usang di aset_bulk_routes.py sudah dihapus pada PR #30. Periksa ulang dugaan typo return1 pada deploy-production.sh dan pesan CSV yang menimpa status Berkas valid; belum dikonfirmasi masih ada di main terbaru.
+10. README sudah diselaraskan sampai PR #28 melalui PR #29; selaraskan lagi untuk format empat digit dan perbarui panduan deployment Fase 1. Commit catatan ini tidak mengubah kedua berkas tersebut.
+11. Selesaikan perlindungan duplikat identitas padanan lintas permintaan dan konsistensi jalur tambah/cek/saran kode manual sebelum memperluas impor production.
+12. Tambahkan tes rollback dengan data lama, kegagalan setelah sebagian lampu masuk, dan kegagalan transaksi melalui HTTP commit.
+13. Konfirmasikan deploy PR #30, verifikasi template live, perbaiki alamat baris Excel 9, verifikasi wilayah, lalu pratinjau batch kecil sebelum simpan.
 
 ## Batasan keamanan yang masih berlaku
 
