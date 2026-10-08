@@ -26,6 +26,7 @@ const CSS = `
 #modal-bulk table{min-width:560px;font-size:.8rem;}
 #modal-bulk td.bulk-code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.76rem;color:#1a56db;white-space:nowrap;}
 #modal-bulk .btn:disabled,#modal-bulk .btn:disabled:hover{opacity:.45;cursor:not-allowed;}
+#modal-bulk .btn[aria-disabled="true"]{opacity:.55;cursor:not-allowed;}
 @media (max-width:640px){
 #modal-bulk .modal{padding:18px;}
 #modal-bulk .modal-actions{flex-wrap:wrap;}
@@ -96,19 +97,19 @@ function init(){
   overlay.innerHTML=`
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="bulk-title">
     <h3 id="bulk-title">📥 Bulk Import Aset</h3>
-    <p class="bulk-intro">Tambahkan banyak aset beserta lampunya sekaligus dari berkas Excel atau CSV. Data yang sudah ada <b>tidak ditimpa</b>.</p>
+    <p class="bulk-intro">Tambahkan banyak aset beserta lampunya sekaligus dari berkas Excel. Data yang sudah ada <b>tidak ditimpa</b>.</p>
     <div class="section-label">1 · Unduh template</div>
     <div class="bulk-templates">
       <button type="button" class="btn btn-secondary btn-sm" id="bulk-xlsx">📗 Template Excel</button>
-      <button type="button" class="btn btn-secondary btn-sm" id="bulk-csv">📄 Template CSV</button>
+      <button type="button" class="btn btn-secondary btn-sm" id="bulk-csv" aria-disabled="true" title="CSV sementara dinonaktifkan">📄 Template CSV</button>
     </div>
-    <p class="bulk-hint">Excel berisi sheet aset, lampu, referensi kategori/wilayah, dan panduan. CSV hanya untuk aset. Format kode aset: <code>PJUP-UH2-26-001</code>.</p>
+    <p class="bulk-hint">Excel berisi sheet aset, lampu, referensi kategori/wilayah, dan panduan. Template CSV sementara dinonaktifkan; gunakan Excel. Format kode aset: <code>PJUP-UH2-26-001</code>.</p>
     <div class="section-label">2 · Pilih berkas</div>
     <label class="bulk-drop" id="bulk-drop">
-      <input type="file" id="bulk-file" class="bulk-file-input" accept=".xlsx,.csv">
+      <input type="file" id="bulk-file" class="bulk-file-input" accept=".xlsx">
       <span class="bulk-drop-icon">📂</span>
       <span class="bulk-drop-title" id="bulk-file-name">Klik untuk memilih berkas, atau seret ke sini</span>
-      <span class="bulk-drop-sub" id="bulk-file-sub">.xlsx atau .csv · maksimum 4 MB · 1.000 baris</span>
+      <span class="bulk-drop-sub" id="bulk-file-sub">.xlsx · maksimum 4 MB · 1.000 baris</span>
     </label>
     <div id="bulk-status" class="bulk-alert" role="status" aria-live="polite" hidden></div>
     <div id="bulk-result"></div>
@@ -140,11 +141,11 @@ function init(){
   function paintFile(){
     drop.classList.toggle('has-file',!!file);
     nameEl.textContent=file?file.name:'Klik untuk memilih berkas, atau seret ke sini';
-    subEl.textContent=file?formatSize(file.size):'.xlsx atau .csv · maksimum 4 MB · 1.000 baris';
+    subEl.textContent=file?formatSize(file.size):'.xlsx · maksimum 4 MB · 1.000 baris';
   }
   function pickFile(f){
     resetResult();setStatus('','');
-    if(f&&!/\.(xlsx|csv)$/i.test(f.name)){file=null;fileInput.value='';paintFile();sync();setStatus('err','❌ Gunakan berkas .xlsx atau .csv.');return;}
+    if(f&&!/\.(xlsx|csv)$/i.test(f.name)){file=null;fileInput.value='';paintFile();sync();setStatus('err','❌ Gunakan berkas Excel (.xlsx).');return;}
     if(f&&f.size>MAX_BYTES){file=null;fileInput.value='';paintFile();sync();setStatus('err','❌ Berkas melebihi 4 MB.');return;}
     file=f||null;paintFile();sync();
   }
@@ -241,7 +242,7 @@ function init(){
   previewBtn.onclick=()=>run('preview');
   saveBtn.onclick=()=>run('commit');
   xlsxBtn.onclick=()=>download('xlsx');
-  csvBtn.onclick=()=>download('csv');
+  csvBtn.onclick=()=>{if(busy)return;setStatus('','ℹ️ CSV sementara dinonaktifkan; gunakan Template Excel.');};
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
